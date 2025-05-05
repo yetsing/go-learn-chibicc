@@ -1,2 +1,2 @@
 # go-learn-chibicc
-chibicc learn(rewrite) with golang
+[chibicc](https://github.com/rui314/chibicc) learn(rewrite) with golang

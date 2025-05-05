@@ -1,0 +1,24 @@
+commit 0522e2d77e3ab82d3b80a5be8dbbdc8d4180561c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 3 11:29:50 2019 +0900
+
+    Compile an integer to an exectuable that exits with the given number
+
+= so easy
+
+commit bf7081fba7d8c6b1cd8a12eb329697a5481c604e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 3 12:20:08 2019 +0900
+
+    Add + and - operators
+
+= so easy
+
+commit a1ab0ff26f23c82f15180051204eeb6279747c9a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 3 12:36:06 2019 +0900
+
+    Add a tokenizer to allow space characters between tokens
+
+= so easy
+

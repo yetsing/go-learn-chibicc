@@ -1,14 +1,12 @@
 #!/bin/bash
 
-set -ex
-
 assert() {
     expected="$1"
     input="$2"
 
-    ./chibicc "$input" >tmp.s || exit
-    gcc -static -o tmp tmp.s
-    ./tmp
+    ./chibicc "$input" >tmp/tmp.s || exit
+    gcc -static -o tmp/tmp tmp/tmp.s
+    ./tmp/tmp
     actual="$?"
 
     if [ "$actual" = "$expected" ]; then

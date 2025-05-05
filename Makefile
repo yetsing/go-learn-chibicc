@@ -1,6 +1,6 @@
 CFLAGS=-std=c11 -g -fno-common
 
-chibicc:
+chibicc: *.go
 	go build -o chibicc .
 
 test: chibicc

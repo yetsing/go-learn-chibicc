@@ -6,14 +6,27 @@ import (
 	"strconv"
 )
 
+var currentInput string
+
 func check(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-func errorf(format string, args ...interface{}) {
-	panic(fmt.Sprintf(format, args...))
+func errorAt(pos int, format string, args ...interface{}) {
+	fmt.Println(currentInput)
+	for i := 0; i < pos; i++ {
+		fmt.Print(" ")
+	}
+	fmt.Printf("^ ")
+	fmt.Printf(format, args...)
+	fmt.Println()
+	os.Exit(1)
+}
+
+func errorTok(tok *Token, format string, args ...interface{}) {
+	errorAt(tok.pos, format, args...)
 }
 
 // #region Token
@@ -30,6 +43,7 @@ type Token struct {
 	next    *Token
 	val     int
 	literal string
+	pos     int
 }
 
 func (t *Token) equal(op string) bool {
@@ -38,28 +52,30 @@ func (t *Token) equal(op string) bool {
 
 func (t *Token) consume(op string) *Token {
 	if !t.equal(op) {
-		errorf("expected '%s', but got '%s'", op, t.literal)
+		errorTok(t, "expected '%s', but got '%s'", op, t.literal)
 	}
 	return t.next
 }
 
 func (t *Token) getNumber() int {
 	if t.kind != TK_NUM {
-		errorf("expected number, but got '%s'", t.literal)
+		errorTok(t, "expected number, but got '%s'", t.literal)
 	}
 	return t.val
 }
 
-func NewToken(kind TokenKind, literal string) *Token {
+func NewToken(kind TokenKind, literal string, pos int) *Token {
 	return &Token{
 		kind:    kind,
 		next:    nil,
 		val:     0,
 		literal: literal,
+		pos:     pos,
 	}
 }
 
 func tokenize(input string) *Token {
+	currentInput = input
 	var head Token
 	cur := &head
 
@@ -74,13 +90,14 @@ func tokenize(input string) *Token {
 		}
 
 		// Handle numbers
+		start := p
 		if ch >= '0' && ch <= '9' {
 			start := p
 			for p < len(input) && input[p] >= '0' && input[p] <= '9' {
 				p++
 			}
 			numStr := input[start:p]
-			cur.next = NewToken(TK_NUM, numStr)
+			cur.next = NewToken(TK_NUM, numStr, start)
 			val, err := strconv.Atoi(numStr)
 			check(err)
 			cur.next.val = val
@@ -90,15 +107,15 @@ func tokenize(input string) *Token {
 
 		// Handle punctuation
 		if ch == '+' || ch == '-' {
-			cur.next = NewToken(TK_PUNCT, string(ch))
+			cur.next = NewToken(TK_PUNCT, string(ch), start)
 			cur = cur.next
 			p++
 			continue
 		}
 
-		errorf("unexpected character: '%c'", ch)
+		errorAt(p, "unexpected character: '%c'", ch)
 	}
-	cur.next = NewToken(TK_EOF, "")
+	cur.next = NewToken(TK_EOF, "", p)
 	return head.next
 }
 

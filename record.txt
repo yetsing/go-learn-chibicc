@@ -4,7 +4,7 @@ Date:   Sat Aug 3 11:29:50 2019 +0900
 
     Compile an integer to an exectuable that exits with the given number
 
-= so easy
+= easy
 
 commit bf7081fba7d8c6b1cd8a12eb329697a5481c604e
 Author: Rui Ueyama <ruiu@cs.stanford.edu>
@@ -12,7 +12,7 @@ Date:   Sat Aug 3 12:20:08 2019 +0900
 
     Add + and - operators
 
-= so easy
+= easy
 
 commit a1ab0ff26f23c82f15180051204eeb6279747c9a
 Author: Rui Ueyama <ruiu@cs.stanford.edu>
@@ -20,5 +20,19 @@ Date:   Sat Aug 3 12:36:06 2019 +0900
 
     Add a tokenizer to allow space characters between tokens
 
-= so easy
+= easy
 
+commit cc5a6d978144bda90220bd10866c4fd908d07546
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 3 15:02:08 2019 +0900
+
+    Improve error message
+
+    Now, chibicc can print out an error message with an error location
+    like this:
+
+      $ ./chibicc 1+foo
+      1+foo
+        ^ expected a number
+
+= easy

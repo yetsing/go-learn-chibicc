@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"unicode"
 )
 
 var currentInput string
@@ -29,7 +30,15 @@ func errorTok(tok *Token, format string, args ...interface{}) {
 	errorAt(tok.pos, format, args...)
 }
 
-// #region Token
+func ispunct(ch rune) bool {
+	return unicode.Is(unicode.Punct, ch)
+}
+
+func sout(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+// #region Tokenizer
 type TokenKind int
 
 const (
@@ -74,8 +83,8 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
-func tokenize(input string) *Token {
-	currentInput = input
+func tokenize() *Token {
+	input := currentInput
 	var head Token
 	cur := &head
 
@@ -106,7 +115,7 @@ func tokenize(input string) *Token {
 		}
 
 		// Handle punctuation
-		if ch == '+' || ch == '-' {
+		if ispunct(rune(ch)) {
 			cur.next = NewToken(TK_PUNCT, string(ch), start)
 			cur = cur.next
 			p++
@@ -121,9 +130,155 @@ func tokenize(input string) *Token {
 
 // #endregion
 
-func sout(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
+// #region Parser
+var gtok *Token
+
+type NodeKind int
+
+const (
+	ND_ADD NodeKind = iota
+	ND_SUB
+	ND_MUL
+	ND_DIV
+	ND_NUM
+)
+
+// AST node type
+type Node struct {
+	kind NodeKind // Node kind
+	lhs  *Node    // Left-hand side
+	rhs  *Node    // Right-hand side
+	val  int      // Used if kind is ND_NUM
 }
+
+func NewNode(kind NodeKind) *Node {
+	return &Node{
+		kind: kind,
+		lhs:  nil,
+		rhs:  nil,
+		val:  0,
+	}
+}
+
+func NewBinary(kind NodeKind, lhs, rhs *Node) *Node {
+	return &Node{
+		kind: kind,
+		lhs:  lhs,
+		rhs:  rhs,
+		val:  0,
+	}
+}
+func NewNumber(val int) *Node {
+	return &Node{
+		kind: ND_NUM,
+		lhs:  nil,
+		rhs:  nil,
+		val:  val,
+	}
+}
+
+// expr = mul ( ('+' | '-') mul)*
+func expr() *Node {
+	node := mul()
+	for {
+		if gtok.equal("+") {
+			gtok = gtok.next
+			node = NewBinary(ND_ADD, node, mul())
+			continue
+		}
+		if gtok.equal("-") {
+			gtok = gtok.next
+			node = NewBinary(ND_SUB, node, mul())
+			continue
+		}
+
+		return node
+	}
+}
+
+// mul = primary ( ('*' | '/') primary)*
+func mul() *Node {
+	node := primary()
+	for {
+		if gtok.equal("*") {
+			gtok = gtok.next
+			node = NewBinary(ND_MUL, node, primary())
+			continue
+		}
+		if gtok.equal("/") {
+			gtok = gtok.next
+			node = NewBinary(ND_DIV, node, primary())
+			continue
+		}
+
+		return node
+	}
+}
+
+// primary = "(" expr ")" | num
+func primary() *Node {
+	if gtok.equal("(") {
+		gtok = gtok.next
+		node := expr()
+		gtok = gtok.consume(")")
+		return node
+	}
+
+	if gtok.kind == TK_NUM {
+		node := NewNumber(gtok.getNumber())
+		gtok = gtok.next
+		return node
+	}
+
+	errorTok(gtok, "expected an expression")
+	return nil
+}
+
+// #endregion
+
+// #region Code generator
+var depth int
+
+func push() {
+	sout("  push %%rax\n")
+	depth++
+}
+
+func pop(arg string) {
+	sout("  pop %s\n", arg)
+	depth--
+}
+
+func genExpr(node *Node) {
+	if node.kind == ND_NUM {
+		sout("  mov $%d, %%rax\n", node.val)
+		return
+	}
+
+	genExpr(node.lhs)
+	push()
+	genExpr(node.rhs)
+	pop("%rdi")
+
+	switch node.kind {
+	case ND_ADD:
+		sout("  add %%rdi, %%rax\n")
+		return
+	case ND_SUB:
+		sout("  sub %%rdi, %%rax\n")
+		return
+	case ND_MUL:
+		sout("  imul %%rdi, %%rax\n")
+		return
+	case ND_DIV:
+		sout("  cqo\n")
+		sout("  idiv %%rdi\n")
+	default:
+		errorTok(gtok, "unknown node kind: %d", node.kind)
+	}
+}
+
+// #endregion
 
 func main() {
 	args := os.Args
@@ -132,27 +287,22 @@ func main() {
 		return
 	}
 
-	tok := tokenize(args[1])
+	currentInput = args[1]
+	tok := tokenize()
+	gtok = tok
+	node := expr()
+	if gtok.kind != TK_EOF {
+		errorTok(gtok, "extra tokens at the end")
+	}
 
 	sout("  .global main\n")
 	sout("main:\n")
 
-	// The first token must be a number
-	sout("  mov $%d, %%rax\n", tok.getNumber())
-	tok = tok.next
-
-	// next token must be a '+' or '-'
-	for tok.kind != TK_EOF {
-		if tok.equal("+") {
-			sout("  add $%d, %%rax\n", tok.next.getNumber())
-			tok = tok.next.next
-			continue
-		}
-
-		tok = tok.consume("-")
-		sout("  sub $%d, %%rax\n", tok.getNumber())
-		tok = tok.next
-	}
-
+	// Traverse the AST to emit assembly
+	genExpr(node)
 	sout("  ret\n")
+
+	if depth != 0 {
+		panic("stack depth mismatch")
+	}
 }

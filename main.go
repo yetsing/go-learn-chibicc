@@ -15,6 +15,12 @@ func check(err error) {
 	}
 }
 
+func errorf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+	fmt.Println()
+	os.Exit(1)
+}
+
 func errorAt(pos int, format string, args ...interface{}) {
 	fmt.Println(currentInput)
 	for i := 0; i < pos; i++ {
@@ -31,7 +37,7 @@ func errorTok(tok *Token, format string, args ...interface{}) {
 }
 
 func ispunct(ch rune) bool {
-	return unicode.Is(unicode.Punct, ch)
+	return unicode.IsPrint(ch) && !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && !unicode.IsSpace(ch)
 }
 
 func sout(format string, args ...interface{}) {
@@ -255,9 +261,9 @@ func genExpr(node *Node) {
 		return
 	}
 
-	genExpr(node.lhs)
-	push()
 	genExpr(node.rhs)
+	push()
+	genExpr(node.lhs)
 	pop("%rdi")
 
 	switch node.kind {
@@ -273,9 +279,9 @@ func genExpr(node *Node) {
 	case ND_DIV:
 		sout("  cqo\n")
 		sout("  idiv %%rdi\n")
-	default:
-		errorTok(gtok, "unknown node kind: %d", node.kind)
+		return
 	}
+	errorf("invalid expression")
 }
 
 // #endregion

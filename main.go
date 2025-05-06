@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -82,6 +83,18 @@ func (t *Token) getNumber() int {
 	return t.val
 }
 
+func readPunct(input string, p int) int {
+	s := input[p:]
+	if strings.HasPrefix(s, "==") || strings.HasPrefix(s, "!=") ||
+		strings.HasPrefix(s, "<=") || strings.HasPrefix(s, ">=") {
+		return 2
+	}
+	if ispunct(rune(input[p])) {
+		return 1
+	}
+	return 0
+}
+
 func NewToken(kind TokenKind, literal string, pos int) *Token {
 	return &Token{
 		kind:    kind,
@@ -124,10 +137,11 @@ func tokenize() *Token {
 		}
 
 		// Handle punctuation
-		if ispunct(rune(ch)) {
-			cur.next = NewToken(TK_PUNCT, string(ch), start)
+		punctLen := readPunct(input, p)
+		if punctLen > 0 {
+			cur.next = NewToken(TK_PUNCT, input[p:p+punctLen], start)
 			cur = cur.next
-			p++
+			p += punctLen
 			continue
 		}
 
@@ -150,6 +164,10 @@ const (
 	ND_MUL                 // *
 	ND_DIV                 // /
 	ND_NEG                 // unary -
+	ND_EQ                  // ==
+	ND_NE                  // !=
+	ND_LT                  // <
+	ND_LE                  // <=
 	ND_NUM                 // Integer
 )
 
@@ -197,8 +215,61 @@ func NewNumber(val int) *Node {
 	}
 }
 
-// expr = mul ( ('+' | '-') mul)*
+// expr = equality
 func expr() *Node {
+	return equality()
+}
+
+// equality = relational ("==" relational | "!=" relational)*
+func equality() *Node {
+	node := relational()
+	for {
+		if gtok.equal("==") {
+			gtok = gtok.next
+			node = NewBinary(ND_EQ, node, relational())
+			continue
+		}
+		if gtok.equal("!=") {
+			gtok = gtok.next
+			node = NewBinary(ND_NE, node, relational())
+			continue
+		}
+
+		return node
+	}
+}
+
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+func relational() *Node {
+	node := add()
+	for {
+		if gtok.equal("<") {
+			gtok = gtok.next
+			node = NewBinary(ND_LT, node, add())
+			continue
+		}
+		if gtok.equal("<=") {
+			gtok = gtok.next
+			node = NewBinary(ND_LE, node, add())
+			continue
+		}
+		if gtok.equal(">") {
+			gtok = gtok.next
+			node = NewBinary(ND_LT, add(), node)
+			continue
+		}
+		if gtok.equal(">=") {
+			gtok = gtok.next
+			node = NewBinary(ND_LE, add(), node)
+			continue
+		}
+
+		return node
+	}
+}
+
+// add = mul ("+" mul | "-" mul)*
+func add() *Node {
 	node := mul()
 	for {
 		if gtok.equal("+") {
@@ -313,8 +384,28 @@ func genExpr(node *Node) {
 		sout("  cqo\n")
 		sout("  idiv %%rdi\n")
 		return
+	case ND_EQ:
+		fallthrough
+	case ND_NE:
+		fallthrough
+	case ND_LT:
+		fallthrough
+	case ND_LE:
+		sout("  cmp %%rdi, %%rax\n")
+
+		if node.kind == ND_EQ {
+			sout("  sete %%al\n")
+		} else if node.kind == ND_NE {
+			sout("  setne %%al\n")
+		} else if node.kind == ND_LT {
+			sout("  setl %%al\n")
+		} else if node.kind == ND_LE {
+			sout("  setle %%al\n")
+		}
+		sout("  movzb %%al, %%rax\n")
+		return
 	}
-	errorf("invalid expression")
+	errorf("invalid expression %d", node.kind)
 }
 
 // #endregion

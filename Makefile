@@ -1,7 +1,7 @@
 CFLAGS=-std=c11 -g -fno-common
 
 chibicc: *.go
-	go build -o chibicc .
+	rm -f tmp* && go build -o chibicc .
 
 test: chibicc
 	./test.sh

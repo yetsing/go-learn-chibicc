@@ -7,6 +7,7 @@ import (
 	"unicode"
 )
 
+// #region util functions
 var currentInput string
 
 func check(err error) {
@@ -43,6 +44,8 @@ func ispunct(ch rune) bool {
 func sout(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
+
+// #endregion
 
 // #region Tokenizer
 type TokenKind int

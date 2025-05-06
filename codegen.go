@@ -64,7 +64,16 @@ func genExpr(node *Node) {
 		sout("  movzb %%al, %%rax\n")
 		return
 	}
-	errorf("invalid expression %d", node.kind)
+	errorf("invalid expression %s", node.kind)
+}
+
+func genStmt(node *Node) {
+	if node.kind == ND_EXPR_STMT {
+		genExpr(node.lhs)
+		return
+	}
+
+	errorf("invalid statement %s", node.kind)
 }
 
 // #endregion
@@ -73,10 +82,12 @@ func codegen(node *Node) {
 	sout("  .global main\n")
 	sout("main:\n")
 
-	genExpr(node)
-	sout("  ret\n")
-
-	if depth > 0 {
-		errorf("stack depth is not zero")
+	for node != nil {
+		genStmt(node)
+		if depth != 0 {
+			panic("stack depth is not 0")
+		}
+		node = node.next
 	}
+	sout("  ret\n")
 }

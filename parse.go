@@ -6,21 +6,54 @@ var gtok *Token
 type NodeKind int
 
 const (
-	ND_ADD NodeKind = iota // +
-	ND_SUB                 // -
-	ND_MUL                 // *
-	ND_DIV                 // /
-	ND_NEG                 // unary -
-	ND_EQ                  // ==
-	ND_NE                  // !=
-	ND_LT                  // <
-	ND_LE                  // <=
-	ND_NUM                 // Integer
+	ND_ADD       NodeKind = iota // +
+	ND_SUB                       // -
+	ND_MUL                       // *
+	ND_DIV                       // /
+	ND_NEG                       // unary -
+	ND_EQ                        // ==
+	ND_NE                        // !=
+	ND_LT                        // <
+	ND_LE                        // <=
+	ND_EXPR_STMT                 // Expression statement
+	ND_NUM                       // Integer
 )
 
+// NodeKind string
+func (nk NodeKind) String() string {
+	switch nk {
+	case ND_ADD:
+		return "ND_ADD"
+	case ND_SUB:
+		return "ND_SUB"
+	case ND_MUL:
+		return "ND_MUL"
+	case ND_DIV:
+		return "ND_DIV"
+	case ND_NEG:
+		return "ND_NEG"
+	case ND_EQ:
+		return "ND_EQ"
+	case ND_NE:
+		return "ND_NE"
+	case ND_LT:
+		return "ND_LT"
+	case ND_LE:
+		return "ND_LE"
+	case ND_EXPR_STMT:
+		return "ND_EXPR_STMT"
+	case ND_NUM:
+		return "ND_NUM"
+	default:
+		panic("Unknown NodeKind")
+	}
+}
+
 // AST node type
+// all nodes are linked in a list
 type Node struct {
 	kind NodeKind // Node kind
+	next *Node    // Next node in the list
 	lhs  *Node    // Left-hand side
 	rhs  *Node    // Right-hand side
 	val  int      // Used if kind is ND_NUM
@@ -60,6 +93,18 @@ func NewNumber(val int) *Node {
 		rhs:  nil,
 		val:  val,
 	}
+}
+
+// stmt = expr-stmt
+func stmt() *Node {
+	return exprStmt()
+}
+
+// expr-stmt = expr ";"
+func exprStmt() *Node {
+	node := NewUnary(ND_EXPR_STMT, expr())
+	gtok = gtok.consume(";")
+	return node
 }
 
 // expr = equality
@@ -190,13 +235,12 @@ func primary() *Node {
 
 func parse(tok *Token) *Node {
 	gtok = tok
-	// Parse the expression
-	node := expr()
 
-	// Check for extra tokens at the end
-	if gtok.kind != TK_EOF {
-		errorTok(gtok, "extra tokens at the end")
+	var head Node
+	cur := &head
+	for gtok.kind != TK_EOF {
+		cur.next = stmt()
+		cur = cur.next
 	}
-
-	return node
+	return head.next
 }

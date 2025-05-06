@@ -68,3 +68,11 @@ Date:   Wed Oct 7 20:11:16 2020 +0900
     Split main.c into multiple small files
 
 = 文件拆分 easy
+
+commit 76cae0ad05b6ba3e3e927b2b749ccddda23f0c51
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 08:50:44 2020 +0900
+
+    Accept multiple statements separated by semicolons
+
+= 增加语句 easy

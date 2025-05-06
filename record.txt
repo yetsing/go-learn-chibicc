@@ -76,3 +76,11 @@ Date:   Sat Sep 26 08:50:44 2020 +0900
     Accept multiple statements separated by semicolons
 
 = 增加语句 easy
+
+commit 1f9f3adf324af1432a380b41c7690834e649e346
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 08:59:56 2020 +0900
+
+    Support single-letter local variables
+
+= 支持本地变量（地址） middle

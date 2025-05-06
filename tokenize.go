@@ -52,7 +52,8 @@ func sout(format string, args ...interface{}) {
 type TokenKind int
 
 const (
-	TK_PUNCT TokenKind = iota
+	TK_IDENT TokenKind = iota
+	TK_PUNCT
 	TK_NUM
 	TK_EOF
 )
@@ -135,6 +136,14 @@ func tokenize(input string) *Token {
 			check(err)
 			cur.next.val = val
 			cur = cur.next
+			continue
+		}
+
+		// Handle identifiers
+		if unicode.IsLetter(rune(ch)) {
+			cur.next = NewToken(TK_IDENT, string(ch), p)
+			cur = cur.next
+			p++
 			continue
 		}
 

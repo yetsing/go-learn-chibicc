@@ -13,6 +13,19 @@ func pop(arg string) {
 	depth--
 }
 
+// Compute the absolute address of a given node.
+// It's an error if a given node does not reside in memory.
+func genAddr(node *Node) {
+	if node.kind != ND_VAR {
+		errorf("not a lvalue %s", node.kind)
+		return
+	}
+
+	offset := (node.name[0] - 'a' + 1) * 8
+	sout("  lea %d(%%rbp), %%rax\n", -offset)
+}
+
+// Generate code for a given node.
 func genExpr(node *Node) {
 	switch node.kind {
 	case ND_NUM:
@@ -21,6 +34,17 @@ func genExpr(node *Node) {
 	case ND_NEG:
 		genExpr(node.lhs)
 		sout("  neg %%rax\n")
+		return
+	case ND_VAR:
+		genAddr(node)
+		sout("  mov (%%rax), %%rax\n")
+		return
+	case ND_ASSIGN:
+		genAddr(node.lhs)
+		push()
+		genExpr(node.rhs)
+		pop("%rdi")
+		sout("  mov %%rax, (%%rdi)\n")
 		return
 	}
 
@@ -82,6 +106,11 @@ func codegen(node *Node) {
 	sout("  .global main\n")
 	sout("main:\n")
 
+	// Prologue
+	sout("  push %%rbp\n")
+	sout("  mov %%rsp, %%rbp\n")
+	sout("  sub $208, %%rsp\n")
+
 	for node != nil {
 		genStmt(node)
 		if depth != 0 {
@@ -89,5 +118,8 @@ func codegen(node *Node) {
 		}
 		node = node.next
 	}
+
+	sout("  mov %%rbp, %%rsp\n")
+	sout("  pop %%rbp\n")
 	sout("  ret\n")
 }

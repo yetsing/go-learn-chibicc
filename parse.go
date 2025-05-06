@@ -15,7 +15,9 @@ const (
 	ND_NE                        // !=
 	ND_LT                        // <
 	ND_LE                        // <=
+	ND_ASSIGN                    // =
 	ND_EXPR_STMT                 // Expression statement
+	ND_VAR                       // Variable
 	ND_NUM                       // Integer
 )
 
@@ -40,8 +42,12 @@ func (nk NodeKind) String() string {
 		return "ND_LT"
 	case ND_LE:
 		return "ND_LE"
+	case ND_ASSIGN:
+		return "ND_ASSIGN"
 	case ND_EXPR_STMT:
 		return "ND_EXPR_STMT"
+	case ND_VAR:
+		return "ND_VAR"
 	case ND_NUM:
 		return "ND_NUM"
 	default:
@@ -56,6 +62,7 @@ type Node struct {
 	next *Node    // Next node in the list
 	lhs  *Node    // Left-hand side
 	rhs  *Node    // Right-hand side
+	name string   // Used if kind is ND_VAR
 	val  int      // Used if kind is ND_NUM
 }
 
@@ -95,6 +102,15 @@ func NewNumber(val int) *Node {
 	}
 }
 
+func NewVarNode(name string) *Node {
+	return &Node{
+		kind: ND_VAR,
+		lhs:  nil,
+		rhs:  nil,
+		name: name,
+	}
+}
+
 // stmt = expr-stmt
 func stmt() *Node {
 	return exprStmt()
@@ -107,9 +123,19 @@ func exprStmt() *Node {
 	return node
 }
 
-// expr = equality
+// expr = assign
 func expr() *Node {
-	return equality()
+	return assign()
+}
+
+// assign = equality ("=" assign)?
+func assign() *Node {
+	node := equality()
+	if gtok.equal("=") {
+		gtok = gtok.next
+		node = NewBinary(ND_ASSIGN, node, assign())
+	}
+	return node
 }
 
 // equality = relational ("==" relational | "!=" relational)*
@@ -212,12 +238,18 @@ func unary() *Node {
 	return primary()
 }
 
-// primary = "(" expr ")" | num
+// primary = "(" expr ")" | ident | num
 func primary() *Node {
 	if gtok.equal("(") {
 		gtok = gtok.next
 		node := expr()
 		gtok = gtok.consume(")")
+		return node
+	}
+
+	if gtok.kind == TK_IDENT {
+		node := NewVarNode(gtok.literal)
+		gtok = gtok.next
 		return node
 	}
 

@@ -60,3 +60,11 @@ Date:   Sat Aug 3 16:15:23 2019 +0900
     Add ==, !=, <= and >= operators
 
 = 比较操作 easy
+
+commit 725badfb494544b7c7f1d4c4690b9bc033c6d051
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:11:16 2020 +0900
+
+    Split main.c into multiple small files
+
+= 文件拆分 easy

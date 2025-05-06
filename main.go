@@ -17,19 +17,19 @@ func check(err error) {
 }
 
 func errorf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintln(os.Stderr)
 	os.Exit(1)
 }
 
 func errorAt(pos int, format string, args ...interface{}) {
-	fmt.Println(currentInput)
-	for i := 0; i < pos; i++ {
-		fmt.Print(" ")
+	fmt.Fprintln(os.Stderr, currentInput)
+	for range pos {
+		fmt.Fprint(os.Stderr, " ")
 	}
-	fmt.Printf("^ ")
-	fmt.Printf(format, args...)
-	fmt.Println()
+	fmt.Fprintf(os.Stderr, "^ ")
+	fmt.Fprintf(os.Stderr, format, args...)
+	fmt.Fprintln(os.Stderr)
 	os.Exit(1)
 }
 
@@ -145,11 +145,12 @@ var gtok *Token
 type NodeKind int
 
 const (
-	ND_ADD NodeKind = iota
-	ND_SUB
-	ND_MUL
-	ND_DIV
-	ND_NUM
+	ND_ADD NodeKind = iota // +
+	ND_SUB                 // -
+	ND_MUL                 // *
+	ND_DIV                 // /
+	ND_NEG                 // unary -
+	ND_NUM                 // Integer
 )
 
 // AST node type
@@ -177,6 +178,16 @@ func NewBinary(kind NodeKind, lhs, rhs *Node) *Node {
 		val:  0,
 	}
 }
+
+func NewUnary(kind NodeKind, expr *Node) *Node {
+	return &Node{
+		kind: kind,
+		lhs:  expr,
+		rhs:  nil,
+		val:  0,
+	}
+}
+
 func NewNumber(val int) *Node {
 	return &Node{
 		kind: ND_NUM,
@@ -205,23 +216,37 @@ func expr() *Node {
 	}
 }
 
-// mul = primary ( ('*' | '/') primary)*
+// mul = unary ( ('*' | '/') unary)*
 func mul() *Node {
-	node := primary()
+	node := unary()
 	for {
 		if gtok.equal("*") {
 			gtok = gtok.next
-			node = NewBinary(ND_MUL, node, primary())
+			node = NewBinary(ND_MUL, node, unary())
 			continue
 		}
 		if gtok.equal("/") {
 			gtok = gtok.next
-			node = NewBinary(ND_DIV, node, primary())
+			node = NewBinary(ND_DIV, node, unary())
 			continue
 		}
 
 		return node
 	}
+}
+
+// unary = ( ("+" | "-") unary ) | primary
+func unary() *Node {
+	if gtok.equal("+") {
+		gtok = gtok.next
+		return unary()
+	}
+	if gtok.equal("-") {
+		gtok = gtok.next
+		return NewUnary(ND_NEG, unary())
+	}
+
+	return primary()
 }
 
 // primary = "(" expr ")" | num
@@ -259,8 +284,13 @@ func pop(arg string) {
 }
 
 func genExpr(node *Node) {
-	if node.kind == ND_NUM {
+	switch node.kind {
+	case ND_NUM:
 		sout("  mov $%d, %%rax\n", node.val)
+		return
+	case ND_NEG:
+		genExpr(node.lhs)
+		sout("  neg %%rax\n")
 		return
 	}
 
@@ -297,8 +327,7 @@ func main() {
 	}
 
 	currentInput = args[1]
-	tok := tokenize()
-	gtok = tok
+	gtok = tokenize()
 	node := expr()
 	if gtok.kind != TK_EOF {
 		errorTok(gtok, "extra tokens at the end")
@@ -314,4 +343,5 @@ func main() {
 	if depth != 0 {
 		panic("stack depth mismatch")
 	}
+
 }

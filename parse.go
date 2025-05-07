@@ -1,10 +1,56 @@
 package main
 
+// #region Local variable
+
+// Local variable
+type Obj struct {
+	next   *Obj   // Next local variable
+	name   string // Variable name
+	offset int    // Offset from RBP
+}
+
+// All local variable instances created during parsing are
+// accumulated to this list.
+// 所有的本地变量通过链表连接在一起
+var locals *Obj
+
+// Find a local variable by name
+func findVar(name string) *Obj {
+	for l := locals; l != nil; l = l.next {
+		if l.name == name {
+			return l
+		}
+	}
+	return nil
+}
+
+// Create a new local variable
+func newLVar(name string) *Obj {
+	l := &Obj{
+		name:   name,
+		offset: 0,
+		next:   locals,
+	}
+	locals = l
+	return l
+}
+
+// #endregion
+
 // #region Parser
+
 var gtok *Token
+
+// Function
+type Function struct {
+	body      *Node // Function body
+	locals    *Obj  // Local variables
+	stackSize int   // Stack size
+}
 
 type NodeKind int
 
+// AST node kinds
 const (
 	ND_ADD       NodeKind = iota // +
 	ND_SUB                       // -
@@ -55,15 +101,15 @@ func (nk NodeKind) String() string {
 	}
 }
 
-// AST node type
+// AST node
 // all nodes are linked in a list
 type Node struct {
-	kind NodeKind // Node kind
-	next *Node    // Next node in the list
-	lhs  *Node    // Left-hand side
-	rhs  *Node    // Right-hand side
-	name string   // Used if kind is ND_VAR
-	val  int      // Used if kind is ND_NUM
+	kind     NodeKind // Node kind
+	next     *Node    // Next node in the list
+	lhs      *Node    // Left-hand side
+	rhs      *Node    // Right-hand side
+	variable *Obj     // Used if kind is ND_VAR
+	val      int      // Used if kind is ND_NUM
 }
 
 func NewNode(kind NodeKind) *Node {
@@ -102,12 +148,12 @@ func NewNumber(val int) *Node {
 	}
 }
 
-func NewVarNode(name string) *Node {
+func NewVarNode(variable *Obj) *Node {
 	return &Node{
-		kind: ND_VAR,
-		lhs:  nil,
-		rhs:  nil,
-		name: name,
+		kind:     ND_VAR,
+		lhs:      nil,
+		rhs:      nil,
+		variable: variable,
 	}
 }
 
@@ -248,7 +294,11 @@ func primary() *Node {
 	}
 
 	if gtok.kind == TK_IDENT {
-		node := NewVarNode(gtok.literal)
+		variable := findVar(gtok.literal)
+		if variable == nil {
+			variable = newLVar(gtok.literal)
+		}
+		node := NewVarNode(variable)
 		gtok = gtok.next
 		return node
 	}
@@ -265,7 +315,7 @@ func primary() *Node {
 
 // #endregion
 
-func parse(tok *Token) *Node {
+func parse(tok *Token) *Function {
 	gtok = tok
 
 	var head Node
@@ -274,5 +324,11 @@ func parse(tok *Token) *Node {
 		cur.next = stmt()
 		cur = cur.next
 	}
-	return head.next
+
+	prog := &Function{
+		body:      head.next,
+		locals:    locals,
+		stackSize: 0,
+	}
+	return prog
 }

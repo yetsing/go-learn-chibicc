@@ -84,6 +84,16 @@ func (t *Token) getNumber() int {
 	return t.val
 }
 
+// Returns true if c is valid as the first character of an identifier.
+func isIdent1(ch rune) bool {
+	return unicode.IsLetter(ch) || ch == '_'
+}
+
+// Returns true if c is valid as a non-first character of an identifier.
+func isIdent2(ch rune) bool {
+	return isIdent1(ch) || unicode.IsDigit(ch)
+}
+
 func readPunct(input string, p int) int {
 	s := input[p:]
 	if strings.HasPrefix(s, "==") || strings.HasPrefix(s, "!=") ||
@@ -140,10 +150,12 @@ func tokenize(input string) *Token {
 		}
 
 		// Handle identifiers
-		if unicode.IsLetter(rune(ch)) {
-			cur.next = NewToken(TK_IDENT, string(ch), p)
+		if isIdent1(rune(ch)) {
+			for p < len(input) && isIdent2(rune(input[p])) {
+				p++
+			}
+			cur.next = NewToken(TK_IDENT, input[start:p], start)
 			cur = cur.next
-			p++
 			continue
 		}
 

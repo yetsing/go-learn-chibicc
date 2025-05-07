@@ -84,3 +84,12 @@ Date:   Sat Sep 26 08:59:56 2020 +0900
     Support single-letter local variables
 
 = 支持本地变量（地址） middle
+
+commit 482c26b536f8e5c998af6210470cd3d97a47ee9a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:12:19 2020 +0900
+
+    Support multi-letter local variables
+
+= 多字母本地变量 easy
+= 甚至改完 tokenize 就直接测试通过

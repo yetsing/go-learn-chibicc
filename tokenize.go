@@ -117,13 +117,16 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
+var keywords = map[string]TokenKind{
+	"return": TK_KEYWORD,
+	"if":     TK_KEYWORD,
+	"else":   TK_KEYWORD,
+}
+
 func convertKeywords(tok *Token) {
 	for t := tok; t != nil; t = t.next {
-		switch t.literal {
-		case "return":
+		if _, ok := keywords[t.literal]; ok {
 			t.kind = TK_KEYWORD
-		default:
-			continue
 		}
 	}
 }

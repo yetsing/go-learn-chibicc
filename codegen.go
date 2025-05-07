@@ -2,6 +2,12 @@ package main
 
 // #region Code Generator
 var depth int = 0
+var gcount int = 0
+
+func count() int {
+	gcount++
+	return gcount
+}
 
 func push() {
 	sout("  push %%rax\n")
@@ -98,6 +104,19 @@ func genExpr(node *Node) {
 
 func genStmt(node *Node) {
 	switch node.kind {
+	case ND_IF:
+		c := count()
+		genExpr(node.cond)
+		sout("  cmp $0, %%rax\n")
+		sout("  je .L.else.%d\n", c)
+		genStmt(node.then)
+		sout("  jmp .L.end.%d\n", c)
+		sout(".L.else.%d:\n", c)
+		if node.els != nil {
+			genStmt(node.els)
+		}
+		sout(".L.end.%d:\n", c)
+		return
 	case ND_BLOCK:
 		for n := node.body; n != nil; n = n.next {
 			genStmt(n)

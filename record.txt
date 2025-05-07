@@ -117,3 +117,11 @@ Date:   Thu May 14 11:05:01 2020 +0900
     Add null statement
 
 = 增加空语句， parse 的小调整 easy
+
+commit 72b841508f562c65b427a502fe6b270c3717319b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 12:47:09 2020 +0900
+
+    Add "if" statement
+
+= 增加 if 语句，还在我的掌握之中 easy

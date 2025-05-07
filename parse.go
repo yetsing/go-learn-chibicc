@@ -63,6 +63,7 @@ const (
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
 	ND_RETURN                    // return
+	ND_IF                        // if
 	ND_BLOCK                     // Block { ... }
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
@@ -92,6 +93,12 @@ func (nk NodeKind) String() string {
 		return "ND_LE"
 	case ND_ASSIGN:
 		return "ND_ASSIGN"
+	case ND_RETURN:
+		return "ND_RETURN"
+	case ND_IF:
+		return "ND_IF"
+	case ND_BLOCK:
+		return "ND_BLOCK"
 	case ND_EXPR_STMT:
 		return "ND_EXPR_STMT"
 	case ND_VAR:
@@ -99,7 +106,7 @@ func (nk NodeKind) String() string {
 	case ND_NUM:
 		return "ND_NUM"
 	default:
-		panic("Unknown NodeKind")
+		panic("unknown NodeKind")
 	}
 }
 
@@ -111,6 +118,11 @@ type Node struct {
 
 	lhs *Node // Left-hand side
 	rhs *Node // Right-hand side
+
+	// "if" statement
+	cond *Node // Condition
+	then *Node // Then branch
+	els  *Node // Else branch
 
 	body *Node // Used if kind is ND_BLOCK
 
@@ -165,6 +177,7 @@ func NewVarNode(variable *Obj) *Node {
 }
 
 // stmt = "return" expr ";"
+// .	| if-stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
 func stmt() *Node {
@@ -175,12 +188,31 @@ func stmt() *Node {
 		return node
 	}
 
+	if gtok.equal("if") {
+		return ifStmt()
+	}
+
 	if gtok.equal("{") {
 		gtok = gtok.next
 		return compoundStmt()
 	}
 
 	return exprStmt()
+}
+
+// if-stmt = "if" "(" expr ")" stmt ("else" stmt)?
+func ifStmt() *Node {
+	gtok = gtok.consume("if")
+	gtok = gtok.consume("(")
+	node := NewNode(ND_IF)
+	node.cond = expr()
+	gtok = gtok.consume(")")
+	node.then = stmt()
+	if gtok.equal("else") {
+		gtok = gtok.next
+		node.els = stmt()
+	}
+	return node
 }
 
 // compound-stmt = stmt* "}"

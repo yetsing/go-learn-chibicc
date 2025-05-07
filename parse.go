@@ -63,6 +63,7 @@ const (
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
 	ND_RETURN                    // return
+	ND_BLOCK                     // Block { ... }
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
 	ND_NUM                       // Integer
@@ -105,12 +106,17 @@ func (nk NodeKind) String() string {
 // AST node
 // all nodes are linked in a list
 type Node struct {
-	kind     NodeKind // Node kind
-	next     *Node    // Next node in the list
-	lhs      *Node    // Left-hand side
-	rhs      *Node    // Right-hand side
-	variable *Obj     // Used if kind is ND_VAR
-	val      int      // Used if kind is ND_NUM
+	kind NodeKind // Node kind
+	next *Node    // Next node in the list
+
+	lhs *Node // Left-hand side
+	rhs *Node // Right-hand side
+
+	body *Node // Used if kind is ND_BLOCK
+
+	variable *Obj // Used if kind is ND_VAR
+
+	val int // Used if kind is ND_NUM
 }
 
 func NewNode(kind NodeKind) *Node {
@@ -159,6 +165,7 @@ func NewVarNode(variable *Obj) *Node {
 }
 
 // stmt = "return" expr ";"
+// .    | "{" compound-stmt
 // .    | expr-stmt
 func stmt() *Node {
 	if gtok.equal("return") {
@@ -167,7 +174,28 @@ func stmt() *Node {
 		gtok = gtok.consume(";")
 		return node
 	}
+
+	if gtok.equal("{") {
+		gtok = gtok.next
+		return compoundStmt()
+	}
+
 	return exprStmt()
+}
+
+// compound-stmt = stmt* "}"
+func compoundStmt() *Node {
+	var head Node
+	cur := &head
+	for !gtok.equal("}") {
+		cur.next = stmt()
+		cur = cur.next
+	}
+
+	node := NewNode(ND_BLOCK)
+	node.body = head.next
+	gtok = gtok.consume("}")
+	return node
 }
 
 // expr-stmt = expr ";"
@@ -326,15 +354,10 @@ func primary() *Node {
 func parse(tok *Token) *Function {
 	gtok = tok
 
-	var head Node
-	cur := &head
-	for gtok.kind != TK_EOF {
-		cur.next = stmt()
-		cur = cur.next
-	}
+	gtok = gtok.consume("{")
 
 	prog := &Function{
-		body:      head.next,
+		body:      compoundStmt(),
 		locals:    locals,
 		stackSize: 0,
 	}

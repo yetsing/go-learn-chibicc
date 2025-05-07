@@ -98,6 +98,11 @@ func genExpr(node *Node) {
 
 func genStmt(node *Node) {
 	switch node.kind {
+	case ND_BLOCK:
+		for n := node.body; n != nil; n = n.next {
+			genStmt(n)
+		}
+		return
 	case ND_RETURN:
 		genExpr(node.lhs)
 		sout("  jmp .L.return\n")
@@ -139,13 +144,9 @@ func codegen(prog *Function) {
 	sout("  mov %%rsp, %%rbp\n")
 	sout("  sub $%d, %%rsp\n", prog.stackSize)
 
-	node := prog.body
-	for node != nil {
-		genStmt(node)
-		if depth != 0 {
-			panic("stack depth is not 0")
-		}
-		node = node.next
+	genStmt(prog.body)
+	if depth > 0 {
+		panic("stack not empty")
 	}
 
 	sout(".L.return:\n")

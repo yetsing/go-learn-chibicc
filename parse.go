@@ -64,6 +64,7 @@ const (
 	ND_ASSIGN                    // =
 	ND_RETURN                    // return
 	ND_IF                        // if
+	ND_FOR                       // for
 	ND_BLOCK                     // Block { ... }
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
@@ -97,6 +98,8 @@ func (nk NodeKind) String() string {
 		return "ND_RETURN"
 	case ND_IF:
 		return "ND_IF"
+	case ND_FOR:
+		return "ND_FOR"
 	case ND_BLOCK:
 		return "ND_BLOCK"
 	case ND_EXPR_STMT:
@@ -119,10 +122,12 @@ type Node struct {
 	lhs *Node // Left-hand side
 	rhs *Node // Right-hand side
 
-	// "if" statement
-	cond *Node // Condition
-	then *Node // Then branch
-	els  *Node // Else branch
+	// "if" or "for" statement
+	cond *Node // if/for Condition
+	then *Node // if/for Then branch
+	els  *Node // if Else branch
+	init *Node // for Initialization
+	inc  *Node // for Increment
 
 	body *Node // Used if kind is ND_BLOCK
 
@@ -177,7 +182,8 @@ func NewVarNode(variable *Obj) *Node {
 }
 
 // stmt = "return" expr ";"
-// .	| if-stmt
+// .    | if-stmt
+// .    | for-stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
 func stmt() *Node {
@@ -192,12 +198,37 @@ func stmt() *Node {
 		return ifStmt()
 	}
 
+	if gtok.equal("for") {
+		return forStmt()
+	}
+
 	if gtok.equal("{") {
 		gtok = gtok.next
 		return compoundStmt()
 	}
 
 	return exprStmt()
+}
+
+// for-stmt = "for" "(" expr-stmt expr? ";" expr? ")" stmt
+func forStmt() *Node {
+	gtok = gtok.consume("for")
+	gtok = gtok.consume("(")
+	node := NewNode(ND_FOR)
+
+	node.init = exprStmt()
+	if !gtok.equal(";") {
+		node.cond = expr()
+	}
+	gtok = gtok.consume(";")
+
+	if !gtok.equal(")") {
+		node.inc = expr()
+	}
+	gtok = gtok.consume(")")
+
+	node.then = stmt()
+	return node
 }
 
 // if-stmt = "if" "(" expr ")" stmt ("else" stmt)?

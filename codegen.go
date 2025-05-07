@@ -104,6 +104,22 @@ func genExpr(node *Node) {
 
 func genStmt(node *Node) {
 	switch node.kind {
+	case ND_FOR:
+		c := count()
+		genStmt(node.init)
+		sout(".L.begin.%d:\n", c)
+		if node.cond != nil {
+			genExpr(node.cond)
+			sout("  cmp $0, %%rax\n")
+			sout("  je .L.end.%d\n", c)
+		}
+		genStmt(node.then)
+		if node.inc != nil {
+			genExpr(node.inc)
+		}
+		sout("  jmp .L.begin.%d\n", c)
+		sout(".L.end.%d:\n", c)
+		return
 	case ND_IF:
 		c := count()
 		genExpr(node.cond)

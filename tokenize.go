@@ -52,10 +52,11 @@ func sout(format string, args ...interface{}) {
 type TokenKind int
 
 const (
-	TK_IDENT TokenKind = iota
-	TK_PUNCT
-	TK_NUM
-	TK_EOF
+	TK_IDENT   TokenKind = iota // identifiers
+	TK_PUNCT                    // punctuation
+	TK_KEYWORD                  // keywords
+	TK_NUM                      // numbers literals
+	TK_EOF                      // end of file
 )
 
 type Token struct {
@@ -116,8 +117,20 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
+func convertKeywords(tok *Token) {
+	for t := tok; t != nil; t = t.next {
+		switch t.literal {
+		case "return":
+			t.kind = TK_KEYWORD
+		default:
+			continue
+		}
+	}
+}
+
 // #endregion
 
+// Tokenize the input string and return a linked list of tokens.
 func tokenize(input string) *Token {
 	currentInput = input
 	var head Token
@@ -149,7 +162,7 @@ func tokenize(input string) *Token {
 			continue
 		}
 
-		// Handle identifiers
+		// Handle identifiers or keywords
 		if isIdent1(rune(ch)) {
 			for p < len(input) && isIdent2(rune(input[p])) {
 				p++
@@ -171,5 +184,6 @@ func tokenize(input string) *Token {
 		errorAt(p, "unexpected character: '%c'", ch)
 	}
 	cur.next = NewToken(TK_EOF, "", p)
+	convertKeywords(head.next)
 	return head.next
 }

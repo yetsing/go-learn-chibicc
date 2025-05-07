@@ -62,6 +62,7 @@ const (
 	ND_LT                        // <
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
+	ND_RETURN                    // return
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
 	ND_NUM                       // Integer
@@ -157,8 +158,15 @@ func NewVarNode(variable *Obj) *Node {
 	}
 }
 
-// stmt = expr-stmt
+// stmt = "return" expr ";"
+// .    | expr-stmt
 func stmt() *Node {
+	if gtok.equal("return") {
+		gtok = gtok.next
+		node := NewUnary(ND_RETURN, expr())
+		gtok = gtok.consume(";")
+		return node
+	}
 	return exprStmt()
 }
 

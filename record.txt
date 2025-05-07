@@ -93,3 +93,11 @@ Date:   Wed Oct 7 20:12:19 2020 +0900
 
 = 多字母本地变量 easy
 = 甚至改完 tokenize 就直接测试通过
+
+commit 6cc1c1f0643ce0f1af0857e024a0a438ddb45853
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:12:57 2020 +0900
+
+    Add "return" statement
+
+= 增加 return ， return 就是 jump 到函数指令末尾 easy

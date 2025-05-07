@@ -64,7 +64,7 @@ const (
 	ND_ASSIGN                    // =
 	ND_RETURN                    // return
 	ND_IF                        // if
-	ND_FOR                       // for
+	ND_FOR                       // for or while
 	ND_BLOCK                     // Block { ... }
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
@@ -184,6 +184,7 @@ func NewVarNode(variable *Obj) *Node {
 // stmt = "return" expr ";"
 // .    | if-stmt
 // .    | for-stmt
+// .    | while-stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
 func stmt() *Node {
@@ -202,12 +203,27 @@ func stmt() *Node {
 		return forStmt()
 	}
 
+	if gtok.equal("while") {
+		return whileStmt()
+	}
+
 	if gtok.equal("{") {
 		gtok = gtok.next
 		return compoundStmt()
 	}
 
 	return exprStmt()
+}
+
+// while-stmt = "while" "(" expr ")" stmt
+func whileStmt() *Node {
+	gtok = gtok.consume("while")
+	gtok = gtok.consume("(")
+	node := NewNode(ND_FOR)
+	node.cond = expr()
+	gtok = gtok.consume(")")
+	node.then = stmt()
+	return node
 }
 
 // for-stmt = "for" "(" expr-stmt expr? ";" expr? ")" stmt

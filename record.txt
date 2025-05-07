@@ -133,3 +133,11 @@ Date:   Sun Aug 4 17:35:53 2019 +0900
     Add "for" statement
 
 = 增加 for 语句，还在我的掌握之中 easy
+
+commit 1f3eb34f637520b01e6b8cd10a9026d05036db6d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 4 17:24:03 2019 +0900
+
+    Add "while" statement
+
+= 增加 while 语句，充分说明了 while 就是 for 的特殊形式 easy

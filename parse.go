@@ -200,6 +200,10 @@ func compoundStmt() *Node {
 
 // expr-stmt = expr ";"
 func exprStmt() *Node {
+	if gtok.equal(";") {
+		gtok = gtok.next
+		return NewNode(ND_BLOCK)
+	}
 	node := NewUnary(ND_EXPR_STMT, expr())
 	gtok = gtok.consume(";")
 	return node

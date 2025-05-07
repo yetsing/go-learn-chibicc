@@ -109,3 +109,11 @@ Date:   Fri Sep 4 13:38:41 2020 +0900
     Add { ... }
 
 = 增加 block 多条语句 easy
+
+commit ff8912c68e877744f8b15070e098af786e7bd296
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu May 14 11:05:01 2020 +0900
+
+    Add null statement
+
+= 增加空语句， parse 的小调整 easy

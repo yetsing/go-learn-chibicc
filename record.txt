@@ -141,3 +141,19 @@ Date:   Sun Aug 4 17:24:03 2019 +0900
     Add "while" statement
 
 = 增加 while 语句，充分说明了 while 就是 for 的特殊形式 easy
+
+commit 5b142b1dcf6561df3c44a743965af3bd4e619112
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 4 18:07:31 2019 +0900
+
+    Add LICENSE and README.md
+
+= easy
+
+commit 3d8627719be00e39070eaca0ee5b599f2a877c5c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 11:23:04 2020 +0900
+
+    Add a representative node to each Node to improve error messages
+
+= easy

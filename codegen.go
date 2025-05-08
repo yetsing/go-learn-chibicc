@@ -28,12 +28,12 @@ func alignTo(n, align int) int {
 // Compute the absolute address of a given node.
 // It's an error if a given node does not reside in memory.
 func genAddr(node *Node) {
-	if node.kind != ND_VAR {
-		errorf("not a lvalue %s", node.kind)
+	if node.kind == ND_VAR {
+		sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
 		return
 	}
 
-	sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
+	errorTok(node.tok, "not a lvalue %s", node.kind)
 }
 
 // Generate code for a given node.
@@ -99,7 +99,7 @@ func genExpr(node *Node) {
 		sout("  movzb %%al, %%rax\n")
 		return
 	}
-	errorf("invalid expression %s", node.kind)
+	errorTok(node.tok, "invalid expression %s", node.kind)
 }
 
 func genStmt(node *Node) {
@@ -154,7 +154,7 @@ func genStmt(node *Node) {
 		return
 	}
 
-	errorf("invalid statement %s", node.kind)
+	errorTok(node.tok, "invalid statement %s", node.kind)
 }
 
 // Assign offsets to local variables.

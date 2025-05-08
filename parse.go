@@ -118,6 +118,7 @@ func (nk NodeKind) String() string {
 type Node struct {
 	kind NodeKind // Node kind
 	next *Node    // Next node in the list
+	tok  *Token   // Representative token
 
 	lhs *Node // Left-hand side
 	rhs *Node // Right-hand side
@@ -136,48 +137,53 @@ type Node struct {
 	val int // Used if kind is ND_NUM
 }
 
-func NewNode(kind NodeKind) *Node {
+func NewNode(kind NodeKind, tok *Token) *Node {
 	return &Node{
 		kind: kind,
 		lhs:  nil,
 		rhs:  nil,
 		val:  0,
+		tok:  tok,
 	}
 }
 
-func NewBinary(kind NodeKind, lhs, rhs *Node) *Node {
+func NewBinary(kind NodeKind, lhs, rhs *Node, tok *Token) *Node {
 	return &Node{
 		kind: kind,
 		lhs:  lhs,
 		rhs:  rhs,
 		val:  0,
+		tok:  tok,
 	}
 }
 
-func NewUnary(kind NodeKind, expr *Node) *Node {
+func NewUnary(kind NodeKind, expr *Node, tok *Token) *Node {
 	return &Node{
 		kind: kind,
 		lhs:  expr,
 		rhs:  nil,
 		val:  0,
+		tok:  tok,
 	}
 }
 
-func NewNumber(val int) *Node {
+func NewNumber(val int, tok *Token) *Node {
 	return &Node{
 		kind: ND_NUM,
 		lhs:  nil,
 		rhs:  nil,
 		val:  val,
+		tok:  tok,
 	}
 }
 
-func NewVarNode(variable *Obj) *Node {
+func NewVarNode(variable *Obj, tok *Token) *Node {
 	return &Node{
 		kind:     ND_VAR,
 		lhs:      nil,
 		rhs:      nil,
 		variable: variable,
+		tok:      tok,
 	}
 }
 
@@ -189,8 +195,9 @@ func NewVarNode(variable *Obj) *Node {
 // .    | expr-stmt
 func stmt() *Node {
 	if gtok.equal("return") {
+		st := gtok
 		gtok = gtok.next
-		node := NewUnary(ND_RETURN, expr())
+		node := NewUnary(ND_RETURN, expr(), st)
 		gtok = gtok.consume(";")
 		return node
 	}
@@ -208,7 +215,6 @@ func stmt() *Node {
 	}
 
 	if gtok.equal("{") {
-		gtok = gtok.next
 		return compoundStmt()
 	}
 
@@ -217,9 +223,10 @@ func stmt() *Node {
 
 // while-stmt = "while" "(" expr ")" stmt
 func whileStmt() *Node {
+	st := gtok
 	gtok = gtok.consume("while")
 	gtok = gtok.consume("(")
-	node := NewNode(ND_FOR)
+	node := NewNode(ND_FOR, st)
 	node.cond = expr()
 	gtok = gtok.consume(")")
 	node.then = stmt()
@@ -228,9 +235,10 @@ func whileStmt() *Node {
 
 // for-stmt = "for" "(" expr-stmt expr? ";" expr? ")" stmt
 func forStmt() *Node {
+	st := gtok
 	gtok = gtok.consume("for")
 	gtok = gtok.consume("(")
-	node := NewNode(ND_FOR)
+	node := NewNode(ND_FOR, st)
 
 	node.init = exprStmt()
 	if !gtok.equal(";") {
@@ -249,9 +257,10 @@ func forStmt() *Node {
 
 // if-stmt = "if" "(" expr ")" stmt ("else" stmt)?
 func ifStmt() *Node {
+	st := gtok
 	gtok = gtok.consume("if")
 	gtok = gtok.consume("(")
-	node := NewNode(ND_IF)
+	node := NewNode(ND_IF, st)
 	node.cond = expr()
 	gtok = gtok.consume(")")
 	node.then = stmt()
@@ -264,6 +273,8 @@ func ifStmt() *Node {
 
 // compound-stmt = stmt* "}"
 func compoundStmt() *Node {
+	st := gtok
+	gtok = gtok.consume("{")
 	var head Node
 	cur := &head
 	for !gtok.equal("}") {
@@ -271,7 +282,7 @@ func compoundStmt() *Node {
 		cur = cur.next
 	}
 
-	node := NewNode(ND_BLOCK)
+	node := NewNode(ND_BLOCK, st)
 	node.body = head.next
 	gtok = gtok.consume("}")
 	return node
@@ -279,11 +290,12 @@ func compoundStmt() *Node {
 
 // expr-stmt = expr ";"
 func exprStmt() *Node {
+	st := gtok
 	if gtok.equal(";") {
 		gtok = gtok.next
-		return NewNode(ND_BLOCK)
+		return NewNode(ND_BLOCK, st)
 	}
-	node := NewUnary(ND_EXPR_STMT, expr())
+	node := NewUnary(ND_EXPR_STMT, expr(), st)
 	gtok = gtok.consume(";")
 	return node
 }
@@ -297,8 +309,9 @@ func expr() *Node {
 func assign() *Node {
 	node := equality()
 	if gtok.equal("=") {
+		st := gtok
 		gtok = gtok.next
-		node = NewBinary(ND_ASSIGN, node, assign())
+		node = NewBinary(ND_ASSIGN, node, assign(), st)
 	}
 	return node
 }
@@ -307,14 +320,15 @@ func assign() *Node {
 func equality() *Node {
 	node := relational()
 	for {
+		st := gtok
 		if gtok.equal("==") {
 			gtok = gtok.next
-			node = NewBinary(ND_EQ, node, relational())
+			node = NewBinary(ND_EQ, node, relational(), st)
 			continue
 		}
 		if gtok.equal("!=") {
 			gtok = gtok.next
-			node = NewBinary(ND_NE, node, relational())
+			node = NewBinary(ND_NE, node, relational(), st)
 			continue
 		}
 
@@ -326,24 +340,25 @@ func equality() *Node {
 func relational() *Node {
 	node := add()
 	for {
+		st := gtok
 		if gtok.equal("<") {
 			gtok = gtok.next
-			node = NewBinary(ND_LT, node, add())
+			node = NewBinary(ND_LT, node, add(), st)
 			continue
 		}
 		if gtok.equal("<=") {
 			gtok = gtok.next
-			node = NewBinary(ND_LE, node, add())
+			node = NewBinary(ND_LE, node, add(), st)
 			continue
 		}
 		if gtok.equal(">") {
 			gtok = gtok.next
-			node = NewBinary(ND_LT, add(), node)
+			node = NewBinary(ND_LT, add(), node, st)
 			continue
 		}
 		if gtok.equal(">=") {
 			gtok = gtok.next
-			node = NewBinary(ND_LE, add(), node)
+			node = NewBinary(ND_LE, add(), node, st)
 			continue
 		}
 
@@ -355,14 +370,15 @@ func relational() *Node {
 func add() *Node {
 	node := mul()
 	for {
+		st := gtok
 		if gtok.equal("+") {
 			gtok = gtok.next
-			node = NewBinary(ND_ADD, node, mul())
+			node = NewBinary(ND_ADD, node, mul(), st)
 			continue
 		}
 		if gtok.equal("-") {
 			gtok = gtok.next
-			node = NewBinary(ND_SUB, node, mul())
+			node = NewBinary(ND_SUB, node, mul(), st)
 			continue
 		}
 
@@ -374,14 +390,15 @@ func add() *Node {
 func mul() *Node {
 	node := unary()
 	for {
+		st := gtok
 		if gtok.equal("*") {
 			gtok = gtok.next
-			node = NewBinary(ND_MUL, node, unary())
+			node = NewBinary(ND_MUL, node, unary(), st)
 			continue
 		}
 		if gtok.equal("/") {
 			gtok = gtok.next
-			node = NewBinary(ND_DIV, node, unary())
+			node = NewBinary(ND_DIV, node, unary(), st)
 			continue
 		}
 
@@ -396,8 +413,9 @@ func unary() *Node {
 		return unary()
 	}
 	if gtok.equal("-") {
+		st := gtok
 		gtok = gtok.next
-		return NewUnary(ND_NEG, unary())
+		return NewUnary(ND_NEG, unary(), st)
 	}
 
 	return primary()
@@ -417,13 +435,13 @@ func primary() *Node {
 		if variable == nil {
 			variable = newLVar(gtok.literal)
 		}
-		node := NewVarNode(variable)
+		node := NewVarNode(variable, gtok)
 		gtok = gtok.next
 		return node
 	}
 
 	if gtok.kind == TK_NUM {
-		node := NewNumber(gtok.getNumber())
+		node := NewNumber(gtok.getNumber(), gtok)
 		gtok = gtok.next
 		return node
 	}
@@ -436,8 +454,6 @@ func primary() *Node {
 
 func parse(tok *Token) *Function {
 	gtok = tok
-
-	gtok = gtok.consume("{")
 
 	prog := &Function{
 		body:      compoundStmt(),

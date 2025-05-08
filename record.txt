@@ -157,3 +157,11 @@ Date:   Sat Sep 26 11:23:04 2020 +0900
     Add a representative node to each Node to improve error messages
 
 = easy
+
+commit 863e2b8de25fdf43a4a63b93d0f57718e9edaa47
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 5 21:12:44 2019 +0900
+
+    Add unary & and *
+
+= 指针操作，有点绕弯难懂，理解之后发现实现很简单 easy

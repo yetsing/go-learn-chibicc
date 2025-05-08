@@ -62,6 +62,8 @@ const (
 	ND_LT                        // <
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
+	ND_ADDR                      // unary &
+	ND_DEREF                     // unary *
 	ND_RETURN                    // return
 	ND_IF                        // if
 	ND_FOR                       // for or while
@@ -406,16 +408,26 @@ func mul() *Node {
 	}
 }
 
-// unary = ( ("+" | "-") unary ) | primary
+// unary = ( ("+" | "-" | "*" | "&") unary ) | primary
 func unary() *Node {
 	if gtok.equal("+") {
 		gtok = gtok.next
 		return unary()
 	}
+	st := gtok
 	if gtok.equal("-") {
-		st := gtok
 		gtok = gtok.next
 		return NewUnary(ND_NEG, unary(), st)
+	}
+
+	if gtok.equal("&") {
+		gtok = gtok.next
+		return NewUnary(ND_ADDR, unary(), st)
+	}
+
+	if gtok.equal("*") {
+		gtok = gtok.next
+		return NewUnary(ND_DEREF, unary(), st)
 	}
 
 	return primary()

@@ -28,8 +28,13 @@ func alignTo(n, align int) int {
 // Compute the absolute address of a given node.
 // It's an error if a given node does not reside in memory.
 func genAddr(node *Node) {
-	if node.kind == ND_VAR {
+	switch node.kind {
+	case ND_VAR:
 		sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
+		return
+	case ND_DEREF:
+		// *p: p 本身就是地址，直接加载 p 的值
+		genExpr(node.lhs)
 		return
 	}
 
@@ -48,13 +53,23 @@ func genExpr(node *Node) {
 		return
 	case ND_VAR:
 		genAddr(node)
+		// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
 		sout("  mov (%%rax), %%rax\n")
 		return
-	case ND_ASSIGN:
+	case ND_DEREF:
+		genExpr(node.lhs)
+		// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
+		sout("  mov (%%rax), %%rax\n")
+		return
+	case ND_ADDR:
 		genAddr(node.lhs)
+		return
+	case ND_ASSIGN:
+		genAddr(node.lhs) // 赋值表达式的左边是个地址（左值）
 		push()
 		genExpr(node.rhs)
 		pop("%rdi")
+		// 将 RAX 中的值保存到 RDI 保存的地址位置
 		sout("  mov %%rax, (%%rdi)\n")
 		return
 	}

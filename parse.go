@@ -6,6 +6,7 @@ package main
 type Obj struct {
 	next   *Obj   // Next local variable
 	name   string // Variable name
+	ty     *Type  // Variable type
 	offset int    // Offset from RBP
 }
 
@@ -25,11 +26,12 @@ func findVar(name string) *Obj {
 }
 
 // Create a new local variable
-func newLVar(name string) *Obj {
+func newLVar(name string, ty *Type) *Obj {
 	l := &Obj{
 		name:   name,
 		offset: 0,
 		next:   locals,
+		ty:     ty,
 	}
 	locals = l
 	return l
@@ -250,7 +252,78 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 // #region Parser
 
+// #region Token
+
+// 使用全局变量 gtok 来保存当前的 token
 var gtok *Token
+
+func tryConsume(s string) bool {
+	if gtok.equal(s) {
+		gtok = gtok.next
+		return true
+	}
+	return false
+}
+
+// #endregion
+
+// declspec = "int"
+func declspec() *Type {
+	gtok = gtok.consume("int")
+	return tyInt
+}
+
+// declarator = "*"* ident
+func declarator(ty *Type) *Type {
+	for tryConsume("*") {
+		ty = pointerTo(ty)
+	}
+
+	if gtok.kind != TK_IDENT {
+		errorTok(gtok, "expected a variable name")
+	}
+
+	ty.name = gtok
+	gtok = gtok.next
+	return ty
+}
+
+// declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
+func declaration() *Node {
+	st := gtok
+	basety := declspec()
+
+	var head Node
+	cur := &head
+
+	i := 0
+	for !gtok.equal(";") {
+		if i > 0 {
+			gtok = gtok.consume(",")
+		}
+		i++
+
+		ty := declarator(basety)
+		variable := newLVar(ty.name.literal, ty)
+
+		if !gtok.equal("=") {
+			continue
+		}
+
+		// lhs = rhs
+		lhs := NewVarNode(variable, ty.name)
+		gtok = gtok.next
+		rhs := expr()
+		node := NewBinary(ND_ASSIGN, lhs, rhs, st)
+		cur.next = NewUnary(ND_EXPR_STMT, node, st)
+		cur = cur.next
+	}
+
+	node := NewNode(ND_BLOCK, st)
+	node.body = head.next
+	gtok = gtok.consume(";")
+	return node
+}
 
 // stmt = "return" expr ";"
 // .    | if-stmt
@@ -336,14 +409,18 @@ func ifStmt() *Node {
 	return node
 }
 
-// compound-stmt = stmt* "}"
+// compound-stmt = "{" ( declaration | stmt )*  "}"
 func compoundStmt() *Node {
 	st := gtok
 	gtok = gtok.consume("{")
 	var head Node
 	cur := &head
 	for !gtok.equal("}") {
-		cur.next = stmt()
+		if gtok.equal("int") {
+			cur.next = declaration()
+		} else {
+			cur.next = stmt()
+		}
 		cur = cur.next
 		addType(cur)
 	}
@@ -509,7 +586,7 @@ func primary() *Node {
 	if gtok.kind == TK_IDENT {
 		variable := findVar(gtok.literal)
 		if variable == nil {
-			variable = newLVar(gtok.literal)
+			errorTok(gtok, "undefined variable: %s", gtok.literal)
 		}
 		node := NewVarNode(variable, gtok)
 		gtok = gtok.next

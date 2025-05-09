@@ -9,7 +9,12 @@ const (
 
 type Type struct {
 	kind TypeKind // Type kind
-	base *Type    // Base type
+
+	// Pinter
+	base *Type
+
+	// Declaration
+	name *Token
 }
 
 var tyInt = &Type{
@@ -85,7 +90,7 @@ func addType(node *Node) {
 		node.ty = tyInt
 		return
 	case ND_VAR:
-		node.ty = tyInt
+		node.ty = node.variable.ty
 		return
 	case ND_NUM:
 		node.ty = tyInt
@@ -97,7 +102,7 @@ func addType(node *Node) {
 		if node.lhs.ty.kind == TY_PTR {
 			node.ty = node.lhs.ty.base
 		} else {
-			node.ty = tyInt
+			errorTok(node.tok, "invalid pointer dereference")
 		}
 		return
 

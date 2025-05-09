@@ -190,3 +190,12 @@ Date:   Sun Aug 4 18:25:20 2019 +0900
     Support zero-arity function calls
 
 = easy
+
+commit 964b1d2a0e3e46882743f16703cb12b51e724179
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 4 19:03:46 2019 +0900
+
+    Support function call with up to 6 arguments
+
+= x86-64 System V 调用约定，前6个整型或指针类参数依次通过寄存器传递，顺序为：%rdi、%rsi、%rdx、%rcx、%r8、%r9
+= easy

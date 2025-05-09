@@ -3,6 +3,9 @@ package main
 // #region Code Generator
 var depth int = 0
 var gcount int = 0
+var argreg = []string{
+	"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
+}
 
 func count() int {
 	gcount++
@@ -73,6 +76,17 @@ func genExpr(node *Node) {
 		sout("  mov %%rax, (%%rdi)\n")
 		return
 	case ND_FUNCALL:
+		nargs := 0
+		for arg := node.args; arg != nil; arg = arg.next {
+			genExpr(arg)
+			push()
+			nargs++
+		}
+
+		for i := nargs - 1; i >= 0; i-- {
+			pop(argreg[i])
+		}
+
 		sout("  mov $0, %%rax\n")
 		sout("  call %s\n", node.funcname)
 		return

@@ -142,7 +142,9 @@ type Node struct {
 
 	body *Node // Used if kind is ND_BLOCK
 
-	funcname string // Used if kind is ND_FUNCALL
+	// Function call
+	funcname string
+	args     *Node
 
 	variable *Obj // Used if kind is ND_VAR
 
@@ -583,8 +585,31 @@ func unary() *Node {
 	return primary()
 }
 
-// primary = "(" expr ")" | ident args? | num
-// args = "(" ")"
+// funcall = ident "(" (assign ("," assign)*)? ")"
+func funcall() *Node {
+	st := gtok
+	gtok = gtok.next.next // skip ident "("
+
+	var head Node
+	cur := &head
+
+	for !gtok.equal(")") {
+		if cur != &head {
+			gtok = gtok.consume(",")
+		}
+		cur.next = assign()
+		cur = cur.next
+	}
+
+	gtok = gtok.consume(")")
+
+	node := NewNode(ND_FUNCALL, st)
+	node.funcname = st.literal
+	node.args = head.next
+	return node
+}
+
+// primary = "(" expr ")" | ident | funcall | num
 func primary() *Node {
 	if gtok.equal("(") {
 		gtok = gtok.next
@@ -597,12 +622,7 @@ func primary() *Node {
 	if gtok.kind == TK_IDENT {
 		// Function call
 		if gtok.next.equal("(") {
-			gtok = gtok.next
-			gtok = gtok.consume("(")
-			node := NewNode(ND_FUNCALL, st)
-			node.funcname = st.literal
-			gtok = gtok.consume(")")
-			return node
+			return funcall()
 		}
 
 		variable := findVar(gtok.literal)

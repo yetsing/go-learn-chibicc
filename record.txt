@@ -165,3 +165,11 @@ Date:   Mon Aug 5 21:12:44 2019 +0900
     Add unary & and *
 
 = 指针操作，有点绕弯难懂，理解之后发现实现很简单 easy
+
+commit a6bc4ab101c20b6398fd6bbfe124665bb7db5d25
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 13:39:06 2020 +0900
+
+    Make pointer arithmetic work
+
+= 指针运算， AST 层面进行处理 easy

@@ -37,9 +37,7 @@ func newLVar(name string) *Obj {
 
 // #endregion
 
-// #region Parser
-
-var gtok *Token
+// #region AST Node
 
 // Function
 type Function struct {
@@ -120,6 +118,7 @@ func (nk NodeKind) String() string {
 type Node struct {
 	kind NodeKind // Node kind
 	next *Node    // Next node in the list
+	ty   *Type    // Type of the node
 	tok  *Token   // Representative token
 
 	lhs *Node // Left-hand side
@@ -188,6 +187,70 @@ func NewVarNode(variable *Obj, tok *Token) *Node {
 		tok:      tok,
 	}
 }
+
+// In C, `+` operator is overloaded to perform the pointer arithmetic.
+// If p is a pointer, p+n adds not n but sizeof(*p)*n to the value of p,
+// so that p+n points to the location n elements (not bytes) ahead of p.
+// In other words, we need to scale an integer value before adding to a
+// pointer value. This function takes care of the scaling.
+func newAdd(lhs, rhs *Node, tok *Token) *Node {
+	addType(lhs)
+	addType(rhs)
+
+	// num + num
+	if lhs.ty.isInteger() && rhs.ty.isInteger() {
+		return NewBinary(ND_ADD, lhs, rhs, tok)
+	}
+
+	if lhs.ty.base != nil && rhs.ty.base != nil {
+		errorTok(tok, "invalid operands")
+	}
+
+	// Canonicalize `num + ptr` to `ptr + num`.
+	if lhs.ty.base == nil && rhs.ty.base != nil {
+		lhs, rhs = rhs, lhs
+	}
+
+	// ptr + num
+	rhs = NewBinary(ND_MUL, rhs, NewNumber(8, tok), tok)
+	return NewBinary(ND_ADD, lhs, rhs, tok)
+}
+
+// Like `+`, `-` is overloaded for the pointer type.
+func newSub(lhs, rhs *Node, tok *Token) *Node {
+	addType(lhs)
+	addType(rhs)
+
+	// num - num
+	if lhs.ty.isInteger() && rhs.ty.isInteger() {
+		return NewBinary(ND_SUB, lhs, rhs, tok)
+	}
+
+	// ptr - num
+	if lhs.ty.base != nil && rhs.ty.isInteger() {
+		rhs = NewBinary(ND_MUL, rhs, NewNumber(8, tok), tok)
+		addType(rhs)
+		node := NewBinary(ND_SUB, lhs, rhs, tok)
+		node.ty = lhs.ty
+		return node
+	}
+
+	// ptr - ptr, which returns how many elements are between the two.
+	if lhs.ty.base != nil && rhs.ty.base != nil {
+		node := NewBinary(ND_SUB, lhs, rhs, tok)
+		node.ty = tyInt
+		return NewBinary(ND_DIV, node, NewNumber(8, tok), tok)
+	}
+
+	errorTok(tok, "invalid operands")
+	return nil
+}
+
+// #endregion
+
+// #region Parser
+
+var gtok *Token
 
 // stmt = "return" expr ";"
 // .    | if-stmt
@@ -282,6 +345,7 @@ func compoundStmt() *Node {
 	for !gtok.equal("}") {
 		cur.next = stmt()
 		cur = cur.next
+		addType(cur)
 	}
 
 	node := NewNode(ND_BLOCK, st)
@@ -375,12 +439,12 @@ func add() *Node {
 		st := gtok
 		if gtok.equal("+") {
 			gtok = gtok.next
-			node = NewBinary(ND_ADD, node, mul(), st)
+			node = newAdd(node, mul(), st)
 			continue
 		}
 		if gtok.equal("-") {
 			gtok = gtok.next
-			node = NewBinary(ND_SUB, node, mul(), st)
+			node = newSub(node, mul(), st)
 			continue
 		}
 

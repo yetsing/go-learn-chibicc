@@ -68,6 +68,7 @@ const (
 	ND_IF                        // if
 	ND_FOR                       // for or while
 	ND_BLOCK                     // Block { ... }
+	ND_FUNCALL                   // Function call
 	ND_EXPR_STMT                 // Expression statement
 	ND_VAR                       // Variable
 	ND_NUM                       // Integer
@@ -96,6 +97,10 @@ func (nk NodeKind) String() string {
 		return "ND_LE"
 	case ND_ASSIGN:
 		return "ND_ASSIGN"
+	case ND_ADDR:
+		return "ND_ADDR"
+	case ND_DEREF:
+		return "ND_DEREF"
 	case ND_RETURN:
 		return "ND_RETURN"
 	case ND_IF:
@@ -104,6 +109,8 @@ func (nk NodeKind) String() string {
 		return "ND_FOR"
 	case ND_BLOCK:
 		return "ND_BLOCK"
+	case ND_FUNCALL:
+		return "ND_FUNCALL"
 	case ND_EXPR_STMT:
 		return "ND_EXPR_STMT"
 	case ND_VAR:
@@ -134,6 +141,8 @@ type Node struct {
 	inc  *Node // for Increment
 
 	body *Node // Used if kind is ND_BLOCK
+
+	funcname string // Used if kind is ND_FUNCALL
 
 	variable *Obj // Used if kind is ND_VAR
 
@@ -574,7 +583,8 @@ func unary() *Node {
 	return primary()
 }
 
-// primary = "(" expr ")" | ident | num
+// primary = "(" expr ")" | ident args? | num
+// args = "(" ")"
 func primary() *Node {
 	if gtok.equal("(") {
 		gtok = gtok.next
@@ -583,18 +593,29 @@ func primary() *Node {
 		return node
 	}
 
+	st := gtok
 	if gtok.kind == TK_IDENT {
+		// Function call
+		if gtok.next.equal("(") {
+			gtok = gtok.next
+			gtok = gtok.consume("(")
+			node := NewNode(ND_FUNCALL, st)
+			node.funcname = st.literal
+			gtok = gtok.consume(")")
+			return node
+		}
+
 		variable := findVar(gtok.literal)
 		if variable == nil {
 			errorTok(gtok, "undefined variable: %s", gtok.literal)
 		}
-		node := NewVarNode(variable, gtok)
+		node := NewVarNode(variable, st)
 		gtok = gtok.next
 		return node
 	}
 
 	if gtok.kind == TK_NUM {
-		node := NewNumber(gtok.getNumber(), gtok)
+		node := NewNumber(gtok.getNumber(), st)
 		gtok = gtok.next
 		return node
 	}

@@ -182,3 +182,11 @@ Date:   Thu Sep 3 15:43:36 2020 +0900
 
 = mandatory 强制的
 = 声明的语法是真的奇怪 middle
+
+commit 30a39926272a8341c52018654ca18d2c86ba662b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 4 18:25:20 2019 +0900
+
+    Support zero-arity function calls
+
+= easy

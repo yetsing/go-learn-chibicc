@@ -72,6 +72,10 @@ func genExpr(node *Node) {
 		// 将 RAX 中的值保存到 RDI 保存的地址位置
 		sout("  mov %%rax, (%%rdi)\n")
 		return
+	case ND_FUNCALL:
+		sout("  mov $0, %%rax\n")
+		sout("  call %s\n", node.funcname)
+		return
 	}
 
 	genExpr(node.rhs)

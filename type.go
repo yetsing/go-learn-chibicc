@@ -95,6 +95,9 @@ func addType(node *Node) {
 	case ND_NUM:
 		node.ty = tyInt
 		return
+	case ND_FUNCALL:
+		node.ty = tyInt
+		return
 	case ND_ADDR:
 		node.ty = pointerTo(node.lhs.ty)
 		return

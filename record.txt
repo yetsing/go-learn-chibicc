@@ -199,3 +199,13 @@ Date:   Sun Aug 4 19:03:46 2019 +0900
 
 = x86-64 System V 调用约定，前6个整型或指针类参数依次通过寄存器传递，顺序为：%rdi、%rsi、%rdx、%rcx、%r8、%r9
 = easy
+
+commit 6cb4220f339e7d2a894e44b61c90c576a482914b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 19:01:33 2020 +0900
+
+    Support zero-arity function definition
+
+= 函数定义语法更是大惑不解， declarator 怎么就多了一个 type-suffix
+= 还有 Type ，增加 name 和 return_ty ，为何如此设计
+= easy

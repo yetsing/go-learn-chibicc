@@ -6,6 +6,7 @@ var gcount int = 0
 var argreg = []string{
 	"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
 }
+var currentFn *Function
 
 func count() int {
 	gcount++
@@ -175,7 +176,7 @@ func genStmt(node *Node) {
 		return
 	case ND_RETURN:
 		genExpr(node.lhs)
-		sout("  jmp .L.return\n")
+		sout("  jmp .L.return.%s\n", currentFn.name)
 		return
 	case ND_EXPR_STMT:
 		genExpr(node.lhs)
@@ -192,13 +193,15 @@ func genStmt(node *Node) {
 
 // Assign offsets to local variables.
 func assignLVarOffsets(prog *Function) {
-	offset := 0
-	for lvar := prog.locals; lvar != nil; lvar = lvar.next {
-		offset += 8
-		lvar.offset = -offset
-	}
+	for fn := prog; fn != nil; fn = fn.next {
+		offset := 0
+		for lvar := prog.locals; lvar != nil; lvar = lvar.next {
+			offset += 8
+			lvar.offset = -offset
+		}
 
-	prog.stackSize = alignTo(offset, 16)
+		fn.stackSize = alignTo(offset, 16)
+	}
 }
 
 // #endregion
@@ -206,21 +209,26 @@ func assignLVarOffsets(prog *Function) {
 func codegen(prog *Function) {
 	assignLVarOffsets(prog)
 
-	sout("  .global main\n")
-	sout("main:\n")
+	for fn := prog; fn != nil; fn = fn.next {
+		sout("  .global %s\n", fn.name)
+		sout("%s:\n", fn.name)
+		currentFn = fn
 
-	// Prologue
-	sout("  push %%rbp\n")
-	sout("  mov %%rsp, %%rbp\n")
-	sout("  sub $%d, %%rsp\n", prog.stackSize)
+		// Prologue
+		sout("  push %%rbp\n")
+		sout("  mov %%rsp, %%rbp\n")
+		sout("  sub $%d, %%rsp\n", fn.stackSize)
 
-	genStmt(prog.body)
-	if depth > 0 {
-		panic("stack not empty")
+		// Emit code
+		genStmt(fn.body)
+		if depth > 0 {
+			panic("stack not empty")
+		}
+
+		// Epilogue
+		sout(".L.return.%s:\n", fn.name)
+		sout("  mov %%rbp, %%rsp\n")
+		sout("  pop %%rbp\n")
+		sout("  ret\n")
 	}
-
-	sout(".L.return:\n")
-	sout("  mov %%rbp, %%rsp\n")
-	sout("  pop %%rbp\n")
-	sout("  ret\n")
 }

@@ -41,11 +41,13 @@ func newLVar(name string, ty *Type) *Obj {
 
 // #region AST Node
 
-// Function
+// Function 所有的函数都通过链表连接在一起
 type Function struct {
-	body      *Node // Function body
-	locals    *Obj  // Local variables
-	stackSize int   // Stack size
+	next      *Function
+	name      string // Function name
+	body      *Node  // Function body
+	locals    *Obj   // Local variables
+	stackSize int    // Stack size
 }
 
 type NodeKind int
@@ -284,7 +286,17 @@ func declspec() *Type {
 	return tyInt
 }
 
-// declarator = "*"* ident
+// type-suffix = ( "(" func-params )?
+func typeSuffix(ty *Type) *Type {
+	if gtok.equal("(") {
+		gtok = gtok.next
+		ty = funcType(ty)
+		gtok = gtok.consume(")")
+	}
+	return ty
+}
+
+// declarator = "*"* ident type-suffix
 func declarator(ty *Type) *Type {
 	for tryConsume("*") {
 		ty = pointerTo(ty)
@@ -294,8 +306,10 @@ func declarator(ty *Type) *Type {
 		errorTok(gtok, "expected a variable name")
 	}
 
-	ty.name = gtok
+	name := gtok
 	gtok = gtok.next
+	ty = typeSuffix(ty)
+	ty.name = name
 	return ty
 }
 
@@ -644,15 +658,35 @@ func primary() *Node {
 	return nil
 }
 
+func function() *Function {
+	ty := declspec()
+	ty = declarator(ty)
+
+	locals = nil
+
+	fn := &Function{}
+	fn.name = ty.name.literal
+	fn.body = compoundStmt()
+	fn.locals = locals
+	return fn
+}
+
+// program = function-definition*
+func program() *Function {
+	var head Function
+	cur := &head
+
+	for gtok.kind != TK_EOF {
+		cur.next = function()
+		cur = cur.next
+	}
+
+	return head.next
+}
+
 // #endregion
 
 func parse(tok *Token) *Function {
 	gtok = tok
-
-	prog := &Function{
-		body:      compoundStmt(),
-		locals:    locals,
-		stackSize: 0,
-	}
-	return prog
+	return program()
 }

@@ -3,8 +3,9 @@ package main
 type TypeKind int
 
 const (
-	TY_INT TypeKind = iota // int
-	TY_PTR                 // pointer
+	TY_INT  TypeKind = iota // int
+	TY_PTR                  // pointer
+	TY_FUNC                 // function
 )
 
 type Type struct {
@@ -15,6 +16,9 @@ type Type struct {
 
 	// Declaration
 	name *Token
+
+	// Function Type
+	returnTy *Type
 }
 
 var tyInt = &Type{
@@ -33,6 +37,14 @@ func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind: TY_PTR,
 		base: base,
+	}
+	return t
+}
+
+func funcType(returnTy *Type) *Type {
+	t := &Type{
+		kind:     TY_FUNC,
+		returnTy: returnTy,
 	}
 	return t
 }

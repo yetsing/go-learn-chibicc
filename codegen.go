@@ -34,7 +34,13 @@ func alignTo(n, align int) int {
 func genAddr(node *Node) {
 	switch node.kind {
 	case ND_VAR:
-		sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
+		if node.variable.isLocal {
+			// Local variable
+			sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
+		} else {
+			// Global variable
+			sout("  lea %s(%%rip), %%rax\n", node.variable.name)
+		}
 		return
 	case ND_DEREF:
 		// *p: p 本身就是地址，直接加载 p 的值
@@ -229,9 +235,22 @@ func assignLVarOffsets(prog *Obj) {
 
 // #endregion
 
-func codegen(prog *Obj) {
-	assignLVarOffsets(prog)
+// #region Emit
 
+func emitData(prog *Obj) {
+	for g := prog; g != nil; g = g.next {
+		if g.isFunction {
+			continue
+		}
+
+		sout("  .data\n")
+		sout("  .global %s\n", g.name)
+		sout("%s:\n", g.name)
+		sout("  .zero %d\n", g.ty.size)
+	}
+}
+
+func emitText(prog *Obj) {
 	for fn := prog; fn != nil; fn = fn.next {
 		if !fn.isFunction {
 			continue
@@ -266,4 +285,12 @@ func codegen(prog *Obj) {
 		sout("  pop %%rbp\n")
 		sout("  ret\n")
 	}
+}
+
+// #endregion
+
+func codegen(prog *Obj) {
+	assignLVarOffsets(prog)
+	emitData(prog)
+	emitText(prog)
 }

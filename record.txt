@@ -263,3 +263,11 @@ Date:   Fri Sep 4 17:58:53 2020 +0900
     No functional change
 
 = easy
+
+commit a4d3223a7215712b86076fad8aaf179d8f768b14
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 5 08:43:21 2020 +0900
+
+    Add global variables
+
+= 全局变量 easy

@@ -35,6 +35,12 @@ func findVar(name string) *Obj {
 			return l
 		}
 	}
+
+	for g := globals; g != nil; g = g.next {
+		if g.name == name {
+			return g
+		}
+	}
 	return nil
 }
 
@@ -279,8 +285,6 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 // #endregion
 
-// #region Parser
-
 // #region Token
 
 // 使用全局变量 gtok 来保存当前的 token
@@ -295,6 +299,8 @@ func tryConsume(s string) bool {
 }
 
 // #endregion
+
+// #region Parser
 
 // declspec = "int"
 func declspec() *Type {
@@ -757,13 +763,49 @@ func function(basety *Type) *Obj {
 	return fn
 }
 
+func globalVariable(basety *Type) {
+	first := true
+
+	for !tryConsume(";") {
+		if !first {
+			gtok = gtok.consume(",")
+		}
+		first = false
+
+		ty := declarator(basety)
+		newGVar(ty.name.literal, ty)
+	}
+}
+
+// Lookahead tokens and returns true if a given token is a start
+// of a function definition or declaration.
+func isFunctionDefinition() bool {
+	if gtok.equal(";") {
+		return false
+	}
+
+	st := gtok
+	var dummy = Type{}
+	ty := declarator(&dummy)
+	gtok = st
+	return ty.kind == TY_FUNC
+}
+
 // program = (function-definition | global-variable)*
 func program() *Obj {
 	globals = nil
 
 	for gtok.kind != TK_EOF {
 		basety := declspec()
-		function(basety)
+
+		// Function
+		if isFunctionDefinition() {
+			function(basety)
+			continue
+		}
+
+		// Global variable
+		globalVariable(basety)
 	}
 
 	return globals

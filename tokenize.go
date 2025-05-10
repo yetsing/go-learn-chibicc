@@ -110,18 +110,76 @@ func readPunct(input string, p int) int {
 	return 0
 }
 
-func readStringLiteral(input string, p int) *Token {
-	start := p
-	p++
-	for input[p] != '"' {
-		if p == len(input)-1 || input[p] == '\n' {
-			errorAt(start, "unclosed string literal")
+func readEscapedChar(input string, p int) byte {
+	// Escape sequences are defined using themselves here. E.g.
+	// '\n' is implemented using '\n'. This tautological definition
+	// works because the compiler that compiles our compiler knows
+	// what '\n' actually is. In other words, we "inherit" the ASCII
+	// code of '\n' from the compiler that compiles our compiler,
+	// so we don't have to teach the actual code here.
+	//
+	// This fact has huge implications not only for the correctness
+	// of the compiler but also for the security of the generated code.
+	// For more info, read "Reflections on Trusting Trust" by Ken Thompson.
+	// https://github.com/rui314/chibicc/wiki/thompson1984.pdf
+	switch input[p] {
+	case 'a':
+		return '\a'
+	case 'b':
+		return '\b'
+	case 't':
+		return '\t'
+	case 'n':
+		return '\n'
+	case 'v':
+		return '\v'
+	case 'f':
+		return '\f'
+	case 'r':
+		return '\r'
+	// [GNU] \e for the ASCII escape character is a GNU C extension.
+	case 'e':
+		return 27
+	default:
+		return input[p]
+	}
+
+}
+
+// Find a closing double-quote
+func stringLiteralEnd(input string, p int) int {
+	for p <= len(input)-1 && input[p] != '"' {
+		if input[p] == '\n' {
+			errorAt(p, "unclosed string literal")
+		}
+		if input[p] == '\\' {
+			p++
 		}
 		p++
 	}
-	tok := NewToken(TK_STR, input[start:p+1], start)
+	if p > len(input)-1 {
+		errorAt(p, "unclosed string literal")
+	}
+	return p
+}
+
+func readStringLiteral(input string, p int) *Token {
+	start := p
+	end := stringLiteralEnd(input, p+1)
+
+	sb := strings.Builder{}
+	for p = start + 1; p < end; p++ {
+		if input[p] == '\\' {
+			sb.WriteByte(readEscapedChar(input, p+1))
+			p++
+		} else {
+			sb.WriteByte(input[p])
+		}
+	}
+
+	tok := NewToken(TK_STR, input[start:end+1], start)
 	tok.ty = arrayOf(charType(), p-start)
-	tok.str = input[start+1 : p]
+	tok.str = sb.String()
 	return tok
 }
 

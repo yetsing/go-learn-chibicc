@@ -291,3 +291,20 @@ Date:   Wed Oct 7 12:49:08 2020 +0900
     Add string literal
 
 = 字符串字面量 easy
+
+commit 35a0bcd366163168bf3337975130f62fc1c30235
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Oct 8 14:30:04 2020 +0900
+
+    Refactoring: Add a utility function
+
+= nothing to do easy
+
+commit ad7749f2fad87a4b1df644d4e1c345b3f87d386d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 6 22:36:19 2019 +0900
+
+    Add \a, \b, \t, \n \v, \f, \r and \e
+
+= 支持转义
+= 循环索引处理容易出错，应该用几个例子试验一下 middle

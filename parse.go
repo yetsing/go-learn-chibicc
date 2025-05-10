@@ -609,7 +609,8 @@ func mul() *Node {
 	}
 }
 
-// unary = ( ("+" | "-" | "*" | "&") unary ) | primary
+// unary = ( ("+" | "-" | "*" | "&") unary )
+// .     | postfix
 func unary() *Node {
 	if gtok.equal("+") {
 		gtok = gtok.next
@@ -631,7 +632,22 @@ func unary() *Node {
 		return NewUnary(ND_DEREF, unary(), st)
 	}
 
-	return primary()
+	return postfix()
+}
+
+// postfix = primary ("[" expr "]")*
+func postfix() *Node {
+	node := primary()
+
+	for gtok.equal("[") {
+		// x[y] is short for *(x+y)
+		st := gtok
+		gtok = gtok.next
+		idx := expr()
+		gtok = gtok.consume("]")
+		node = NewUnary(ND_DEREF, newAdd(node, idx, st), st)
+	}
+	return node
 }
 
 // funcall = ident "(" (assign ("," assign)*)? ")"

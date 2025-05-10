@@ -234,4 +234,14 @@ Date:   Mon Aug 5 23:56:37 2019 +0900
 
     Add arrays of arrays
 
-=
+= 多维数组，修复了之前的一个问题 easy
+
+commit 648646bba704745274fcd4fef3b7029c7f7e0fcd
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 6 18:14:53 2019 +0900
+
+    Add [] operator
+
+= EBNF 语法愈发让人难懂
+= 按个人经验来看， [] 会放在 primary 里面
+= easy

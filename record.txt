@@ -227,3 +227,11 @@ Date:   Sat Sep 26 10:15:32 2020 +0900
     Add one dimensional arrays
 
 = 数组和指针 easy
+
+commit 3ce1b2d067164f754dcb4216c193dc98e164b3ce
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 5 23:56:37 2019 +0900
+
+    Add arrays of arrays
+
+=

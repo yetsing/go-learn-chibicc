@@ -313,7 +313,7 @@ func funcParams(ty *Type) *Type {
 }
 
 // type-suffix = "(" func-params
-// .           | "[" num "]"
+// .           | "[" num "]" type-suffix
 // .           | ε
 func typeSuffix(ty *Type) *Type {
 	if gtok.equal("(") {
@@ -325,6 +325,7 @@ func typeSuffix(ty *Type) *Type {
 		gtok = gtok.next
 		length := gtok.getNumber()
 		gtok = gtok.next.consume("]")
+		ty = typeSuffix(ty)
 		return arrayOf(ty, length)
 	}
 	return ty

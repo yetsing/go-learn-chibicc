@@ -84,8 +84,7 @@ func genExpr(node *Node) {
 		return
 	case ND_DEREF:
 		genExpr(node.lhs)
-		// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
-		sout("  mov (%%rax), %%rax\n")
+		load(node.ty)
 		return
 	case ND_ADDR:
 		genAddr(node.lhs)

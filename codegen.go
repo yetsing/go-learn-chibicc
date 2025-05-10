@@ -3,7 +3,10 @@ package main
 // #region Code Generator
 var depth int = 0
 var gcount int = 0
-var argreg = []string{
+var argreg8 = []string{
+	"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b",
+}
+var argreg64 = []string{
 	"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
 }
 var currentFn *Obj
@@ -64,14 +67,24 @@ func load(ty *Type) {
 	}
 
 	// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
-	sout("  mov (%%rax), %%rax\n")
+	if ty.size == 1 {
+		// 1 byte
+		sout("  movsbq (%%rax), %%rax\n")
+	} else {
+		sout("  mov (%%rax), %%rax\n")
+	}
 }
 
 // Store %rax to an address that the stack top is pointing to.
-func store() {
+func store(ty *Type) {
 	pop("%rdi")
 	// 将 RAX 中的值保存到 RDI 保存的地址位置
-	sout("  mov %%rax, (%%rdi)\n")
+	if ty.size == 1 {
+		// 1 byte
+		sout("  mov %%al, (%%rdi)\n")
+	} else {
+		sout("  mov %%rax, (%%rdi)\n")
+	}
 }
 
 // Generate code for a given node.
@@ -99,7 +112,7 @@ func genExpr(node *Node) {
 		genAddr(node.lhs) // 赋值表达式的左边是个地址（左值）
 		push()
 		genExpr(node.rhs)
-		store()
+		store(node.ty)
 		return
 	case ND_FUNCALL:
 		nargs := 0
@@ -110,7 +123,7 @@ func genExpr(node *Node) {
 		}
 
 		for i := nargs - 1; i >= 0; i-- {
-			pop(argreg[i])
+			pop(argreg64[i])
 		}
 
 		sout("  mov $0, %%rax\n")
@@ -269,7 +282,11 @@ func emitText(prog *Obj) {
 		// Save passed-by-register arguments to the stack
 		i := 0
 		for variable := fn.params; variable != nil; variable = variable.next {
-			sout("  mov %s, %d(%%rbp)\n", argreg[i], variable.offset)
+			if variable.ty.size == 1 {
+				sout("  mov %s, %d(%%rbp)\n", argreg8[i], variable.offset)
+			} else {
+				sout("  mov %s, %d(%%rbp)\n", argreg64[i], variable.offset)
+			}
 			i++
 		}
 

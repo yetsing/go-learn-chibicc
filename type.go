@@ -3,7 +3,8 @@ package main
 type TypeKind int
 
 const (
-	TY_INT   TypeKind = iota // int
+	TY_CHAR  TypeKind = iota // char
+	TY_INT                   // int
 	TY_PTR                   // pointer
 	TY_FUNC                  // function
 	TY_ARRAY                 // array
@@ -50,6 +51,14 @@ func intType() *Type {
 	return t
 }
 
+func charType() *Type {
+	t := &Type{
+		kind: TY_CHAR,
+		size: 1,
+	}
+	return t
+}
+
 func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind: TY_PTR,
@@ -78,7 +87,7 @@ func arrayOf(base *Type, len int) *Type {
 }
 
 func (t *Type) isInteger() bool {
-	return t.kind == TY_INT
+	return t.kind == TY_CHAR || t.kind == TY_INT
 }
 
 func addType(node *Node) {

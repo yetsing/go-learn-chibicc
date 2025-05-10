@@ -285,7 +285,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 // #endregion
 
-// #region Token
+// #region Parser Token
 
 // 使用全局变量 gtok 来保存当前的 token
 var gtok *Token
@@ -298,12 +298,21 @@ func tryConsume(s string) bool {
 	return false
 }
 
+// Returns true if a given token represents a type.
+func isTypename(tok *Token) bool {
+	return tok.equal("char") || tok.equal("int")
+}
+
 // #endregion
 
 // #region Parser
 
-// declspec = "int"
+// declspec = "char" | "int"
 func declspec() *Type {
+	if gtok.equal("char") {
+		gtok = gtok.next
+		return charType()
+	}
 	gtok = gtok.consume("int")
 	return intType()
 }
@@ -496,7 +505,7 @@ func compoundStmt() *Node {
 	var head Node
 	cur := &head
 	for !gtok.equal("}") {
-		if gtok.equal("int") {
+		if isTypename(gtok) {
 			cur.next = declaration()
 		} else {
 			cur.next = stmt()

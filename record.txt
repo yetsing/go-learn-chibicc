@@ -271,3 +271,15 @@ Date:   Sat Sep 5 08:43:21 2020 +0900
     Add global variables
 
 = 全局变量 easy
+
+commit be38d63d1b9cd236ef3ec884eedad8112bb6e6f9
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 21:04:17 2020 +0900
+
+    Add char type
+
+= 支持 char 类型
+= 增加了 isTypename 函数判断 Token 是否类型名
+= C 语言有 typedef 定义类型别名，所以类型和标志符 parse 不好区分
+= 这可能也是现在语言类型后置的原因嘛
+= easy

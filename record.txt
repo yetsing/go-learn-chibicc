@@ -245,3 +245,11 @@ Date:   Tue Aug 6 18:14:53 2019 +0900
 = EBNF 语法愈发让人难懂
 = 按个人经验来看， [] 会放在 primary 里面
 = easy
+
+commit 3e55cafef80f0fc9d74bb06ea174de4b53e2ef94
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 6 18:44:53 2019 +0900
+
+    Add sizeof
+
+= sizeof 编译期操作，在 parse 中直接取值 easy

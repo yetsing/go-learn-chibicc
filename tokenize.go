@@ -124,6 +124,7 @@ var keywords = map[string]TokenKind{
 	"for":    TK_KEYWORD,
 	"while":  TK_KEYWORD,
 	"int":    TK_KEYWORD,
+	"sizeof": TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

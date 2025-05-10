@@ -674,7 +674,11 @@ func funcall() *Node {
 	return node
 }
 
-// primary = "(" expr ")" | ident | funcall | num
+// primary = "(" expr ")"
+// .       | "sizeof" unary
+// .       | ident
+// .       | funcall
+// .       | num
 func primary() *Node {
 	if gtok.equal("(") {
 		gtok = gtok.next
@@ -684,6 +688,13 @@ func primary() *Node {
 	}
 
 	st := gtok
+	if gtok.equal("sizeof") {
+		gtok = gtok.next
+		node := unary()
+		addType(node)
+		return NewNumber(node.ty.size, st)
+	}
+
 	if gtok.kind == TK_IDENT {
 		// Function call
 		if gtok.next.equal("(") {

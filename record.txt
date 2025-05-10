@@ -283,3 +283,11 @@ Date:   Thu Aug 27 21:04:17 2020 +0900
 = C 语言有 typedef 定义类型别名，所以类型和标志符 parse 不好区分
 = 这可能也是现在语言类型后置的原因嘛
 = easy
+
+commit 4cedda2dbeca6bd81d2bd00032f7cff46e0a985e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 12:49:08 2020 +0900
+
+    Add string literal
+
+= 字符串字面量 easy

@@ -259,7 +259,16 @@ func emitData(prog *Obj) {
 		sout("  .data\n")
 		sout("  .global %s\n", g.name)
 		sout("%s:\n", g.name)
-		sout("  .zero %d\n", g.ty.size)
+
+		if g.initData != "" {
+			for i := range len(g.initData) {
+				sout("  .byte %d\n", g.initData[i])
+			}
+			// C 语言中，字符串是以 \0 结尾的
+			sout("  .byte 0\n")
+		} else {
+			sout("  .zero %d\n", g.ty.size)
+		}
 	}
 }
 

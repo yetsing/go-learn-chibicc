@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // #region Local variable
 
 // Variable or function
@@ -14,6 +16,9 @@ type Obj struct {
 
 	// Global variable or function
 	isFunction bool
+
+	// Global variable
+	initData string
 
 	// Function
 	params    *Obj
@@ -66,6 +71,24 @@ func newGVar(name string, ty *Type) *Obj {
 	}
 	globals = g
 	return g
+}
+
+var uid int = 0
+
+func newUniqueName() string {
+	s := fmt.Sprintf(".L..%d", uid)
+	uid++
+	return s
+}
+
+func newAnonGvar(ty *Type) *Obj {
+	return newGVar(newUniqueName(), ty)
+}
+
+func newStringLiteral(s string, ty *Type) *Obj {
+	variable := newAnonGvar(ty)
+	variable.initData = s
+	return variable
 }
 
 // #endregion
@@ -707,6 +730,7 @@ func funcall() *Node {
 // .       | "sizeof" unary
 // .       | ident
 // .       | funcall
+// .       | str
 // .       | num
 func primary() *Node {
 	if gtok.equal("(") {
@@ -737,6 +761,12 @@ func primary() *Node {
 		node := NewVarNode(variable, st)
 		gtok = gtok.next
 		return node
+	}
+
+	if gtok.kind == TK_STR {
+		variable := newStringLiteral(gtok.str, gtok.ty)
+		gtok = gtok.next
+		return NewVarNode(variable, st)
 	}
 
 	if gtok.kind == TK_NUM {

@@ -55,6 +55,7 @@ const (
 	TK_IDENT   TokenKind = iota // identifiers
 	TK_PUNCT                    // punctuation
 	TK_KEYWORD                  // keywords
+	TK_STR                      // string literals
 	TK_NUM                      // numbers literals
 	TK_EOF                      // end of file
 )
@@ -65,6 +66,8 @@ type Token struct {
 	val     int
 	literal string
 	pos     int
+	ty      *Type  // Used if TK_STR
+	str     string // String literal contents
 }
 
 func (t *Token) equal(op string) bool {
@@ -105,6 +108,21 @@ func readPunct(input string, p int) int {
 		return 1
 	}
 	return 0
+}
+
+func readStringLiteral(input string, p int) *Token {
+	start := p
+	p++
+	for input[p] != '"' {
+		if p == len(input)-1 || input[p] == '\n' {
+			errorAt(start, "unclosed string literal")
+		}
+		p++
+	}
+	tok := NewToken(TK_STR, input[start:p+1], start)
+	tok.ty = arrayOf(charType(), p-start)
+	tok.str = input[start+1 : p]
+	return tok
 }
 
 func NewToken(kind TokenKind, literal string, pos int) *Token {
@@ -167,6 +185,14 @@ func tokenize(input string) *Token {
 			check(err)
 			cur.next.val = val
 			cur = cur.next
+			continue
+		}
+
+		// Handle string literals
+		if ch == '"' {
+			cur.next = readStringLiteral(input, p)
+			cur = cur.next
+			p += len(cur.literal)
 			continue
 		}
 

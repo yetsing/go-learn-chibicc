@@ -253,3 +253,13 @@ Date:   Tue Aug 6 18:44:53 2019 +0900
     Add sizeof
 
 = sizeof 编译期操作，在 parse 中直接取值 easy
+
+commit 0b7663481d0513067e0c0af04765b8578ae2a498
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:58:53 2020 +0900
+
+    Merge Function with Var
+
+    No functional change
+
+= easy

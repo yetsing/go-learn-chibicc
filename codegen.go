@@ -6,7 +6,7 @@ var gcount int = 0
 var argreg = []string{
 	"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
 }
-var currentFn *Function
+var currentFn *Obj
 
 func count() int {
 	gcount++
@@ -211,8 +211,12 @@ func genStmt(node *Node) {
 }
 
 // Assign offsets to local variables.
-func assignLVarOffsets(prog *Function) {
+func assignLVarOffsets(prog *Obj) {
 	for fn := prog; fn != nil; fn = fn.next {
+		if !fn.isFunction {
+			continue
+		}
+
 		offset := 0
 		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
 			offset += lvar.ty.size
@@ -225,11 +229,16 @@ func assignLVarOffsets(prog *Function) {
 
 // #endregion
 
-func codegen(prog *Function) {
+func codegen(prog *Obj) {
 	assignLVarOffsets(prog)
 
 	for fn := prog; fn != nil; fn = fn.next {
+		if !fn.isFunction {
+			continue
+		}
+
 		sout("  .global %s\n", fn.name)
+		sout("  .text\n")
 		sout("%s:\n", fn.name)
 		currentFn = fn
 

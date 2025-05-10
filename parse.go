@@ -2,18 +2,31 @@ package main
 
 // #region Local variable
 
-// Local variable
+// Variable or function
 type Obj struct {
-	next   *Obj   // Next local variable
-	name   string // Variable name
-	ty     *Type  // Variable type
-	offset int    // Offset from RBP
+	next    *Obj   // Next local variable
+	name    string // Variable name
+	ty      *Type  // Variable type
+	isLocal bool   // local or global/function
+
+	// Local variable
+	offset int // Offset from RBP
+
+	// Global variable or function
+	isFunction bool
+
+	// Function
+	params    *Obj
+	body      *Node
+	locals    *Obj
+	stackSize int // Stack size
 }
 
 // All local variable instances created during parsing are
 // accumulated to this list.
 // 所有的本地变量通过链表连接在一起
 var locals *Obj
+var globals *Obj
 
 // Find a local variable by name
 func findVar(name string) *Obj {
@@ -28,29 +41,30 @@ func findVar(name string) *Obj {
 // Create a new local variable
 func newLVar(name string, ty *Type) *Obj {
 	l := &Obj{
-		name:   name,
-		offset: 0,
-		next:   locals,
-		ty:     ty,
+		name:    name,
+		offset:  0,
+		next:    locals,
+		ty:      ty,
+		isLocal: true,
 	}
 	locals = l
 	return l
 }
 
+func newGVar(name string, ty *Type) *Obj {
+	g := &Obj{
+		name:    name,
+		next:    globals,
+		ty:      ty,
+		isLocal: false,
+	}
+	globals = g
+	return g
+}
+
 // #endregion
 
 // #region AST Node
-
-// Function 所有的函数都通过链表连接在一起
-type Function struct {
-	next   *Function
-	name   string // Function name
-	params *Obj   // Function parameters
-
-	body      *Node // Function body
-	locals    *Obj  // Local variables
-	stackSize int   // Stack size
-}
 
 type NodeKind int
 
@@ -728,14 +742,13 @@ func createParamLvars(param *Type) {
 	}
 }
 
-func function() *Function {
-	ty := declspec()
-	ty = declarator(ty)
+func function(basety *Type) *Obj {
+	ty := declarator(basety)
+
+	fn := newGVar(ty.name.literal, ty)
+	fn.isFunction = true
 
 	locals = nil
-
-	fn := &Function{}
-	fn.name = ty.name.literal
 	createParamLvars(ty.params)
 	fn.params = locals
 
@@ -744,22 +757,21 @@ func function() *Function {
 	return fn
 }
 
-// program = function-definition*
-func program() *Function {
-	var head Function
-	cur := &head
+// program = (function-definition | global-variable)*
+func program() *Obj {
+	globals = nil
 
 	for gtok.kind != TK_EOF {
-		cur.next = function()
-		cur = cur.next
+		basety := declspec()
+		function(basety)
 	}
 
-	return head.next
+	return globals
 }
 
 // #endregion
 
-func parse(tok *Token) *Function {
+func parse(tok *Token) *Obj {
 	gtok = tok
 	return program()
 }

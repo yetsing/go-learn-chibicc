@@ -19,16 +19,20 @@ type Type struct {
 
 	// Function Type
 	returnTy *Type
-}
-
-var tyInt = &Type{
-	kind: TY_INT,
-	base: nil,
+	params   *Type
+	next     *Type // next parameter type
 }
 
 func newType(kind TypeKind) *Type {
 	t := &Type{
 		kind: kind,
+	}
+	return t
+}
+
+func intType() *Type {
+	t := &Type{
+		kind: TY_INT,
 	}
 	return t
 }
@@ -53,6 +57,22 @@ func (t *Type) isInteger() bool {
 	return t.kind == TY_INT
 }
 
+func copyType(t *Type) *Type {
+	if t == nil {
+		return nil
+	}
+
+	newTy := &Type{
+		kind:     t.kind,
+		base:     t.base,
+		name:     t.name,
+		returnTy: t.returnTy,
+		params:   t.params,
+		next:     t.next,
+	}
+	return newTy
+}
+
 func addType(node *Node) {
 	if node == nil || node.ty != nil {
 		return
@@ -67,6 +87,9 @@ func addType(node *Node) {
 	addType(node.inc)
 
 	for n := node.body; n != nil; n = n.next {
+		addType(n)
+	}
+	for n := node.args; n != nil; n = n.next {
 		addType(n)
 	}
 
@@ -90,25 +113,25 @@ func addType(node *Node) {
 		node.ty = node.lhs.ty
 		return
 	case ND_EQ:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_NE:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_LT:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_LE:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_VAR:
 		node.ty = node.variable.ty
 		return
 	case ND_NUM:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_FUNCALL:
-		node.ty = tyInt
+		node.ty = intType()
 		return
 	case ND_ADDR:
 		node.ty = pointerTo(node.lhs.ty)

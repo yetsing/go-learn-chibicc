@@ -195,7 +195,7 @@ func genStmt(node *Node) {
 func assignLVarOffsets(prog *Function) {
 	for fn := prog; fn != nil; fn = fn.next {
 		offset := 0
-		for lvar := prog.locals; lvar != nil; lvar = lvar.next {
+		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
 			offset += 8
 			lvar.offset = -offset
 		}
@@ -218,6 +218,13 @@ func codegen(prog *Function) {
 		sout("  push %%rbp\n")
 		sout("  mov %%rsp, %%rbp\n")
 		sout("  sub $%d, %%rsp\n", fn.stackSize)
+
+		// Save passed-by-register arguments to the stack
+		i := 0
+		for variable := fn.params; variable != nil; variable = variable.next {
+			sout("  mov %s, %d(%%rbp)\n", argreg[i], variable.offset)
+			i++
+		}
 
 		// Emit code
 		genStmt(fn.body)

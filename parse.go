@@ -43,11 +43,13 @@ func newLVar(name string, ty *Type) *Obj {
 
 // Function 所有的函数都通过链表连接在一起
 type Function struct {
-	next      *Function
-	name      string // Function name
-	body      *Node  // Function body
-	locals    *Obj   // Local variables
-	stackSize int    // Stack size
+	next   *Function
+	name   string // Function name
+	params *Obj   // Function parameters
+
+	body      *Node // Function body
+	locals    *Obj  // Local variables
+	stackSize int   // Stack size
 }
 
 type NodeKind int
@@ -253,7 +255,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 	// ptr - ptr, which returns how many elements are between the two.
 	if lhs.ty.base != nil && rhs.ty.base != nil {
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
-		node.ty = tyInt
+		node.ty = intType()
 		return NewBinary(ND_DIV, node, NewNumber(8, tok), tok)
 	}
 
@@ -283,15 +285,35 @@ func tryConsume(s string) bool {
 // declspec = "int"
 func declspec() *Type {
 	gtok = gtok.consume("int")
-	return tyInt
+	return intType()
 }
 
-// type-suffix = ( "(" func-params )?
+// type-suffix = ("(" func-params? ")")?
+// func-params = param ("," param)*
+// param       = declspec declarator
 func typeSuffix(ty *Type) *Type {
 	if gtok.equal("(") {
 		gtok = gtok.next
-		ty = funcType(ty)
+
+		var head = Type{}
+		cur := &head
+
+		for !gtok.equal(")") {
+			if cur != &head {
+				gtok = gtok.consume(",")
+			}
+
+			// param = declspec declarator
+			basety := declspec()
+			ty := declarator(basety)
+			cur.next = ty
+			cur = cur.next
+		}
+
 		gtok = gtok.consume(")")
+		ty = funcType(ty)
+		ty.params = head.next
+		return ty
 	}
 	return ty
 }
@@ -658,6 +680,14 @@ func primary() *Node {
 	return nil
 }
 
+// 为函数参数创建局部变量
+func createParamLvars(param *Type) {
+	if param != nil {
+		createParamLvars(param.next)
+		newLVar(param.name.literal, param)
+	}
+}
+
 func function() *Function {
 	ty := declspec()
 	ty = declarator(ty)
@@ -666,6 +696,9 @@ func function() *Function {
 
 	fn := &Function{}
 	fn.name = ty.name.literal
+	createParamLvars(ty.params)
+	fn.params = locals
+
 	fn.body = compoundStmt()
 	fn.locals = locals
 	return fn

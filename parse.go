@@ -229,7 +229,7 @@ func newAdd(lhs, rhs *Node, tok *Token) *Node {
 	}
 
 	// ptr + num
-	rhs = NewBinary(ND_MUL, rhs, NewNumber(8, tok), tok)
+	rhs = NewBinary(ND_MUL, rhs, NewNumber(lhs.ty.base.size, tok), tok)
 	return NewBinary(ND_ADD, lhs, rhs, tok)
 }
 
@@ -245,7 +245,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 	// ptr - num
 	if lhs.ty.base != nil && rhs.ty.isInteger() {
-		rhs = NewBinary(ND_MUL, rhs, NewNumber(8, tok), tok)
+		rhs = NewBinary(ND_MUL, rhs, NewNumber(lhs.ty.base.size, tok), tok)
 		addType(rhs)
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
 		node.ty = lhs.ty
@@ -256,7 +256,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 	if lhs.ty.base != nil && rhs.ty.base != nil {
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
 		node.ty = intType()
-		return NewBinary(ND_DIV, node, NewNumber(8, tok), tok)
+		return NewBinary(ND_DIV, node, NewNumber(lhs.ty.base.size, tok), tok)
 	}
 
 	errorTok(tok, "invalid operands")
@@ -288,32 +288,44 @@ func declspec() *Type {
 	return intType()
 }
 
-// type-suffix = ("(" func-params? ")")?
-// func-params = param ("," param)*
+// func-params = (param ("," param)*)? ")"
 // param       = declspec declarator
+func funcParams(ty *Type) *Type {
+	var head = Type{}
+	cur := &head
+
+	for !gtok.equal(")") {
+		if cur != &head {
+			gtok = gtok.consume(",")
+		}
+
+		// param = declspec declarator
+		basety := declspec()
+		ty := declarator(basety)
+		cur.next = ty
+		cur = cur.next
+	}
+
+	gtok = gtok.consume(")")
+	ty = funcType(ty)
+	ty.params = head.next
+	return ty
+}
+
+// type-suffix = "(" func-params
+// .           | "[" num "]"
+// .           | ε
 func typeSuffix(ty *Type) *Type {
 	if gtok.equal("(") {
 		gtok = gtok.next
+		return funcParams(ty)
+	}
 
-		var head = Type{}
-		cur := &head
-
-		for !gtok.equal(")") {
-			if cur != &head {
-				gtok = gtok.consume(",")
-			}
-
-			// param = declspec declarator
-			basety := declspec()
-			ty := declarator(basety)
-			cur.next = ty
-			cur = cur.next
-		}
-
-		gtok = gtok.consume(")")
-		ty = funcType(ty)
-		ty.params = head.next
-		return ty
+	if gtok.equal("[") {
+		gtok = gtok.next
+		length := gtok.getNumber()
+		gtok = gtok.next.consume("]")
+		return arrayOf(ty, length)
 	}
 	return ty
 }

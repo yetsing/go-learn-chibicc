@@ -219,3 +219,11 @@ Date:   Fri Sep 4 13:39:48 2020 +0900
 = 支持最多 6 个函数参数
 = 因为一个全局变量 tyInt ， debug 了好久 :()
 = hard
+
+commit 8b6395d0f2be4024bd7e7921157a6496951eb162
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 10:15:32 2020 +0900
+
+    Add one dimensional arrays
+
+= 数组和指针 easy

@@ -3,19 +3,31 @@ package main
 type TypeKind int
 
 const (
-	TY_INT  TypeKind = iota // int
-	TY_PTR                  // pointer
-	TY_FUNC                 // function
+	TY_INT   TypeKind = iota // int
+	TY_PTR                   // pointer
+	TY_FUNC                  // function
+	TY_ARRAY                 // array
 )
 
 type Type struct {
 	kind TypeKind // Type kind
+	size int      // sizeof() value
 
-	// Pinter
+	// Pointer-to or array-of type. We intentionally use the same member
+	// to represent pointer/array duality(二元性) in C.
+	//
+	// In many contexts in which a pointer is expected, we examine this
+	// member instead of "kind" member to determine whether a type is a
+	// pointer or not. That means in many contexts "array of T" is
+	// naturally handled as if it were "pointer to T", as required by
+	// the C spec.
 	base *Type
 
 	// Declaration
 	name *Token
+
+	// Array
+	arrayLen int // array length
 
 	// Function Type
 	returnTy *Type
@@ -33,6 +45,7 @@ func newType(kind TypeKind) *Type {
 func intType() *Type {
 	t := &Type{
 		kind: TY_INT,
+		size: 8,
 	}
 	return t
 }
@@ -40,6 +53,7 @@ func intType() *Type {
 func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind: TY_PTR,
+		size: 8,
 		base: base,
 	}
 	return t
@@ -53,24 +67,18 @@ func funcType(returnTy *Type) *Type {
 	return t
 }
 
-func (t *Type) isInteger() bool {
-	return t.kind == TY_INT
+func arrayOf(base *Type, len int) *Type {
+	t := &Type{
+		kind:     TY_ARRAY,
+		size:     base.size * len,
+		base:     base,
+		arrayLen: len,
+	}
+	return t
 }
 
-func copyType(t *Type) *Type {
-	if t == nil {
-		return nil
-	}
-
-	newTy := &Type{
-		kind:     t.kind,
-		base:     t.base,
-		name:     t.name,
-		returnTy: t.returnTy,
-		params:   t.params,
-		next:     t.next,
-	}
-	return newTy
+func (t *Type) isInteger() bool {
+	return t.kind == TY_INT
 }
 
 func addType(node *Node) {
@@ -110,6 +118,9 @@ func addType(node *Node) {
 		node.ty = node.lhs.ty
 		return
 	case ND_ASSIGN:
+		if node.lhs.ty.kind == TY_ARRAY {
+			errorTok(node.tok, "cannot assign to array")
+		}
 		node.ty = node.lhs.ty
 		return
 	case ND_EQ:
@@ -134,10 +145,14 @@ func addType(node *Node) {
 		node.ty = intType()
 		return
 	case ND_ADDR:
-		node.ty = pointerTo(node.lhs.ty)
+		if node.lhs.ty.kind == TY_ARRAY {
+			node.ty = pointerTo(node.lhs.ty.base)
+		} else {
+			node.ty = pointerTo(node.lhs.ty)
+		}
 		return
 	case ND_DEREF:
-		if node.lhs.ty.kind == TY_PTR {
+		if node.lhs.ty.base != nil {
 			node.ty = node.lhs.ty.base
 		} else {
 			errorTok(node.tok, "invalid pointer dereference")

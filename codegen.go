@@ -45,6 +45,29 @@ func genAddr(node *Node) {
 	errorTok(node.tok, "not a lvalue %s", node.kind)
 }
 
+// Load a value from where %rax is pointing to.
+func load(ty *Type) {
+	if ty.kind == TY_ARRAY {
+		// If it is an array, do not attempt to load a value to the
+		// register because in general we can't load an entire array to a
+		// register. As a result, the result of an evaluation of an array
+		// becomes not the array itself but the address of the array.
+		// This is where "array is automatically converted to a pointer to
+		// the first element of the array in C" occurs.
+		return
+	}
+
+	// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
+	sout("  mov (%%rax), %%rax\n")
+}
+
+// Store %rax to an address that the stack top is pointing to.
+func store() {
+	pop("%rdi")
+	// 将 RAX 中的值保存到 RDI 保存的地址位置
+	sout("  mov %%rax, (%%rdi)\n")
+}
+
 // Generate code for a given node.
 func genExpr(node *Node) {
 	switch node.kind {
@@ -57,8 +80,7 @@ func genExpr(node *Node) {
 		return
 	case ND_VAR:
 		genAddr(node)
-		// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
-		sout("  mov (%%rax), %%rax\n")
+		load(node.ty)
 		return
 	case ND_DEREF:
 		genExpr(node.lhs)
@@ -72,9 +94,7 @@ func genExpr(node *Node) {
 		genAddr(node.lhs) // 赋值表达式的左边是个地址（左值）
 		push()
 		genExpr(node.rhs)
-		pop("%rdi")
-		// 将 RAX 中的值保存到 RDI 保存的地址位置
-		sout("  mov %%rax, (%%rdi)\n")
+		store()
 		return
 	case ND_FUNCALL:
 		nargs := 0
@@ -196,7 +216,7 @@ func assignLVarOffsets(prog *Function) {
 	for fn := prog; fn != nil; fn = fn.next {
 		offset := 0
 		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
-			offset += 8
+			offset += lvar.ty.size
 			lvar.offset = -offset
 		}
 

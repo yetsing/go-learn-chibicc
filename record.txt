@@ -361,3 +361,11 @@ Date:   Fri May 8 20:44:25 2020 +0900
     Add -o and --help options
 
 = easy
+
+commit 6c0a42926a10ea5abc781c9db89b105e007512b1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 7 08:56:28 2019 +0900
+
+    Add line and block comments
+
+= easy

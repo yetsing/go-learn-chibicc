@@ -105,6 +105,8 @@ func store(ty *Type) {
 
 // Generate code for a given node.
 func genExpr(node *Node) {
+	sout("  .loc 1 %d", node.tok.lineno)
+
 	switch node.kind {
 	case ND_NUM:
 		sout("  mov $%d, %%rax", node.val)
@@ -196,6 +198,8 @@ func genExpr(node *Node) {
 }
 
 func genStmt(node *Node) {
+	sout("  .loc 1 %d", node.tok.lineno)
+
 	switch node.kind {
 	case ND_FOR:
 		c := count()

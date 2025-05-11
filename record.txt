@@ -397,3 +397,14 @@ Date:   Mon Apr 20 22:23:11 2020 +0900
     No functionality change
 
 = easy
+
+commit 1c91d1943a8ee07034224dd950412c3c87ef3276
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Apr 20 22:15:09 2020 +0900
+
+    Emit .file and .loc assembler directives
+
+    With these directives, gdb can print out an error location when
+    a compiled program crashes.
+
+= easy

@@ -110,7 +110,16 @@ func readPunct(input string, p int) int {
 	return 0
 }
 
-func readEscapedChar(input string, p int) byte {
+func readEscapedChar(input string, p int) (byte, int) {
+	if input[p] >= '0' && input[p] <= '7' {
+		// Octal escape sequence
+		// Read up to 3 octal digits
+		octal := 0
+		for i := 0; i < 3 && p+i < len(input) && input[p+i] >= '0' && input[p+i] <= '7'; i++ {
+			octal = octal*8 + int(input[p+i]-'0')
+		}
+		return byte(octal), 3
+	}
 	// Escape sequences are defined using themselves here. E.g.
 	// '\n' is implemented using '\n'. This tautological definition
 	// works because the compiler that compiles our compiler knows
@@ -124,24 +133,24 @@ func readEscapedChar(input string, p int) byte {
 	// https://github.com/rui314/chibicc/wiki/thompson1984.pdf
 	switch input[p] {
 	case 'a':
-		return '\a'
+		return '\a', 2
 	case 'b':
-		return '\b'
+		return '\b', 2
 	case 't':
-		return '\t'
+		return '\t', 2
 	case 'n':
-		return '\n'
+		return '\n', 2
 	case 'v':
-		return '\v'
+		return '\v', 2
 	case 'f':
-		return '\f'
+		return '\f', 2
 	case 'r':
-		return '\r'
+		return '\r', 2
 	// [GNU] \e for the ASCII escape character is a GNU C extension.
 	case 'e':
-		return 27
+		return 27, 2
 	default:
-		return input[p]
+		return input[p], 2
 	}
 
 }
@@ -170,8 +179,9 @@ func readStringLiteral(input string, p int) *Token {
 	sb := strings.Builder{}
 	for p = start + 1; p < end; p++ {
 		if input[p] == '\\' {
-			sb.WriteByte(readEscapedChar(input, p+1))
-			p++
+			b, n := readEscapedChar(input, p+1)
+			sb.WriteByte(b)
+			p += n - 1
 		} else {
 			sb.WriteByte(input[p])
 		}

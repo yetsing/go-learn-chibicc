@@ -12,7 +12,7 @@ func main() {
 		return
 	}
 
-	tok := tokenize(args[1])
+	tok := tokenizeFile(args[1])
 	node := parse(tok)
 	codegen(node)
 

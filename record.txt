@@ -337,3 +337,11 @@ Date:   Wed Aug 7 08:05:18 2019 +0900
     This is a GNU C extension but will be useful for writing tests.
 
 = easy
+
+commit d9ea59757e2710e34f105e98230f30f578e0e662
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 7 08:30:06 2019 +0900
+
+    Read code from a file instead of argv[1]
+
+= AI 加持毫无难度 easy

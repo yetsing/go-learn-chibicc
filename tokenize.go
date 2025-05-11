@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 )
 
 // #region util functions
+var currentFilename string
 var currentInput string
 
 func check(err error) {
@@ -17,17 +19,41 @@ func check(err error) {
 	}
 }
 
-func errorf(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args...)
-	fmt.Fprintln(os.Stderr)
-	os.Exit(1)
-}
-
+// Reports an error message in the following format and exit.
+//
+// foo.c:10: x = y + 1;
+// .             ^ <error message here>
 func errorAt(pos int, format string, args ...interface{}) {
-	fmt.Fprintln(os.Stderr, currentInput)
-	for range pos {
-		fmt.Fprint(os.Stderr, " ")
+	// Find the line number and column for the error position
+	line := 1
+	lineStart := 0
+	for i := range pos {
+		if i >= len(currentInput) {
+			break
+		}
+		if currentInput[i] == '\n' {
+			line++
+			lineStart = i + 1
+		}
 	}
+	col := pos - lineStart
+
+	// Find the end of the current line
+	lineEnd := lineStart
+	for lineEnd < len(currentInput) && currentInput[lineEnd] != '\n' {
+		lineEnd++
+	}
+
+	// Extract the line content
+	lineContent := currentInput[lineStart:lineEnd]
+
+	// Print the formatted error location and line content
+	fmt.Fprintf(os.Stderr, "%s:%d: %s\n", currentFilename, line, lineContent)
+
+	// Print spaces up to the error position
+	fmt.Fprint(os.Stderr, strings.Repeat(" ", col))
+
+	// Print caret and error message
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
@@ -44,6 +70,19 @@ func ispunct(ch rune) bool {
 
 func sout(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
+}
+
+func readFile(filename string) string {
+	if filename == "-" {
+		// read from stdin
+		data, err := io.ReadAll(os.Stdin)
+		check(err)
+		return string(data)
+	} else {
+		data, err := os.ReadFile(filename)
+		check(err)
+		return string(data)
+	}
 }
 
 // #endregion
@@ -243,10 +282,9 @@ func convertKeywords(tok *Token) {
 	}
 }
 
-// #endregion
-
 // Tokenize the input string and return a linked list of tokens.
-func tokenize(input string) *Token {
+func tokenize(filename, input string) *Token {
+	currentFilename = filename
 	currentInput = input
 	var head Token
 	cur := &head
@@ -309,4 +347,10 @@ func tokenize(input string) *Token {
 	cur.next = NewToken(TK_EOF, "", p)
 	convertKeywords(head.next)
 	return head.next
+}
+
+// #endregion
+
+func tokenizeFile(filename string) *Token {
+	return tokenize(filename, readFile(filename))
 }

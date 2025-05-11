@@ -26,3 +26,12 @@ go.work.sum
 
 chibicc
 tmp*
+
+**/*~
+**/\#*
+**/*.o
+**/*.s
+**/a.out
+/tmp*
+/chibicc
+/test/*.exe

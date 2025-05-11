@@ -377,3 +377,13 @@ Date:   Fri Sep 4 18:00:26 2020 +0900
     Handle block scope
 
 = 各种链表，脑子快链乱了 easy
+
+commit cd832a311e56bda981c9c957ba45f1bc1f6cc737
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 19:03:01 2020 +0900
+
+    Rewrite tests in shell script in C
+
+= 一开始以为是要 C 写测试，后面发现是写测试文件
+= 编译测试文件，验证执行
+= 这样只要复制粘贴即可 easy

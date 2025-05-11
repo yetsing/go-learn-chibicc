@@ -316,3 +316,14 @@ Date:   Mon Apr 6 08:49:00 2020 +0900
     Add \<octal-sequence>
 
 = AI 直接补全 easy
+
+commit c2cc1d3c4500caa34da5e68eb62b7474caf96fe2
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:14:14 2020 +0900
+
+    Add \x<hexadecimal-sequence>
+
+= 因为是直接处理的字符串，需要考虑边界判断，导致逻辑很多
+= 一种简单的方式是在源代码后面增加几个空格
+= 像 C 字符串末尾有个 \0 ，刚好方便
+= easy

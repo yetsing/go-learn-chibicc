@@ -110,6 +110,10 @@ func readPunct(input string, p int) int {
 	return 0
 }
 
+func ishexdigit(ch rune) bool {
+	return '0' <= ch && ch <= '9' || 'a' <= ch && ch <= 'f' || 'A' <= ch && ch <= 'F'
+}
+
 func readEscapedChar(input string, p int) (byte, int) {
 	if input[p] >= '0' && input[p] <= '7' {
 		// Octal escape sequence
@@ -120,6 +124,23 @@ func readEscapedChar(input string, p int) (byte, int) {
 		}
 		return byte(octal), 3
 	}
+
+	if input[p] == 'x' {
+		// Hexadecimal escape sequence
+		p++
+		hex := 0
+		for i := 0; p+i < len(input) && ishexdigit(rune(input[p+i])); i++ {
+			if '0' <= input[p+i] && input[p+i] <= '9' {
+				hex = hex*16 + int(input[p+i]-'0')
+			} else if 'a' <= input[p+i] && input[p+i] <= 'f' {
+				hex = hex*16 + int(input[p+i]-'a'+10)
+			} else if 'A' <= input[p+i] && input[p+i] <= 'F' {
+				hex = hex*16 + int(input[p+i]-'A'+10)
+			}
+		}
+		return byte(hex), 3
+	}
+
 	// Escape sequences are defined using themselves here. E.g.
 	// '\n' is implemented using '\n'. This tautological definition
 	// works because the compiler that compiles our compiler knows

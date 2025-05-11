@@ -70,6 +70,7 @@ func ispunct(ch rune) bool {
 
 func sout(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
+	fmt.Println()
 }
 
 func readFile(filename string) string {

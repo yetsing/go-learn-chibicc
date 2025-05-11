@@ -17,12 +17,12 @@ func count() int {
 }
 
 func push() {
-	sout("  push %%rax\n")
+	sout("  push %%rax")
 	depth++
 }
 
 func pop(arg string) {
-	sout("  pop %s\n", arg)
+	sout("  pop %s", arg)
 	depth--
 }
 
@@ -39,10 +39,10 @@ func genAddr(node *Node) {
 	case ND_VAR:
 		if node.variable.isLocal {
 			// Local variable
-			sout("  lea %d(%%rbp), %%rax\n", node.variable.offset)
+			sout("  lea %d(%%rbp), %%rax", node.variable.offset)
 		} else {
 			// Global variable
-			sout("  lea %s(%%rip), %%rax\n", node.variable.name)
+			sout("  lea %s(%%rip), %%rax", node.variable.name)
 		}
 		return
 	case ND_DEREF:
@@ -69,9 +69,9 @@ func load(ty *Type) {
 	// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
 	if ty.size == 1 {
 		// 1 byte
-		sout("  movsbq (%%rax), %%rax\n")
+		sout("  movsbq (%%rax), %%rax")
 	} else {
-		sout("  mov (%%rax), %%rax\n")
+		sout("  mov (%%rax), %%rax")
 	}
 }
 
@@ -81,9 +81,9 @@ func store(ty *Type) {
 	// 将 RAX 中的值保存到 RDI 保存的地址位置
 	if ty.size == 1 {
 		// 1 byte
-		sout("  mov %%al, (%%rdi)\n")
+		sout("  mov %%al, (%%rdi)")
 	} else {
-		sout("  mov %%rax, (%%rdi)\n")
+		sout("  mov %%rax, (%%rdi)")
 	}
 }
 
@@ -91,11 +91,11 @@ func store(ty *Type) {
 func genExpr(node *Node) {
 	switch node.kind {
 	case ND_NUM:
-		sout("  mov $%d, %%rax\n", node.val)
+		sout("  mov $%d, %%rax", node.val)
 		return
 	case ND_NEG:
 		genExpr(node.lhs)
-		sout("  neg %%rax\n")
+		sout("  neg %%rax")
 		return
 	case ND_VAR:
 		genAddr(node)
@@ -131,8 +131,8 @@ func genExpr(node *Node) {
 			pop(argreg64[i])
 		}
 
-		sout("  mov $0, %%rax\n")
-		sout("  call %s\n", node.funcname)
+		sout("  mov $0, %%rax")
+		sout("  call %s", node.funcname)
 		return
 	}
 
@@ -143,17 +143,17 @@ func genExpr(node *Node) {
 
 	switch node.kind {
 	case ND_ADD:
-		sout("  add %%rdi, %%rax\n")
+		sout("  add %%rdi, %%rax")
 		return
 	case ND_SUB:
-		sout("  sub %%rdi, %%rax\n")
+		sout("  sub %%rdi, %%rax")
 		return
 	case ND_MUL:
-		sout("  imul %%rdi, %%rax\n")
+		sout("  imul %%rdi, %%rax")
 		return
 	case ND_DIV:
-		sout("  cqo\n")
-		sout("  idiv %%rdi\n")
+		sout("  cqo")
+		sout("  idiv %%rdi")
 		return
 	case ND_EQ:
 		fallthrough
@@ -162,18 +162,18 @@ func genExpr(node *Node) {
 	case ND_LT:
 		fallthrough
 	case ND_LE:
-		sout("  cmp %%rdi, %%rax\n")
+		sout("  cmp %%rdi, %%rax")
 
 		if node.kind == ND_EQ {
-			sout("  sete %%al\n")
+			sout("  sete %%al")
 		} else if node.kind == ND_NE {
-			sout("  setne %%al\n")
+			sout("  setne %%al")
 		} else if node.kind == ND_LT {
-			sout("  setl %%al\n")
+			sout("  setl %%al")
 		} else if node.kind == ND_LE {
-			sout("  setle %%al\n")
+			sout("  setle %%al")
 		}
-		sout("  movzb %%al, %%rax\n")
+		sout("  movzb %%al, %%rax")
 		return
 	}
 	errorTok(node.tok, "invalid expression %s", node.kind)
@@ -186,31 +186,31 @@ func genStmt(node *Node) {
 		if node.init != nil {
 			genStmt(node.init)
 		}
-		sout(".L.begin.%d:\n", c)
+		sout(".L.begin.%d:", c)
 		if node.cond != nil {
 			genExpr(node.cond)
-			sout("  cmp $0, %%rax\n")
-			sout("  je .L.end.%d\n", c)
+			sout("  cmp $0, %%rax")
+			sout("  je .L.end.%d", c)
 		}
 		genStmt(node.then)
 		if node.inc != nil {
 			genExpr(node.inc)
 		}
-		sout("  jmp .L.begin.%d\n", c)
-		sout(".L.end.%d:\n", c)
+		sout("  jmp .L.begin.%d", c)
+		sout(".L.end.%d:", c)
 		return
 	case ND_IF:
 		c := count()
 		genExpr(node.cond)
-		sout("  cmp $0, %%rax\n")
-		sout("  je .L.else.%d\n", c)
+		sout("  cmp $0, %%rax")
+		sout("  je .L.else.%d", c)
 		genStmt(node.then)
-		sout("  jmp .L.end.%d\n", c)
-		sout(".L.else.%d:\n", c)
+		sout("  jmp .L.end.%d", c)
+		sout(".L.else.%d:", c)
 		if node.els != nil {
 			genStmt(node.els)
 		}
-		sout(".L.end.%d:\n", c)
+		sout(".L.end.%d:", c)
 		return
 	case ND_BLOCK:
 		for n := node.body; n != nil; n = n.next {
@@ -219,7 +219,7 @@ func genStmt(node *Node) {
 		return
 	case ND_RETURN:
 		genExpr(node.lhs)
-		sout("  jmp .L.return.%s\n", currentFn.name)
+		sout("  jmp .L.return.%s", currentFn.name)
 		return
 	case ND_EXPR_STMT:
 		genExpr(node.lhs)
@@ -261,18 +261,18 @@ func emitData(prog *Obj) {
 			continue
 		}
 
-		sout("  .data\n")
-		sout("  .global %s\n", g.name)
-		sout("%s:\n", g.name)
+		sout("  .data")
+		sout("  .global %s", g.name)
+		sout("%s:", g.name)
 
 		if g.initData != "" {
 			for i := range len(g.initData) {
-				sout("  .byte %d\n", g.initData[i])
+				sout("  .byte %d", g.initData[i])
 			}
 			// C 语言中，字符串是以 \0 结尾的
-			sout("  .byte 0\n")
+			sout("  .byte 0")
 		} else {
-			sout("  .zero %d\n", g.ty.size)
+			sout("  .zero %d", g.ty.size)
 		}
 	}
 }
@@ -283,23 +283,23 @@ func emitText(prog *Obj) {
 			continue
 		}
 
-		sout("  .global %s\n", fn.name)
-		sout("  .text\n")
-		sout("%s:\n", fn.name)
+		sout("  .global %s", fn.name)
+		sout("  .text")
+		sout("%s:", fn.name)
 		currentFn = fn
 
 		// Prologue
-		sout("  push %%rbp\n")
-		sout("  mov %%rsp, %%rbp\n")
-		sout("  sub $%d, %%rsp\n", fn.stackSize)
+		sout("  push %%rbp")
+		sout("  mov %%rsp, %%rbp")
+		sout("  sub $%d, %%rsp", fn.stackSize)
 
 		// Save passed-by-register arguments to the stack
 		i := 0
 		for variable := fn.params; variable != nil; variable = variable.next {
 			if variable.ty.size == 1 {
-				sout("  mov %s, %d(%%rbp)\n", argreg8[i], variable.offset)
+				sout("  mov %s, %d(%%rbp)", argreg8[i], variable.offset)
 			} else {
-				sout("  mov %s, %d(%%rbp)\n", argreg64[i], variable.offset)
+				sout("  mov %s, %d(%%rbp)", argreg64[i], variable.offset)
 			}
 			i++
 		}
@@ -311,10 +311,10 @@ func emitText(prog *Obj) {
 		}
 
 		// Epilogue
-		sout(".L.return.%s:\n", fn.name)
-		sout("  mov %%rbp, %%rsp\n")
-		sout("  pop %%rbp\n")
-		sout("  ret\n")
+		sout(".L.return.%s:", fn.name)
+		sout("  mov %%rbp, %%rsp")
+		sout("  pop %%rbp")
+		sout("  ret")
 	}
 }
 

@@ -345,3 +345,11 @@ Date:   Wed Aug 7 08:30:06 2019 +0900
     Read code from a file instead of argv[1]
 
 = AI 加持毫无难度 easy
+
+commit 7b8528f71c78a01e8ff41a76a83a320d1ef80e93
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 22:00:02 2020 +0900
+
+    Refactor -- no functionality change
+
+= easy

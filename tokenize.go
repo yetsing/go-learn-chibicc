@@ -68,11 +68,6 @@ func ispunct(ch rune) bool {
 	return unicode.IsPrint(ch) && !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && !unicode.IsSpace(ch)
 }
 
-func sout(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-	fmt.Println()
-}
-
 func readFile(filename string) string {
 	if filename == "-" {
 		// read from stdin

@@ -1,5 +1,21 @@
 package main
 
+import (
+	"fmt"
+	"os"
+)
+
+// #region output utils
+
+var outFile *os.File
+
+func sout(format string, args ...interface{}) {
+	fmt.Fprintf(outFile, format, args...)
+	fmt.Fprintln(outFile)
+}
+
+// #endregion
+
 // #region Code Generator
 var depth int = 0
 var gcount int = 0
@@ -320,7 +336,8 @@ func emitText(prog *Obj) {
 
 // #endregion
 
-func codegen(prog *Obj) {
+func codegen(prog *Obj, out *os.File) {
+	outFile = out
 	assignLVarOffsets(prog)
 	emitData(prog)
 	emitText(prog)

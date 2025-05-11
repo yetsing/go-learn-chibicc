@@ -353,3 +353,11 @@ Date:   Thu Sep 3 22:00:02 2020 +0900
     Refactor -- no functionality change
 
 = easy
+
+commit a0388bada4016bc0c3be6154c159faf80ce18d01
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri May 8 20:44:25 2020 +0900
+
+    Add -o and --help options
+
+= easy

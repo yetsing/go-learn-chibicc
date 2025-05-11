@@ -98,11 +98,14 @@ const (
 type Token struct {
 	kind    TokenKind
 	next    *Token
-	val     int
 	literal string
-	pos     int
-	ty      *Type  // Used if TK_STR
-	str     string // String literal contents
+
+	pos    int
+	lineno int
+
+	val int
+	ty  *Type  // Used if TK_STR
+	str string // String literal contents
 }
 
 func (t *Token) equal(op string) bool {
@@ -278,6 +281,21 @@ func convertKeywords(tok *Token) {
 	}
 }
 
+// Initialize line info for all tokens.
+func addLineNumbers(tok *Token) {
+	line := 1
+	lineStart := 0
+	for t := tok; t != nil; t = t.next {
+		for i := lineStart; i < t.pos; i++ {
+			if currentInput[i] == '\n' {
+				line++
+				lineStart = i + 1
+			}
+		}
+		t.lineno = line
+	}
+}
+
 // Tokenize the input string and return a linked list of tokens.
 func tokenize(filename, input string) *Token {
 	currentFilename = filename
@@ -360,6 +378,7 @@ func tokenize(filename, input string) *Token {
 		errorAt(p, "unexpected character: '%c'", ch)
 	}
 	cur.next = NewToken(TK_EOF, "", p)
+	addLineNumbers(head.next)
 	convertKeywords(head.next)
 	return head.next
 }

@@ -2,6 +2,35 @@ package main
 
 import "fmt"
 
+// #region Scope
+
+// Scope for local or global variables.
+type VarScope struct {
+	next     *VarScope // Next scope
+	name     string    // Scope name
+	variable *Obj      // Variable
+}
+
+// Represents a block scope.
+type Scope struct {
+	next *Scope // Next scope
+	vars *VarScope
+}
+
+var scope = &Scope{}
+
+func enterScope() {
+	s := &Scope{}
+	s.next = scope
+	scope = s
+}
+
+func leaveScope() {
+	scope = scope.next
+}
+
+// #endregion
+
 // #region Local variable
 
 // Variable or function
@@ -35,17 +64,14 @@ var globals *Obj
 
 // Find a local variable by name
 func findVar(name string) *Obj {
-	for l := locals; l != nil; l = l.next {
-		if l.name == name {
-			return l
+	for sc := scope; sc != nil; sc = sc.next {
+		for vsc := sc.vars; vsc != nil; vsc = vsc.next {
+			if vsc.name == name {
+				return vsc.variable
+			}
 		}
 	}
 
-	for g := globals; g != nil; g = g.next {
-		if g.name == name {
-			return g
-		}
-	}
 	return nil
 }
 
@@ -58,6 +84,7 @@ func newLVar(name string, ty *Type) *Obj {
 		ty:      ty,
 		isLocal: true,
 	}
+	pushScope(name, l)
 	locals = l
 	return l
 }
@@ -69,6 +96,7 @@ func newGVar(name string, ty *Type) *Obj {
 		ty:      ty,
 		isLocal: false,
 	}
+	pushScope(name, g)
 	globals = g
 	return g
 }
@@ -248,6 +276,16 @@ func NewVarNode(variable *Obj, tok *Token) *Node {
 		variable: variable,
 		tok:      tok,
 	}
+}
+
+func pushScope(name string, variable *Obj) *VarScope {
+	vsc := &VarScope{
+		name:     name,
+		variable: variable,
+		next:     scope.vars,
+	}
+	scope.vars = vsc
+	return vsc
 }
 
 // In C, `+` operator is overloaded to perform the pointer arithmetic.
@@ -526,9 +564,13 @@ func ifStmt() *Node {
 // compound-stmt = "{" ( declaration | stmt )*  "}"
 func compoundStmt() *Node {
 	st := gtok
+	node := NewNode(ND_BLOCK, st)
 	gtok = gtok.consume("{")
 	var head Node
 	cur := &head
+
+	enterScope()
+
 	for !gtok.equal("}") {
 		if isTypename(gtok) {
 			cur.next = declaration()
@@ -539,7 +581,8 @@ func compoundStmt() *Node {
 		addType(cur)
 	}
 
-	node := NewNode(ND_BLOCK, st)
+	leaveScope()
+
 	node.body = head.next
 	gtok = gtok.consume("}")
 	return node
@@ -806,11 +849,13 @@ func function(basety *Type) *Obj {
 	fn.isFunction = true
 
 	locals = nil
+	enterScope()
 	createParamLvars(ty.params)
 	fn.params = locals
 
 	fn.body = compoundStmt()
 	fn.locals = locals
+	leaveScope()
 	return fn
 }
 

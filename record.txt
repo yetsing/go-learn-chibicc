@@ -327,3 +327,13 @@ Date:   Wed Oct 7 20:14:14 2020 +0900
 = 一种简单的方式是在源代码后面增加几个空格
 = 像 C 字符串末尾有个 \0 ，刚好方便
 = easy
+
+commit 9dae23461eb6250865f4ee727a0e727a6a4e03ba
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 7 08:05:18 2019 +0900
+
+    [GNU] Add statement expression
+
+    This is a GNU C extension but will be useful for writing tests.
+
+= easy

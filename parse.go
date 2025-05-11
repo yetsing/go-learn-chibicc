@@ -117,6 +117,7 @@ const (
 	ND_BLOCK                     // Block { ... }
 	ND_FUNCALL                   // Function call
 	ND_EXPR_STMT                 // Expression statement
+	ND_STMT_EXPR                 // Statement expression
 	ND_VAR                       // Variable
 	ND_NUM                       // Integer
 )
@@ -187,7 +188,8 @@ type Node struct {
 	init *Node // for Initialization
 	inc  *Node // for Increment
 
-	body *Node // Used if kind is ND_BLOCK
+	// Block or statement expression
+	body *Node
 
 	// Function call
 	funcname string
@@ -726,13 +728,23 @@ func funcall() *Node {
 	return node
 }
 
-// primary = "(" expr ")"
+// primary = "(" "{" stmt+ "}" ")"
+// .       | "(" expr ")"
 // .       | "sizeof" unary
 // .       | ident
 // .       | funcall
 // .       | str
 // .       | num
 func primary() *Node {
+	if gtok.equal("(") && gtok.next.equal("{") {
+		// This is a GNU statement expression.
+		node := NewNode(ND_STMT_EXPR, gtok)
+		gtok = gtok.next // skip "("
+		node.body = compoundStmt().body
+		gtok = gtok.consume(")")
+		return node
+	}
+
 	if gtok.equal("(") {
 		gtok = gtok.next
 		node := expr()

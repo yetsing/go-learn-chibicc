@@ -114,6 +114,11 @@ func genExpr(node *Node) {
 		genExpr(node.rhs)
 		store(node.ty)
 		return
+	case ND_STMT_EXPR:
+		for n := node.body; n != nil; n = n.next {
+			genStmt(n)
+		}
+		return
 	case ND_FUNCALL:
 		nargs := 0
 		for arg := node.args; arg != nil; arg = arg.next {

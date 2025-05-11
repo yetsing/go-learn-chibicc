@@ -167,6 +167,18 @@ func addType(node *Node) {
 			errorTok(node.tok, "invalid pointer dereference")
 		}
 		return
-
+	case ND_STMT_EXPR:
+		if node.body != nil {
+			stmt := node.body
+			for stmt.next != nil {
+				stmt = stmt.next
+			}
+			if stmt.kind == ND_EXPR_STMT {
+				node.ty = stmt.lhs.ty
+				return
+			}
+		}
+		errorTok(node.tok, "statement expression returning void is not supported")
+		return
 	}
 }

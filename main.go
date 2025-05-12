@@ -47,7 +47,7 @@ func main() {
 	// Traverse the AST to emit assembly code.
 	out, err := os.Create(optOutput)
 	check(err)
-	fmt.Fprintf(out, ".fiel 1 \"%s\"\n", optInput)
+	fmt.Fprintf(out, ".file 1 \"%s\"\n", optInput)
 	codegen(prog, out)
 
 }

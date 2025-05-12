@@ -65,6 +65,10 @@ func genAddr(node *Node) {
 		// *p: p 本身就是地址，直接加载 p 的值
 		genExpr(node.lhs)
 		return
+	case ND_COMMA:
+		genExpr(node.lhs)
+		genAddr(node.rhs)
+		return
 	}
 
 	errorTok(node.tok, "not a lvalue %s", node.kind)
@@ -136,6 +140,10 @@ func genExpr(node *Node) {
 		for n := node.body; n != nil; n = n.next {
 			genStmt(n)
 		}
+		return
+	case ND_COMMA:
+		genExpr(node.lhs)
+		genExpr(node.rhs)
 		return
 	case ND_FUNCALL:
 		nargs := 0

@@ -147,6 +147,9 @@ func addType(node *Node) {
 	case ND_VAR:
 		node.ty = node.variable.ty
 		return
+	case ND_COMMA:
+		node.ty = node.rhs.ty
+		return
 	case ND_NUM:
 		node.ty = intType()
 		return

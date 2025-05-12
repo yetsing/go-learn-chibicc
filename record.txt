@@ -408,3 +408,17 @@ Date:   Mon Apr 20 22:15:09 2020 +0900
     a compiled program crashes.
 
 = easy
+
+commit e6307ad374eeecd6474286b1b6fda5b3dda89d9a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 12 10:29:17 2019 +0900
+
+    Add comma operator
+
+    This patch allows writing a comma expression on the left-hand side
+    of an assignment expression. This is called the "generalized lvalue"
+    which is a deprecated GCC language extension. I'm implementing it
+    anyway because it's useful to implement other features.
+
+= type.go 忘记增加 ND_COMMA 的处理，又花费大段时间 debug
+= middle

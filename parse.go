@@ -137,6 +137,7 @@ const (
 	ND_LT                        // <
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
+	ND_COMMA                     // ,
 	ND_ADDR                      // unary &
 	ND_DEREF                     // unary *
 	ND_RETURN                    // return
@@ -173,6 +174,8 @@ func (nk NodeKind) String() string {
 		return "ND_LE"
 	case ND_ASSIGN:
 		return "ND_ASSIGN"
+	case ND_COMMA:
+		return "ND_COMMA"
 	case ND_ADDR:
 		return "ND_ADDR"
 	case ND_DEREF:
@@ -189,12 +192,14 @@ func (nk NodeKind) String() string {
 		return "ND_FUNCALL"
 	case ND_EXPR_STMT:
 		return "ND_EXPR_STMT"
+	case ND_STMT_EXPR:
+		return "ND_STMT_EXPR"
 	case ND_VAR:
 		return "ND_VAR"
 	case ND_NUM:
 		return "ND_NUM"
 	default:
-		panic("unknown NodeKind")
+		return "UNKNOWN"
 	}
 }
 
@@ -465,9 +470,9 @@ func declaration() *Node {
 		// lhs = rhs
 		lhs := NewVarNode(variable, ty.name)
 		gtok = gtok.next
-		rhs := expr()
-		node := NewBinary(ND_ASSIGN, lhs, rhs, st)
-		cur.next = NewUnary(ND_EXPR_STMT, node, st)
+		rhs := assign()
+		node := NewBinary(ND_ASSIGN, lhs, rhs, gtok)
+		cur.next = NewUnary(ND_EXPR_STMT, node, gtok)
 		cur = cur.next
 	}
 
@@ -600,9 +605,17 @@ func exprStmt() *Node {
 	return node
 }
 
-// expr = assign
+// expr = assign ("," expr)?
 func expr() *Node {
-	return assign()
+	node := assign()
+
+	if gtok.equal(",") {
+		st := gtok
+		gtok = gtok.next
+		node = NewBinary(ND_COMMA, node, expr(), st)
+	}
+
+	return node
 }
 
 // assign = equality ("=" assign)?

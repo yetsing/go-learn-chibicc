@@ -119,6 +119,14 @@ func newStringLiteral(s string, ty *Type) *Obj {
 	return variable
 }
 
+// Struct member
+type Member struct {
+	next   *Member // Next member
+	ty     *Type
+	name   *Token
+	offset int
+}
+
 // #endregion
 
 // #region AST Node
@@ -138,6 +146,7 @@ const (
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
 	ND_COMMA                     // ,
+	ND_MEMBER                    // . (struct member access)
 	ND_ADDR                      // unary &
 	ND_DEREF                     // unary *
 	ND_RETURN                    // return
@@ -176,6 +185,8 @@ func (nk NodeKind) String() string {
 		return "ND_ASSIGN"
 	case ND_COMMA:
 		return "ND_COMMA"
+	case ND_MEMBER:
+		return "ND_MEMBER"
 	case ND_ADDR:
 		return "ND_ADDR"
 	case ND_DEREF:
@@ -223,6 +234,9 @@ type Node struct {
 
 	// Block or statement expression
 	body *Node
+
+	// Struct member access
+	member *Member
 
 	// Function call
 	funcname string
@@ -368,21 +382,32 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	return tok.equal("char") || tok.equal("int")
+	return tok.equal("char") || tok.equal("int") || tok.equal("struct")
 }
 
 // #endregion
 
 // #region Parser
 
-// declspec = "char" | "int"
+// declspec = "char" | "int" | struct-decl
 func declspec() *Type {
 	if gtok.equal("char") {
 		gtok = gtok.next
 		return charType()
 	}
-	gtok = gtok.consume("int")
-	return intType()
+
+	if gtok.equal("int") {
+		gtok = gtok.next
+		return intType()
+	}
+
+	if gtok.equal("struct") {
+		gtok = gtok.next
+		return structDecl()
+	}
+
+	errorTok(gtok, "typename expected")
+	return nil
 }
 
 // func-params = (param ("," param)*)? ")"
@@ -745,19 +770,98 @@ func unary() *Node {
 	return postfix()
 }
 
-// postfix = primary ("[" expr "]")*
+// struct-members = (declspec declarator (","  declarator)* ";")*
+func structMembers(ty *Type) {
+	var head Member
+	cur := &head
+
+	for !gtok.equal("}") {
+		basety := declspec()
+		i := 0
+
+		for !tryConsume(";") {
+			if i != 0 {
+				gtok = gtok.consume(",")
+			}
+			i++
+
+			mem := &Member{}
+			mem.ty = declarator(basety)
+			mem.name = mem.ty.name
+			cur.next = mem
+			cur = cur.next
+		}
+	}
+
+	gtok = gtok.consume("}")
+	ty.members = head.next
+}
+
+// struct-decl = "{" struct-members
+func structDecl() *Type {
+	gtok = gtok.consume("{")
+
+	// Construct a struct object.
+	ty := &Type{}
+	ty.kind = TY_STRUCT
+	structMembers(ty)
+
+	// Assign offsets within the struct to members.
+	offset := 0
+	for m := ty.members; m != nil; m = m.next {
+		m.offset = offset
+		offset += m.ty.size
+	}
+	ty.size = offset
+	return ty
+}
+
+func getStructMember(ty *Type, tok *Token) *Member {
+	for m := ty.members; m != nil; m = m.next {
+		if m.name.equal(tok.literal) {
+			return m
+		}
+	}
+	errorTok(tok, "unknown struct member: %s", tok.literal)
+	return nil
+}
+
+func structRef(lhs *Node) *Node {
+	addType(lhs)
+	if lhs.ty.kind != TY_STRUCT {
+		errorTok(lhs.tok, "not a struct")
+	}
+
+	node := NewUnary(ND_MEMBER, lhs, gtok)
+	node.member = getStructMember(lhs.ty, gtok)
+	return node
+}
+
+// postfix = primary ( "[" expr "]" | "." ident )*
 func postfix() *Node {
 	node := primary()
 
-	for gtok.equal("[") {
-		// x[y] is short for *(x+y)
-		st := gtok
-		gtok = gtok.next
-		idx := expr()
-		gtok = gtok.consume("]")
-		node = NewUnary(ND_DEREF, newAdd(node, idx, st), st)
+	for {
+		for gtok.equal("[") {
+			// x[y] is short for *(x+y)
+			st := gtok
+			gtok = gtok.next
+			idx := expr()
+			gtok = gtok.consume("]")
+			node = NewUnary(ND_DEREF, newAdd(node, idx, st), st)
+			continue
+		}
+
+		if gtok.equal(".") {
+			gtok = gtok.next
+			node = structRef(node)
+			gtok = gtok.next
+			continue
+		}
+
+		return node
+
 	}
-	return node
 }
 
 // funcall = ident "(" (assign ("," assign)*)? ")"

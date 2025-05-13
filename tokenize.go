@@ -48,10 +48,11 @@ func errorAt(pos int, format string, args ...interface{}) {
 	lineContent := currentInput[lineStart:lineEnd]
 
 	// Print the formatted error location and line content
-	fmt.Fprintf(os.Stderr, "%s:%d: %s\n", currentFilename, line, lineContent)
+	n, _ := fmt.Fprintf(os.Stderr, "%s:%d: ", currentFilename, line)
+	fmt.Fprintf(os.Stderr, "%s\n", lineContent)
 
 	// Print spaces up to the error position
-	fmt.Fprint(os.Stderr, strings.Repeat(" ", col))
+	fmt.Fprint(os.Stderr, strings.Repeat(" ", col+n))
 
 	// Print caret and error message
 	fmt.Fprintf(os.Stderr, "^ ")
@@ -271,6 +272,7 @@ var keywords = map[string]TokenKind{
 	"int":    TK_KEYWORD,
 	"sizeof": TK_KEYWORD,
 	"char":   TK_KEYWORD,
+	"struct": TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

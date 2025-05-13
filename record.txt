@@ -422,3 +422,11 @@ Date:   Mon Aug 12 10:29:17 2019 +0900
 
 = type.go 忘记增加 ND_COMMA 的处理，又花费大段时间 debug
 = middle
+
+commit f814033d04c4cefdbcf8174d65011d484d69303c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 8 22:43:58 2019 +0900
+
+    Add struct
+
+= 又是一个地方写错， debug 了好久，烦心烦力 middle

@@ -69,6 +69,10 @@ func genAddr(node *Node) {
 		genExpr(node.lhs)
 		genAddr(node.rhs)
 		return
+	case ND_MEMBER:
+		genAddr(node.lhs)
+		sout("  add $%d, %%rax", node.member.offset)
+		return
 	}
 
 	errorTok(node.tok, "not a lvalue %s", node.kind)
@@ -120,6 +124,10 @@ func genExpr(node *Node) {
 		sout("  neg %%rax")
 		return
 	case ND_VAR:
+		genAddr(node)
+		load(node.ty)
+		return
+	case ND_MEMBER:
 		genAddr(node)
 		load(node.ty)
 		return

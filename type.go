@@ -3,11 +3,12 @@ package main
 type TypeKind int
 
 const (
-	TY_CHAR  TypeKind = iota // char
-	TY_INT                   // int
-	TY_PTR                   // pointer
-	TY_FUNC                  // function
-	TY_ARRAY                 // array
+	TY_CHAR   TypeKind = iota // char
+	TY_INT                    // int
+	TY_PTR                    // pointer
+	TY_FUNC                   // function
+	TY_ARRAY                  // array
+	TY_STRUCT                 // struct
 )
 
 type Type struct {
@@ -29,6 +30,9 @@ type Type struct {
 
 	// Array
 	arrayLen int // array length
+
+	// Struct
+	members *Member
 
 	// Function Type
 	returnTy *Type
@@ -149,6 +153,9 @@ func addType(node *Node) {
 		return
 	case ND_COMMA:
 		node.ty = node.rhs.ty
+		return
+	case ND_MEMBER:
+		node.ty = node.member.ty
 		return
 	case ND_NUM:
 		node.ty = intType()

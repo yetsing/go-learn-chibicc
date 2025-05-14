@@ -12,8 +12,9 @@ const (
 )
 
 type Type struct {
-	kind TypeKind // Type kind
-	size int      // sizeof() value
+	kind  TypeKind // Type kind
+	size  int      // sizeof() value
+	align int      // alignment
 
 	// Pointer-to or array-of type. We intentionally use the same member
 	// to represent pointer/array duality(二元性) in C.
@@ -40,34 +41,39 @@ type Type struct {
 	next     *Type // next parameter type
 }
 
-func newType(kind TypeKind) *Type {
+func newType(kind TypeKind, size int, align int) *Type {
 	t := &Type{
-		kind: kind,
+		kind:  kind,
+		size:  size,
+		align: align,
 	}
 	return t
 }
 
 func intType() *Type {
 	t := &Type{
-		kind: TY_INT,
-		size: 8,
+		kind:  TY_INT,
+		size:  8,
+		align: 8,
 	}
 	return t
 }
 
 func charType() *Type {
 	t := &Type{
-		kind: TY_CHAR,
-		size: 1,
+		kind:  TY_CHAR,
+		size:  1,
+		align: 1,
 	}
 	return t
 }
 
 func pointerTo(base *Type) *Type {
 	t := &Type{
-		kind: TY_PTR,
-		size: 8,
-		base: base,
+		kind:  TY_PTR,
+		size:  8,
+		align: 8,
+		base:  base,
 	}
 	return t
 }
@@ -84,6 +90,7 @@ func arrayOf(base *Type, len int) *Type {
 	t := &Type{
 		kind:     TY_ARRAY,
 		size:     base.size * len,
+		align:    base.align,
 		base:     base,
 		arrayLen: len,
 	}

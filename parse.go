@@ -805,14 +805,22 @@ func structDecl() *Type {
 	ty := &Type{}
 	ty.kind = TY_STRUCT
 	structMembers(ty)
+	ty.align = 1
 
 	// Assign offsets within the struct to members.
 	offset := 0
 	for m := ty.members; m != nil; m = m.next {
+		// 每个成员的地址必须是其类型大小的整数倍（对齐要求）
+		offset = alignTo(offset, m.ty.align)
 		m.offset = offset
 		offset += m.ty.size
+
+		// 结构体的整体大小必须是其最大对齐要求的整数倍
+		if ty.align < m.ty.align {
+			ty.align = m.ty.align
+		}
 	}
-	ty.size = offset
+	ty.size = alignTo(offset, ty.align)
 	return ty
 }
 

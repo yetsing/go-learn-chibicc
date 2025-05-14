@@ -430,3 +430,11 @@ Date:   Thu Aug 8 22:43:58 2019 +0900
     Add struct
 
 = 又是一个地方写错， debug 了好久，烦心烦力 middle
+
+commit 9443e4b8bc587b670f9b448b03842530cd355760
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 17:21:54 2020 +0900
+
+    Align struct members
+
+= 有 AI 解释各种规则，各种细节都清晰起来 easy

@@ -438,3 +438,11 @@ Date:   Sun Aug 30 17:21:54 2020 +0900
     Align struct members
 
 = 有 AI 解释各种规则，各种细节都清晰起来 easy
+
+commit dfec1157b41bb86c8cb66eee0b0cbdb9dcccb6f4
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 9 00:10:31 2019 +0900
+
+    Align local variables
+
+= easy

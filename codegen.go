@@ -280,6 +280,8 @@ func assignLVarOffsets(prog *Obj) {
 		offset := 0
 		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
 			offset += lvar.ty.size
+			// 每个局部变量的地址必须是其类型大小的整数倍（对齐要求）
+			offset = alignTo(offset, lvar.ty.align)
 			lvar.offset = -offset
 		}
 

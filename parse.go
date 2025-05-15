@@ -11,10 +11,21 @@ type VarScope struct {
 	variable *Obj      // Variable
 }
 
+// Scope for struct tags (结构体名字)
+type TagScope struct {
+	next *TagScope // Next scope
+	name string    // Tag name
+	ty   *Type     // Type
+}
+
 // Represents a block scope.
 type Scope struct {
 	next *Scope // Next scope
+
+	// C has two block scopes; one is for variables and the other is
+	// for struct tags.
 	vars *VarScope
+	tags *TagScope
 }
 
 var scope = &Scope{}
@@ -60,6 +71,8 @@ type Obj struct {
 // accumulated to this list.
 // 所有的本地变量通过链表连接在一起
 var locals *Obj
+
+// Likewise, global variables are accumulated to this list.
 var globals *Obj
 
 // Find a local variable by name
@@ -68,6 +81,20 @@ func findVar(name string) *Obj {
 		for vsc := sc.vars; vsc != nil; vsc = vsc.next {
 			if vsc.name == name {
 				return vsc.variable
+			}
+		}
+	}
+
+	return nil
+}
+
+func findTag(tok *Token) *Type {
+	// 第一层链表是 scope
+	for sc := scope; sc != nil; sc = sc.next {
+		// 第二层链表是 scopy 里面的 tag
+		for vsc := sc.tags; vsc != nil; vsc = vsc.next {
+			if vsc.name == tok.literal {
+				return vsc.ty
 			}
 		}
 	}
@@ -388,6 +415,15 @@ func isTypename(tok *Token) bool {
 // #endregion
 
 // #region Parser
+
+func pushTagScope(tok *Token, ty *Type) {
+	sc := &TagScope{
+		name: tok.literal,
+		ty:   ty,
+		next: scope.tags,
+	}
+	scope.tags = sc
+}
 
 // declspec = "char" | "int" | struct-decl
 func declspec() *Type {
@@ -797,8 +833,23 @@ func structMembers(ty *Type) {
 	ty.members = head.next
 }
 
-// struct-decl = "{" struct-members
+// struct-decl = ident? "{" struct-members
 func structDecl() *Type {
+	// Read a struct tag.
+	var tag *Token = nil
+	if gtok.kind == TK_IDENT {
+		tag = gtok
+		gtok = gtok.next
+	}
+
+	if tag != nil && !gtok.equal("{") {
+		ty := findTag(tag)
+		if ty == nil {
+			errorTok(gtok, "unknow struct type: %s", tag.literal)
+		}
+		return ty
+	}
+
 	gtok = gtok.consume("{")
 
 	// Construct a struct object.
@@ -821,6 +872,11 @@ func structDecl() *Type {
 		}
 	}
 	ty.size = alignTo(offset, ty.align)
+
+	// Register the struct type if a name was given.
+	if tag != nil {
+		pushTagScope(tag, ty)
+	}
 	return ty
 }
 

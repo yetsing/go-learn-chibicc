@@ -446,3 +446,12 @@ Date:   Fri Aug 9 00:10:31 2019 +0900
     Align local variables
 
 = easy
+
+commit e1e831ea3ee46ed7d4c975822f418d60d3050e1b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 10:43:02 2020 +0900
+
+    Support struct tags
+
+= struct 名字称为 tag (=m=)
+= easy

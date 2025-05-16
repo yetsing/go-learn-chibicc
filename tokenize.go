@@ -138,10 +138,12 @@ func isIdent2(ch rune) bool {
 }
 
 func readPunct(input string, p int) int {
+	kw := []string{"==", "!=", "<=", ">=", "->"}
 	s := input[p:]
-	if strings.HasPrefix(s, "==") || strings.HasPrefix(s, "!=") ||
-		strings.HasPrefix(s, "<=") || strings.HasPrefix(s, ">=") {
-		return 2
+	for _, k := range kw {
+		if strings.HasPrefix(s, k) {
+			return len(k)
+		}
 	}
 	if ispunct(rune(input[p])) {
 		return 1

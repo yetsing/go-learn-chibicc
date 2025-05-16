@@ -455,3 +455,12 @@ Date:   Wed Oct 7 10:43:02 2020 +0900
 
 = struct 名字称为 tag (=m=)
 = easy
+
+commit f0a018a7d6f5e3847d7e66e324c5f71a55c8b5ef
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:16:40 2020 +0900
+
+    Add -> operator
+
+= 意想不到的改动
+= easy

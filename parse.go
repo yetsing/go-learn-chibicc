@@ -901,7 +901,7 @@ func structRef(lhs *Node) *Node {
 	return node
 }
 
-// postfix = primary ( "[" expr "]" | "." ident )*
+// postfix = primary ( "[" expr "]" | "." ident | "->" ident )*
 func postfix() *Node {
 	node := primary()
 
@@ -917,6 +917,15 @@ func postfix() *Node {
 		}
 
 		if gtok.equal(".") {
+			gtok = gtok.next
+			node = structRef(node)
+			gtok = gtok.next
+			continue
+		}
+
+		if gtok.equal("->") {
+			// x->y is short for (*x).y
+			node = NewUnary(ND_DEREF, node, gtok)
 			gtok = gtok.next
 			node = structRef(node)
 			gtok = gtok.next

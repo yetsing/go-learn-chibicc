@@ -464,3 +464,11 @@ Date:   Wed Oct 7 20:16:40 2020 +0900
 
 = 意想不到的改动
 = easy
+
+commit 11e3841832697c8ba4a1d68f5daa05045f70a716
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 2 21:54:47 2020 +0900
+
+    Add union
+
+= easy

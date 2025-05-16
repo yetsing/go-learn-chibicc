@@ -275,6 +275,7 @@ var keywords = map[string]TokenKind{
 	"sizeof": TK_KEYWORD,
 	"char":   TK_KEYWORD,
 	"struct": TK_KEYWORD,
+	"union":  TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

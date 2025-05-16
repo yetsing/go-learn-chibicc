@@ -11,7 +11,7 @@ type VarScope struct {
 	variable *Obj      // Variable
 }
 
-// Scope for struct tags (结构体名字)
+// Scope for struct or union tags (结构体/union 名字)
 type TagScope struct {
 	next *TagScope // Next scope
 	name string    // Tag name
@@ -409,7 +409,7 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	return tok.equal("char") || tok.equal("int") || tok.equal("struct")
+	return tok.equal("char") || tok.equal("int") || tok.equal("struct") || tok.equal("union")
 }
 
 // #endregion
@@ -425,7 +425,7 @@ func pushTagScope(tok *Token, ty *Type) {
 	scope.tags = sc
 }
 
-// declspec = "char" | "int" | struct-decl
+// declspec = "char" | "int" | struct-decl | union-decl
 func declspec() *Type {
 	if gtok.equal("char") {
 		gtok = gtok.next
@@ -440,6 +440,11 @@ func declspec() *Type {
 	if gtok.equal("struct") {
 		gtok = gtok.next
 		return structDecl()
+	}
+
+	if gtok.equal("union") {
+		gtok = gtok.next
+		return unionDecl()
 	}
 
 	errorTok(gtok, "typename expected")
@@ -833,9 +838,9 @@ func structMembers(ty *Type) {
 	ty.members = head.next
 }
 
-// struct-decl = ident? "{" struct-members
-func structDecl() *Type {
-	// Read a struct tag.
+// struct-union-decl = ident? ("{" struct-members)?
+func structUnionDecl() *Type {
+	// Read a tag
 	var tag *Token = nil
 	if gtok.kind == TK_IDENT {
 		tag = gtok
@@ -845,18 +850,28 @@ func structDecl() *Type {
 	if tag != nil && !gtok.equal("{") {
 		ty := findTag(tag)
 		if ty == nil {
-			errorTok(gtok, "unknow struct type: %s", tag.literal)
+			errorTok(gtok, "unknown struct type: %s", tag.literal)
 		}
 		return ty
 	}
 
-	gtok = gtok.consume("{")
-
 	// Construct a struct object.
-	ty := &Type{}
-	ty.kind = TY_STRUCT
+	ty := newType(TY_STRUCT, 0, 1)
+	gtok = gtok.consume("{")
 	structMembers(ty)
 	ty.align = 1
+
+	// Register the struct type if a name was given.
+	if tag != nil {
+		pushTagScope(tag, ty)
+	}
+	return ty
+}
+
+// struct-decl = struct-union-decl
+func structDecl() *Type {
+	ty := structUnionDecl()
+	ty.kind = TY_STRUCT
 
 	// Assign offsets within the struct to members.
 	offset := 0
@@ -872,11 +887,26 @@ func structDecl() *Type {
 		}
 	}
 	ty.size = alignTo(offset, ty.align)
+	return ty
+}
 
-	// Register the struct type if a name was given.
-	if tag != nil {
-		pushTagScope(tag, ty)
+// union-decl = struct-union-decl
+func unionDecl() *Type {
+	ty := structUnionDecl()
+	ty.kind = TY_UNION
+
+	// If union, we don't have to assign offsets because they
+	// are already initialized to zero. We need to compute the
+	// alignment and the size though.
+	for mem := ty.members; mem != nil; mem = mem.next {
+		if ty.align < mem.ty.align {
+			ty.align = mem.ty.align
+		}
+		if ty.size < mem.ty.size {
+			ty.size = mem.ty.size
+		}
 	}
+	ty.size = alignTo(ty.size, ty.align)
 	return ty
 }
 
@@ -892,8 +922,8 @@ func getStructMember(ty *Type, tok *Token) *Member {
 
 func structRef(lhs *Node) *Node {
 	addType(lhs)
-	if lhs.ty.kind != TY_STRUCT {
-		errorTok(lhs.tok, "not a struct")
+	if lhs.ty.kind != TY_STRUCT && lhs.ty.kind != TY_UNION {
+		errorTok(lhs.tok, "not a struct nor a union")
 	}
 
 	node := NewUnary(ND_MEMBER, lhs, gtok)

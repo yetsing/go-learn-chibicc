@@ -80,7 +80,7 @@ func genAddr(node *Node) {
 
 // Load a value from where %rax is pointing to.
 func load(ty *Type) {
-	if ty.kind == TY_ARRAY {
+	if ty.kind == TY_ARRAY || ty.kind == TY_STRUCT || ty.kind == TY_UNION {
 		// If it is an array, do not attempt to load a value to the
 		// register because in general we can't load an entire array to a
 		// register. As a result, the result of an evaluation of an array
@@ -102,6 +102,17 @@ func load(ty *Type) {
 // Store %rax to an address that the stack top is pointing to.
 func store(ty *Type) {
 	pop("%rdi")
+
+	if ty.kind == TY_STRUCT || ty.kind == TY_UNION {
+		// 将结构体赋值给另外一个结构体， rdi rax 保存的都是地址
+		// 需要将 rax 中的值逐个字节保存到 rdi 保存的地址中
+		for i := range ty.size {
+			sout("  mov %d(%%rax), %%r8b", i)
+			sout("  mov %%r8b, %d(%%rdi)", i)
+		}
+		return
+	}
+
 	// 将 RAX 中的值保存到 RDI 保存的地址位置
 	if ty.size == 1 {
 		// 1 byte

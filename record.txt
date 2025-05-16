@@ -472,3 +472,15 @@ Date:   Thu Apr 2 21:54:47 2020 +0900
     Add union
 
 = easy
+
+commit bef05432c9d3289636ed1d360ca9b863a0698dc7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Apr 18 01:05:18 2020 +0900
+
+    Add struct assignment
+
+= 理解错意思了，以为是实现 x.a = 3 ，百思不得其解
+= 后面找了一个例子，输出汇编仔细比对后发现，实现的是整个结构体的赋值
+= 比如 struct t t1, t2; t1 = t2;
+= AI 对代码的理解完全正确，是我错怪他了 <(_ _)>
+= hard

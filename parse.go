@@ -271,7 +271,7 @@ type Node struct {
 
 	variable *Obj // Used if kind is ND_VAR
 
-	val int // Used if kind is ND_NUM
+	val int64 // Used if kind is ND_NUM
 }
 
 func NewNode(kind NodeKind, tok *Token) *Node {
@@ -304,7 +304,7 @@ func NewUnary(kind NodeKind, expr *Node, tok *Token) *Node {
 	}
 }
 
-func NewNumber(val int, tok *Token) *Node {
+func NewNumber(val int64, tok *Token) *Node {
 	return &Node{
 		kind: ND_NUM,
 		lhs:  nil,
@@ -358,7 +358,7 @@ func newAdd(lhs, rhs *Node, tok *Token) *Node {
 	}
 
 	// ptr + num
-	rhs = NewBinary(ND_MUL, rhs, NewNumber(lhs.ty.base.size, tok), tok)
+	rhs = NewBinary(ND_MUL, rhs, NewNumber(int64(lhs.ty.base.size), tok), tok)
 	return NewBinary(ND_ADD, lhs, rhs, tok)
 }
 
@@ -374,7 +374,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 	// ptr - num
 	if lhs.ty.base != nil && rhs.ty.isInteger() {
-		rhs = NewBinary(ND_MUL, rhs, NewNumber(lhs.ty.base.size, tok), tok)
+		rhs = NewBinary(ND_MUL, rhs, NewNumber(int64(lhs.ty.base.size), tok), tok)
 		addType(rhs)
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
 		node.ty = lhs.ty
@@ -385,7 +385,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 	if lhs.ty.base != nil && rhs.ty.base != nil {
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
 		node.ty = intType()
-		return NewBinary(ND_DIV, node, NewNumber(lhs.ty.base.size, tok), tok)
+		return NewBinary(ND_DIV, node, NewNumber(int64(lhs.ty.base.size), tok), tok)
 	}
 
 	errorTok(tok, "invalid operands")
@@ -409,7 +409,7 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	return tok.equal("char") || tok.equal("int") || tok.equal("struct") || tok.equal("union")
+	return tok.equal("char") || tok.equal("short") || tok.equal("int") || tok.equal("long") || tok.equal("struct") || tok.equal("union")
 }
 
 // #endregion
@@ -425,7 +425,7 @@ func pushTagScope(tok *Token, ty *Type) {
 	scope.tags = sc
 }
 
-// declspec = "char" | "int" | struct-decl | union-decl
+// declspec = "char" | "short" | "int" | "long" | struct-decl | union-decl
 func declspec() *Type {
 	if gtok.equal("char") {
 		gtok = gtok.next
@@ -435,6 +435,11 @@ func declspec() *Type {
 	if gtok.equal("int") {
 		gtok = gtok.next
 		return intType()
+	}
+
+	if gtok.equal("long") {
+		gtok = gtok.next
+		return longType()
 	}
 
 	if gtok.equal("struct") {
@@ -489,7 +494,7 @@ func typeSuffix(ty *Type) *Type {
 		length := gtok.getNumber()
 		gtok = gtok.next.consume("]")
 		ty = typeSuffix(ty)
-		return arrayOf(ty, length)
+		return arrayOf(ty, int(length))
 	}
 	return ty
 }
@@ -1020,7 +1025,7 @@ func primary() *Node {
 		gtok = gtok.next
 		node := unary()
 		addType(node)
-		return NewNumber(node.ty.size, st)
+		return NewNumber(int64(node.ty.size), st)
 	}
 
 	if gtok.kind == TK_IDENT {

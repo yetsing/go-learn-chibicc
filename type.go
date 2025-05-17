@@ -5,6 +5,7 @@ type TypeKind int
 const (
 	TY_CHAR   TypeKind = iota // char
 	TY_INT                    // int
+	TY_LONG                   // long
 	TY_PTR                    // pointer
 	TY_FUNC                   // function
 	TY_ARRAY                  // array
@@ -60,6 +61,15 @@ func intType() *Type {
 	return t
 }
 
+func longType() *Type {
+	t := &Type{
+		kind:  TY_LONG,
+		size:  8,
+		align: 8,
+	}
+	return t
+}
+
 func charType() *Type {
 	t := &Type{
 		kind:  TY_CHAR,
@@ -99,7 +109,7 @@ func arrayOf(base *Type, len int) *Type {
 }
 
 func (t *Type) isInteger() bool {
-	return t.kind == TY_CHAR || t.kind == TY_INT
+	return t.kind == TY_CHAR || t.kind == TY_INT || t.kind == TY_LONG
 }
 
 func addType(node *Node) {
@@ -169,7 +179,7 @@ func addType(node *Node) {
 		node.ty = intType()
 		return
 	case ND_FUNCALL:
-		node.ty = intType()
+		node.ty = longType()
 		return
 	case ND_ADDR:
 		if node.lhs.ty.kind == TY_ARRAY {

@@ -492,3 +492,11 @@ Date:   Sun Sep 6 08:09:09 2020 +0900
     Change size of int from 8 to 4
 
 = easy
+
+commit 43c2f0829f7d4ec3b96132b9964a778ff816b2eb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 21:51:00 2020 +0900
+
+    Add long type
+
+= easy

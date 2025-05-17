@@ -104,7 +104,7 @@ type Token struct {
 	pos    int
 	lineno int
 
-	val int
+	val int64
 	ty  *Type  // Used if TK_STR
 	str string // String literal contents
 }
@@ -120,7 +120,7 @@ func (t *Token) consume(op string) *Token {
 	return t.next
 }
 
-func (t *Token) getNumber() int {
+func (t *Token) getNumber() int64 {
 	if t.kind != TK_NUM {
 		errorTok(t, "expected number, but got '%s'", t.literal)
 	}
@@ -276,6 +276,8 @@ var keywords = map[string]TokenKind{
 	"char":   TK_KEYWORD,
 	"struct": TK_KEYWORD,
 	"union":  TK_KEYWORD,
+	"short":  TK_KEYWORD,
+	"long":   TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {
@@ -346,7 +348,7 @@ func tokenize(filename, input string) *Token {
 			}
 			numStr := input[start:p]
 			cur.next = NewToken(TK_NUM, numStr, start)
-			val, err := strconv.Atoi(numStr)
+			val, err := strconv.ParseInt(numStr, 10, 64)
 			check(err)
 			cur.next.val = val
 			cur = cur.next

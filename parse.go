@@ -410,7 +410,13 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	return tok.equal("char") || tok.equal("short") || tok.equal("int") || tok.equal("long") || tok.equal("struct") || tok.equal("union")
+	kw := []string{"void", "char", "short", "int", "long", "struct", "union"}
+	for _, k := range kw {
+		if tok.equal(k) {
+			return true
+		}
+	}
+	return false
 }
 
 // #endregion
@@ -426,8 +432,13 @@ func pushTagScope(tok *Token, ty *Type) {
 	scope.tags = sc
 }
 
-// declspec = "char" | "short" | "int" | "long" | struct-decl | union-decl
+// declspec = "void" | "char" | "short" | "int" | "long" | struct-decl | union-decl
 func declspec() *Type {
+	if gtok.equal("void") {
+		gtok = gtok.next
+		return voidType()
+	}
+
 	if gtok.equal("char") {
 		gtok = gtok.next
 		return charType()
@@ -554,6 +565,9 @@ func declaration() *Node {
 		i++
 
 		ty := declarator(basety)
+		if ty.kind == TY_VOID {
+			errorTok(ty.name, "variable declared void")
+		}
 		variable := newLVar(ty.name.literal, ty)
 
 		if !gtok.equal("=") {

@@ -526,3 +526,11 @@ Date:   Fri Sep 4 11:45:29 2020 +0900
     Add function declaration
 
 = easy
+
+commit 8c3503bb94bd6b2d57e1f979d9fc1d84383b2961
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 10:18:55 2019 +0900
+
+    Add void type
+
+= easy

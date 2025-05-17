@@ -3,7 +3,8 @@ package main
 type TypeKind int
 
 const (
-	TY_CHAR   TypeKind = iota // char
+	TY_VOID   TypeKind = iota // void
+	TY_CHAR                   // char
 	TY_SHORT                  // short
 	TY_INT                    // int
 	TY_LONG                   // long
@@ -49,6 +50,15 @@ func newType(kind TypeKind, size int, align int) *Type {
 		kind:  kind,
 		size:  size,
 		align: align,
+	}
+	return t
+}
+
+func voidType() *Type {
+	t := &Type{
+		kind:  TY_VOID,
+		size:  1,
+		align: 1,
 	}
 	return t
 }
@@ -199,11 +209,13 @@ func addType(node *Node) {
 		}
 		return
 	case ND_DEREF:
-		if node.lhs.ty.base != nil {
-			node.ty = node.lhs.ty.base
-		} else {
+		if node.lhs.ty.base == nil {
 			errorTok(node.tok, "invalid pointer dereference")
 		}
+		if node.lhs.ty.base.kind == TY_VOID {
+			errorTok(node.tok, "dereferencing a void pointer")
+		}
+		node.ty = node.lhs.ty.base
 		return
 	case ND_STMT_EXPR:
 		if node.body != nil {

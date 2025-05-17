@@ -58,7 +58,6 @@ func errorAt(pos int, format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
-	panic("error")
 	os.Exit(1)
 }
 
@@ -279,6 +278,7 @@ var keywords = map[string]TokenKind{
 	"union":  TK_KEYWORD,
 	"short":  TK_KEYWORD,
 	"long":   TK_KEYWORD,
+	"void":   TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

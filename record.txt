@@ -500,3 +500,11 @@ Date:   Thu Aug 27 21:51:00 2020 +0900
     Add long type
 
 = easy
+
+commit 9d48eef58b964551350fe0c1f641a57f5da40529
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 6 08:10:01 2020 +0900
+
+    Add short type
+
+= easy

@@ -26,6 +26,7 @@ var gcount int = 0
 var argreg8 = []string{
 	"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b",
 }
+var argreg16 = []string{"%di", "%si", "%dx", "%cx", "%r8w", "%r9w"}
 var argreg32 = []string{
 	"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d",
 }
@@ -101,6 +102,8 @@ func load(ty *Type) {
 	if ty.size == 1 {
 		// 1 byte
 		sout("  movsbq (%%rax), %%rax")
+	} else if ty.size == 2 {
+		sout("  movswq (%%rax), %%rax")
 	} else if ty.size == 4 {
 		sout("  movsxd (%%rax), %%rax")
 	} else {
@@ -126,6 +129,8 @@ func store(ty *Type) {
 	if ty.size == 1 {
 		// 1 byte
 		sout("  mov %%al, (%%rdi)")
+	} else if ty.size == 2 {
+		sout("  mov %%ax, (%%rdi)")
 	} else if ty.size == 4 {
 		sout("  mov %%eax, (%%rdi)")
 	} else {
@@ -341,6 +346,9 @@ func storeGP(r, offset, sz int) {
 	switch sz {
 	case 1:
 		sout("  mov %s, %d(%%rbp)", argreg8[r], offset)
+		return
+	case 2:
+		sout("  mov %s, %d(%%rbp)", argreg16[r], offset)
 		return
 	case 4:
 		sout("    mov %s, %d(%%rbp)", argreg32[r], offset)

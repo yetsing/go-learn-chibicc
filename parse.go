@@ -432,6 +432,11 @@ func declspec() *Type {
 		return charType()
 	}
 
+	if gtok.equal("short") {
+		gtok = gtok.next
+		return shortType()
+	}
+
 	if gtok.equal("int") {
 		gtok = gtok.next
 		return intType()

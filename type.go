@@ -4,6 +4,7 @@ type TypeKind int
 
 const (
 	TY_CHAR   TypeKind = iota // char
+	TY_SHORT                  // short
 	TY_INT                    // int
 	TY_LONG                   // long
 	TY_PTR                    // pointer
@@ -52,6 +53,24 @@ func newType(kind TypeKind, size int, align int) *Type {
 	return t
 }
 
+func charType() *Type {
+	t := &Type{
+		kind:  TY_CHAR,
+		size:  1,
+		align: 1,
+	}
+	return t
+}
+
+func shortType() *Type {
+	t := &Type{
+		kind:  TY_SHORT,
+		size:  2,
+		align: 2,
+	}
+	return t
+}
+
 func intType() *Type {
 	t := &Type{
 		kind:  TY_INT,
@@ -66,15 +85,6 @@ func longType() *Type {
 		kind:  TY_LONG,
 		size:  8,
 		align: 8,
-	}
-	return t
-}
-
-func charType() *Type {
-	t := &Type{
-		kind:  TY_CHAR,
-		size:  1,
-		align: 1,
 	}
 	return t
 }
@@ -109,7 +119,7 @@ func arrayOf(base *Type, len int) *Type {
 }
 
 func (t *Type) isInteger() bool {
-	return t.kind == TY_CHAR || t.kind == TY_INT || t.kind == TY_LONG
+	return t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG
 }
 
 func addType(node *Node) {

@@ -362,7 +362,7 @@ func storeGP(r, offset, sz int) {
 
 func emitText(prog *Obj) {
 	for fn := prog; fn != nil; fn = fn.next {
-		if !fn.isFunction {
+		if !fn.isFunction || !fn.isDefinition {
 			continue
 		}
 

@@ -55,7 +55,8 @@ type Obj struct {
 	offset int // Offset from RBP
 
 	// Global variable or function
-	isFunction bool
+	isFunction   bool
+	isDefinition bool
 
 	// Global variable
 	initData string
@@ -1093,6 +1094,11 @@ func function(basety *Type) *Obj {
 
 	fn := newGVar(ty.name.literal, ty)
 	fn.isFunction = true
+	fn.isDefinition = !tryConsume(";")
+
+	if !fn.isDefinition {
+		return fn
+	}
 
 	locals = nil
 	enterScope()

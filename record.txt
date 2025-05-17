@@ -518,3 +518,11 @@ Date:   Sat Aug 10 23:05:37 2019 +0900
 = 这个嵌套类型声明解析着实难懂，
 = token 位置跳来跳去， debug 好长一段时间
 = hard
+
+commit 74e3acc296d90d6d16ae70803196e967564fb16a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:45:29 2020 +0900
+
+    Add function declaration
+
+= easy

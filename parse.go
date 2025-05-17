@@ -4,11 +4,12 @@ import "fmt"
 
 // #region Scope
 
-// Scope for local or global variables.
+// Scope for local, global variables or typedefs.
 type VarScope struct {
 	next     *VarScope // Next scope
 	name     string    // Scope name
 	variable *Obj      // Variable
+	typedef  *Type     // Typedef
 }
 
 // Scope for struct or union tags (结构体/union 名字)
@@ -26,6 +27,11 @@ type Scope struct {
 	// for struct tags.
 	vars *VarScope
 	tags *TagScope
+}
+
+// Variable attributes such as typedef or extern.
+type VarAttr struct {
+	isTypedef bool
 }
 
 var scope = &Scope{}
@@ -77,11 +83,11 @@ var locals *Obj
 var globals *Obj
 
 // Find a local variable by name
-func findVar(name string) *Obj {
+func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
 		for vsc := sc.vars; vsc != nil; vsc = vsc.next {
 			if vsc.name == name {
-				return vsc.variable
+				return vsc
 			}
 		}
 	}
@@ -112,7 +118,7 @@ func newLVar(name string, ty *Type) *Obj {
 		ty:      ty,
 		isLocal: true,
 	}
-	pushScope(name, l)
+	pushScope(name).variable = l
 	locals = l
 	return l
 }
@@ -124,7 +130,7 @@ func newGVar(name string, ty *Type) *Obj {
 		ty:      ty,
 		isLocal: false,
 	}
-	pushScope(name, g)
+	pushScope(name).variable = g
 	globals = g
 	return g
 }
@@ -145,6 +151,16 @@ func newStringLiteral(s string, ty *Type) *Obj {
 	variable := newAnonGvar(ty)
 	variable.initData = s
 	return variable
+}
+
+func findTypedef(tok *Token) *Type {
+	if tok.kind == TK_IDENT {
+		sc := findVar(tok.literal)
+		if sc != nil {
+			return sc.typedef
+		}
+	}
+	return nil
 }
 
 // Struct member
@@ -325,11 +341,10 @@ func NewVarNode(variable *Obj, tok *Token) *Node {
 	}
 }
 
-func pushScope(name string, variable *Obj) *VarScope {
+func pushScope(name string) *VarScope {
 	vsc := &VarScope{
-		name:     name,
-		variable: variable,
-		next:     scope.vars,
+		name: name,
+		next: scope.vars,
 	}
 	scope.vars = vsc
 	return vsc
@@ -410,13 +425,13 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "char", "short", "int", "long", "struct", "union"}
+	kw := []string{"void", "char", "short", "int", "long", "struct", "union", "typedef"}
 	for _, k := range kw {
 		if tok.equal(k) {
 			return true
 		}
 	}
-	return false
+	return findTypedef(tok) != nil
 }
 
 // #endregion
@@ -446,7 +461,7 @@ func pushTagScope(tok *Token, ty *Type) {
 // while keeping the "current" type object that the typenames up
 // until that point represent. When we reach a non-typename token,
 // we returns the current type object.
-func declspec() *Type {
+func declspec(attr *VarAttr) *Type {
 	// We use a single integer as counters for all typenames.
 	// For example, bits 0 and 1 represents how many times we saw the
 	// keyword "void" so far. With this, we can use a switch statement
@@ -462,15 +477,34 @@ func declspec() *Type {
 	counter := 0
 
 	for isTypename(gtok) {
+		// Handle "typedef" keyword
+		if gtok.equal("typedef") {
+			if attr == nil {
+				errorTok(gtok, "storage class specifier is not allowed in this context")
+			}
+			attr.isTypedef = true
+			gtok = gtok.next
+			continue
+		}
+
 		// Handle user-defined types.
-		if gtok.equal("struct") || gtok.equal("union") {
+		ty2 := findTypedef(gtok)
+		if gtok.equal("struct") || gtok.equal("union") || ty2 != nil {
+			if counter != 0 {
+				break
+			}
+
 			if gtok.equal("struct") {
 				gtok = gtok.next
 				ty = structDecl()
-			} else {
+			} else if gtok.equal("union") {
 				gtok = gtok.next
 				ty = unionDecl()
+			} else {
+				ty = ty2
+				gtok = gtok.next
 			}
+
 			counter += OTHER
 			continue
 		}
@@ -531,7 +565,7 @@ func funcParams(ty *Type) *Type {
 		}
 
 		// param = declspec declarator
-		basety := declspec()
+		basety := declspec(nil)
 		ty := declarator(basety)
 		cur.next = ty
 		cur = cur.next
@@ -596,9 +630,8 @@ func declarator(ty *Type) *Type {
 }
 
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
-func declaration() *Node {
+func declaration(basety *Type) *Node {
 	st := gtok
-	basety := declspec()
 
 	var head Node
 	cur := &head
@@ -719,7 +752,7 @@ func ifStmt() *Node {
 	return node
 }
 
-// compound-stmt = "{" ( declaration | stmt )*  "}"
+// compound-stmt = (typedef | declaration | stmt)* "}"
 func compoundStmt() *Node {
 	st := gtok
 	node := NewNode(ND_BLOCK, st)
@@ -731,11 +764,20 @@ func compoundStmt() *Node {
 
 	for !gtok.equal("}") {
 		if isTypename(gtok) {
-			cur.next = declaration()
+			var attr VarAttr = VarAttr{}
+			basety := declspec(&attr)
+
+			if attr.isTypedef {
+				parseTypedef(basety)
+				continue
+			}
+
+			cur.next = declaration(basety)
+			cur = cur.next
 		} else {
 			cur.next = stmt()
+			cur = cur.next
 		}
-		cur = cur.next
 		addType(cur)
 	}
 
@@ -904,7 +946,7 @@ func structMembers(ty *Type) {
 	cur := &head
 
 	for !gtok.equal("}") {
-		basety := declspec()
+		basety := declspec(nil)
 		i := 0
 
 		for !tryConsume(";") {
@@ -1116,11 +1158,11 @@ func primary() *Node {
 			return funcall()
 		}
 
-		variable := findVar(gtok.literal)
-		if variable == nil {
+		sc := findVar(gtok.literal)
+		if sc == nil || sc.variable == nil {
 			errorTok(gtok, "undefined variable: %s", gtok.literal)
 		}
-		node := NewVarNode(variable, st)
+		node := NewVarNode(sc.variable, st)
 		gtok = gtok.next
 		return node
 	}
@@ -1139,6 +1181,20 @@ func primary() *Node {
 
 	errorTok(gtok, "expected an expression")
 	return nil
+}
+
+func parseTypedef(basety *Type) {
+	first := true
+
+	for !tryConsume(";") {
+		if !first {
+			gtok = gtok.consume(",")
+		}
+		first = false
+
+		ty := declarator(basety)
+		pushScope(ty.name.literal).typedef = ty
+	}
 }
 
 // 为函数参数创建局部变量
@@ -1199,12 +1255,19 @@ func isFunctionDefinition() bool {
 	return ty.kind == TY_FUNC
 }
 
-// program = (function-definition | global-variable)*
+// program = (typedef | function-definition | global-variable)*
 func program() *Obj {
 	globals = nil
 
 	for gtok.kind != TK_EOF {
-		basety := declspec()
+		var attr VarAttr = VarAttr{}
+		basety := declspec(&attr)
+
+		// Typedef
+		if attr.isTypedef {
+			parseTypedef(basety)
+			continue
+		}
 
 		// Function
 		if isFunctionDefinition() {

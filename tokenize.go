@@ -266,19 +266,20 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 }
 
 var keywords = map[string]TokenKind{
-	"return": TK_KEYWORD,
-	"if":     TK_KEYWORD,
-	"else":   TK_KEYWORD,
-	"for":    TK_KEYWORD,
-	"while":  TK_KEYWORD,
-	"int":    TK_KEYWORD,
-	"sizeof": TK_KEYWORD,
-	"char":   TK_KEYWORD,
-	"struct": TK_KEYWORD,
-	"union":  TK_KEYWORD,
-	"short":  TK_KEYWORD,
-	"long":   TK_KEYWORD,
-	"void":   TK_KEYWORD,
+	"return":  TK_KEYWORD,
+	"if":      TK_KEYWORD,
+	"else":    TK_KEYWORD,
+	"for":     TK_KEYWORD,
+	"while":   TK_KEYWORD,
+	"int":     TK_KEYWORD,
+	"sizeof":  TK_KEYWORD,
+	"char":    TK_KEYWORD,
+	"struct":  TK_KEYWORD,
+	"union":   TK_KEYWORD,
+	"short":   TK_KEYWORD,
+	"long":    TK_KEYWORD,
+	"void":    TK_KEYWORD,
+	"typedef": TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

@@ -510,7 +510,7 @@ Date:   Sun Sep 6 08:10:01 2020 +0900
 = easy
 
 commit a817b23da3c6f39f22bc57c0a53169978d97d7fa
-Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Author: Rui Ueyama <ru iu@cs.stanford.edu>
 Date:   Sat Aug 10 23:05:37 2019 +0900
 
     Add nested type declarators
@@ -532,5 +532,24 @@ Author: Rui Ueyama <ruiu@cs.stanford.edu>
 Date:   Sun Aug 11 10:18:55 2019 +0900
 
     Add void type
+
+= easy
+
+commit 287906abb85081b961e118bb80b30decb93fba6f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 14:12:01 2019 +0900
+
+    Handle complex type declarations correctly
+
+    chibicc can now read complex type declarations such as below.
+
+      long x;
+      long int x;
+      int long x;
+      short x;
+      short int x;
+      int short x;
+      long long x;
+      long long int x;
 
 = easy

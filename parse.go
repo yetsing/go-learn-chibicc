@@ -432,45 +432,87 @@ func pushTagScope(tok *Token, ty *Type) {
 	scope.tags = sc
 }
 
-// declspec = "void" | "char" | "short" | "int" | "long" | struct-decl | union-decl
+// declspec = ("void" | "char" | "short" | "int" | "long"
+// .           | struct-decl | union-decl)+
+//
+// The order of typenames in a type-specifier doesn't matter. For
+// example, `int long static` means the same as `static long int`.
+// That can also be written as `static long` because you can omit
+// `int` if `long` or `short` are specified. However, something like
+// `char int` is not a valid type specifier. We have to accept only a
+// limited combinations of the typenames.
+//
+// In this function, we count the number of occurrences of each typename
+// while keeping the "current" type object that the typenames up
+// until that point represent. When we reach a non-typename token,
+// we returns the current type object.
 func declspec() *Type {
-	if gtok.equal("void") {
+	// We use a single integer as counters for all typenames.
+	// For example, bits 0 and 1 represents how many times we saw the
+	// keyword "void" so far. With this, we can use a switch statement
+	// as you can see below.
+	VOID := 1 << 0
+	CHAR := 1 << 2
+	SHORT := 1 << 4
+	INT := 1 << 6
+	LONG := 1 << 8
+	OTHER := 1 << 10
+
+	ty := intType()
+	counter := 0
+
+	for isTypename(gtok) {
+		// Handle user-defined types.
+		if gtok.equal("struct") || gtok.equal("union") {
+			if gtok.equal("struct") {
+				gtok = gtok.next
+				ty = structDecl()
+			} else {
+				gtok = gtok.next
+				ty = unionDecl()
+			}
+			counter += OTHER
+			continue
+		}
+
+		// Handle built-in types.
+		if gtok.equal("void") {
+			counter += VOID
+		} else if gtok.equal("char") {
+			counter += CHAR
+		} else if gtok.equal("short") {
+			counter += SHORT
+		} else if gtok.equal("int") {
+			counter += INT
+		} else if gtok.equal("long") {
+			counter += LONG
+		} else {
+			unreachable()
+		}
+
+		switch counter {
+		case VOID:
+			ty = voidType()
+		case CHAR:
+			ty = charType()
+		case SHORT:
+			ty = shortType()
+		case SHORT + INT:
+			ty = shortType()
+		case INT:
+			ty = intType()
+		case LONG:
+			ty = longType()
+		case LONG + INT:
+			ty = longType()
+		default:
+			errorTok(gtok, "invalid type specifier")
+		}
+
 		gtok = gtok.next
-		return voidType()
 	}
 
-	if gtok.equal("char") {
-		gtok = gtok.next
-		return charType()
-	}
-
-	if gtok.equal("short") {
-		gtok = gtok.next
-		return shortType()
-	}
-
-	if gtok.equal("int") {
-		gtok = gtok.next
-		return intType()
-	}
-
-	if gtok.equal("long") {
-		gtok = gtok.next
-		return longType()
-	}
-
-	if gtok.equal("struct") {
-		gtok = gtok.next
-		return structDecl()
-	}
-
-	if gtok.equal("union") {
-		gtok = gtok.next
-		return unionDecl()
-	}
-
-	errorTok(gtok, "typename expected")
-	return nil
+	return ty
 }
 
 // func-params = (param ("," param)*)? ")"

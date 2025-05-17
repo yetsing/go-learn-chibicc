@@ -484,3 +484,11 @@ Date:   Sat Apr 18 01:05:18 2020 +0900
 = 比如 struct t t1, t2; t1 = t2;
 = AI 对代码的理解完全正确，是我错怪他了 <(_ _)>
 = hard
+
+commit 5831edaab3eb6d56126c08f01f5639222602f7e5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 6 08:09:09 2020 +0900
+
+    Change size of int from 8 to 4
+
+= easy

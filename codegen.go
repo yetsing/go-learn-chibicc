@@ -14,6 +14,10 @@ func sout(format string, args ...interface{}) {
 	fmt.Fprintln(outFile)
 }
 
+func unreachable() {
+	panic("unreachable")
+}
+
 // #endregion
 
 // #region Code Generator
@@ -21,6 +25,9 @@ var depth int = 0
 var gcount int = 0
 var argreg8 = []string{
 	"%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b",
+}
+var argreg32 = []string{
+	"%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d",
 }
 var argreg64 = []string{
 	"%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9",
@@ -94,6 +101,8 @@ func load(ty *Type) {
 	if ty.size == 1 {
 		// 1 byte
 		sout("  movsbq (%%rax), %%rax")
+	} else if ty.size == 4 {
+		sout("  movsxd (%%rax), %%rax")
 	} else {
 		sout("  mov (%%rax), %%rax")
 	}
@@ -117,6 +126,8 @@ func store(ty *Type) {
 	if ty.size == 1 {
 		// 1 byte
 		sout("  mov %%al, (%%rdi)")
+	} else if ty.size == 4 {
+		sout("  mov %%eax, (%%rdi)")
 	} else {
 		sout("  mov %%rax, (%%rdi)")
 	}
@@ -326,6 +337,21 @@ func emitData(prog *Obj) {
 	}
 }
 
+func storeGP(r, offset, sz int) {
+	switch sz {
+	case 1:
+		sout("  mov %s, %d(%%rbp)", argreg8[r], offset)
+		return
+	case 4:
+		sout("    mov %s, %d(%%rbp)", argreg32[r], offset)
+		return
+	case 8:
+		sout("    mov %s, %d(%%rbp)", argreg64[r], offset)
+		return
+	}
+	unreachable()
+}
+
 func emitText(prog *Obj) {
 	for fn := prog; fn != nil; fn = fn.next {
 		if !fn.isFunction {
@@ -345,11 +371,7 @@ func emitText(prog *Obj) {
 		// Save passed-by-register arguments to the stack
 		i := 0
 		for variable := fn.params; variable != nil; variable = variable.next {
-			if variable.ty.size == 1 {
-				sout("  mov %s, %d(%%rbp)", argreg8[i], variable.offset)
-			} else {
-				sout("  mov %s, %d(%%rbp)", argreg64[i], variable.offset)
-			}
+			storeGP(i, variable.offset, variable.ty.size)
 			i++
 		}
 

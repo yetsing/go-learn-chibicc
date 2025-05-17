@@ -54,8 +54,8 @@ func newType(kind TypeKind, size int, align int) *Type {
 func intType() *Type {
 	t := &Type{
 		kind:  TY_INT,
-		size:  8,
-		align: 8,
+		size:  4,
+		align: 4,
 	}
 	return t
 }

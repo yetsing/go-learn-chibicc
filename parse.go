@@ -505,6 +505,10 @@ func declspec() *Type {
 			ty = longType()
 		case LONG + INT:
 			ty = longType()
+		case LONG + LONG:
+			ty = longType()
+		case LONG + LONG + INT:
+			ty = longType()
 		default:
 			errorTok(gtok, "invalid type specifier")
 		}

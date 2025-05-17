@@ -553,3 +553,11 @@ Date:   Sun Aug 11 14:12:01 2019 +0900
       long long int x;
 
 = easy
+
+commit f46370ef98adec5d3a840d69a6b34a03d80b0699
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Apr 20 21:53:23 2020 +0900
+
+    Add `long long` as an alias for `long`
+
+= easy

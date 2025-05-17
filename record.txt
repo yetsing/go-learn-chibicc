@@ -508,3 +508,13 @@ Date:   Sun Sep 6 08:10:01 2020 +0900
     Add short type
 
 = easy
+
+commit a817b23da3c6f39f22bc57c0a53169978d97d7fa
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 10 23:05:37 2019 +0900
+
+    Add nested type declarators
+
+= 这个嵌套类型声明解析着实难懂，
+= token 位置跳来跳去， debug 好长一段时间
+= hard

@@ -504,10 +504,26 @@ func typeSuffix(ty *Type) *Type {
 	return ty
 }
 
-// declarator = "*"* ident type-suffix
+// ref: https://www.sigbus.info/compilerbook#type
+// declarator = "*"* ( "(" ident ")" | "(" declarator ")" | ident ) type-suffix
 func declarator(ty *Type) *Type {
 	for tryConsume("*") {
 		ty = pointerTo(ty)
+	}
+
+	if gtok.equal("(") {
+		st := gtok
+		var dummy Type = Type{}
+		gtok = st.next
+		declarator(&dummy)
+		gtok = gtok.consume(")")
+		ty := typeSuffix(ty)
+		end := gtok
+		// 把括号外的类型填入括号里面
+		gtok = st.next
+		ty = declarator(ty)
+		gtok = end
+		return ty
 	}
 
 	if gtok.kind != TK_IDENT {

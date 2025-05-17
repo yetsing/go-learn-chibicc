@@ -58,6 +58,7 @@ func errorAt(pos int, format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
+	panic("error")
 	os.Exit(1)
 }
 

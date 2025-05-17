@@ -579,3 +579,15 @@ Date:   Fri Sep 4 17:23:26 2020 +0900
       t t = 3;
 
 = 有点迷糊，怎么就实现了这个功能 middle
+
+commit 67543ea113c5cc2b15881e2bbb85ffd44feaef1f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 15:04:35 2019 +0900
+
+    Make sizeof to accept not only an expression but also a typename
+
+    Previously, chibicc's sizeof accepted only an expression, so you
+    couldn't write something like `sizeof(int)`. Now it accepts that.
+
+= C 的类型语法有点复杂，写 C 代码的时候没有注意到
+= easy

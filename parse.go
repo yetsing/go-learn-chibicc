@@ -629,6 +629,37 @@ func declarator(ty *Type) *Type {
 	return ty
 }
 
+// abstract-declarator = "*"* ("(" abstract-declarator ")")? type-suffix
+func abstractDeclarator(ty *Type) *Type {
+	for gtok.equal("*") {
+		ty = pointerTo(ty)
+		gtok = gtok.next
+	}
+
+	if gtok.equal("(") {
+		st := gtok
+		var dummy Type = Type{}
+		gtok = st.next
+		abstractDeclarator(&dummy)
+		gtok = gtok.consume(")")
+		ty = typeSuffix(ty)
+		end := gtok
+		// 把括号外的类型填入括号里面
+		gtok = st.next
+		ty = abstractDeclarator(ty)
+		gtok = end
+		return ty
+	}
+
+	return typeSuffix(ty)
+}
+
+// type-name = declspec abstract-declarator
+func typename() *Type {
+	ty := declspec(nil)
+	return abstractDeclarator(ty)
+}
+
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
 func declaration(basety *Type) *Node {
 	st := gtok
@@ -1122,12 +1153,15 @@ func funcall() *Node {
 
 // primary = "(" "{" stmt+ "}" ")"
 // .       | "(" expr ")"
+// .       | "sizeof" "(" type-name ")"
 // .       | "sizeof" unary
 // .       | ident
 // .       | funcall
 // .       | str
 // .       | num
 func primary() *Node {
+	st := gtok
+
 	if gtok.equal("(") && gtok.next.equal("{") {
 		// This is a GNU statement expression.
 		node := NewNode(ND_STMT_EXPR, gtok)
@@ -1144,7 +1178,13 @@ func primary() *Node {
 		return node
 	}
 
-	st := gtok
+	if gtok.equal("sizeof") && gtok.next.equal("(") && isTypename(gtok.next.next) {
+		gtok = gtok.next.next
+		ty := typename()
+		gtok = gtok.consume(")")
+		return NewNumber(int64(ty.size), st)
+	}
+
 	if gtok.equal("sizeof") {
 		gtok = gtok.next
 		node := unary()

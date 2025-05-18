@@ -658,3 +658,12 @@ Date:   Fri Aug 28 22:07:54 2020 +0900
       _Bool y = 256; // y is 1
 
 = easy
+
+commit aa0accc75e9358d313fef0a6d4005103e2ce25f5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 16:27:43 2019 +0900
+
+    Add character literal
+
+= golang byte 是 uint8 ， C char 是 int8
+= easy

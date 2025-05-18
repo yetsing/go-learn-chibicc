@@ -160,17 +160,19 @@ func readEscapedChar(input string, p int) (byte, int) {
 		// Octal escape sequence
 		// Read up to 3 octal digits
 		octal := 0
-		for i := 0; i < 3 && p+i < len(input) && input[p+i] >= '0' && input[p+i] <= '7'; i++ {
+		i := 0
+		for ; i < 3 && p+i < len(input) && input[p+i] >= '0' && input[p+i] <= '7'; i++ {
 			octal = octal*8 + int(input[p+i]-'0')
 		}
-		return byte(octal), 3
+		return byte(octal), i
 	}
 
 	if input[p] == 'x' {
 		// Hexadecimal escape sequence
 		p++
 		hex := 0
-		for i := 0; p+i < len(input) && ishexdigit(rune(input[p+i])); i++ {
+		i := 0
+		for ; p+i < len(input) && ishexdigit(rune(input[p+i])); i++ {
 			if '0' <= input[p+i] && input[p+i] <= '9' {
 				hex = hex*16 + int(input[p+i]-'0')
 			} else if 'a' <= input[p+i] && input[p+i] <= 'f' {
@@ -179,7 +181,7 @@ func readEscapedChar(input string, p int) (byte, int) {
 				hex = hex*16 + int(input[p+i]-'A'+10)
 			}
 		}
-		return byte(hex), 3
+		return byte(hex), i + 1
 	}
 
 	// Escape sequences are defined using themselves here. E.g.
@@ -195,24 +197,24 @@ func readEscapedChar(input string, p int) (byte, int) {
 	// https://github.com/rui314/chibicc/wiki/thompson1984.pdf
 	switch input[p] {
 	case 'a':
-		return '\a', 2
+		return '\a', 1
 	case 'b':
-		return '\b', 2
+		return '\b', 1
 	case 't':
-		return '\t', 2
+		return '\t', 1
 	case 'n':
-		return '\n', 2
+		return '\n', 1
 	case 'v':
-		return '\v', 2
+		return '\v', 1
 	case 'f':
-		return '\f', 2
+		return '\f', 1
 	case 'r':
-		return '\r', 2
+		return '\r', 1
 	// [GNU] \e for the ASCII escape character is a GNU C extension.
 	case 'e':
-		return 27, 2
+		return 27, 1
 	default:
-		return input[p], 2
+		return byte(input[p]), 1
 	}
 
 }
@@ -243,7 +245,7 @@ func readStringLiteral(input string, p int) *Token {
 		if input[p] == '\\' {
 			b, n := readEscapedChar(input, p+1)
 			sb.WriteByte(b)
-			p += n - 1
+			p += n
 		} else {
 			sb.WriteByte(input[p])
 		}
@@ -263,6 +265,32 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 		literal: literal,
 		pos:     pos,
 	}
+}
+
+func readCharLiteral(input string, p int) *Token {
+	start := p
+	p++
+	if p >= len(input) {
+		errorAt(p, "unclosed character literal")
+	}
+
+	var c byte
+	if input[p] == '\\' {
+		var n int
+		c, n = readEscapedChar(input, p+1)
+		p += n + 1
+	} else {
+		c = input[p]
+		p++
+	}
+
+	if p >= len(input) || input[p] != '\'' {
+		errorAt(p, "unclosed character literal")
+	}
+
+	tok := NewToken(TK_NUM, input[start:p+1], start)
+	tok.val = int64(int8(c))
+	return tok
 }
 
 var keywords = map[string]TokenKind{
@@ -361,6 +389,14 @@ func tokenize(filename, input string) *Token {
 		// Handle string literals
 		if ch == '"' {
 			cur.next = readStringLiteral(input, p)
+			cur = cur.next
+			p += len(cur.literal)
+			continue
+		}
+
+		// Handle character literals
+		if ch == '\'' {
+			cur.next = readCharLiteral(input, p)
 			cur = cur.next
 			p += len(cur.literal)
 			continue

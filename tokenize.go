@@ -280,6 +280,7 @@ var keywords = map[string]TokenKind{
 	"long":    TK_KEYWORD,
 	"void":    TK_KEYWORD,
 	"typedef": TK_KEYWORD,
+	"_Bool":   TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

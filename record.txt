@@ -642,3 +642,19 @@ Date:   Sun Mar 22 18:43:16 2020 +0900
     Handle function argument type conversion
 
 = easy
+
+commit 44bba965cbe3827be2b68651e541b33fa040bb72
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 28 22:07:54 2020 +0900
+
+    Add _Bool type
+
+    _Bool isn't just a 1-bit integer because when you convert a value
+    to bool, the result is 1 if the original value is non-zero. This
+    is contrary to the other small integral types, e.g. char, as you
+    can see below:
+
+      char x  = 256; // x is 0
+      _Bool y = 256; // y is 1
+
+= easy

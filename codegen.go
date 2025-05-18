@@ -142,6 +142,14 @@ func store(ty *Type) {
 	}
 }
 
+func cmpZero(ty *Type) {
+	if ty.isInteger() && ty.size <= 4 {
+		sout("  cmp $0, %%eax")
+	} else {
+		sout("  cmp $0, %%rax")
+	}
+}
+
 const (
 	I8 int = iota
 	I16
@@ -197,6 +205,13 @@ var castTable = map[int]map[int]string{
 
 func genCast(from, to *Type) {
 	if to.kind == TY_VOID {
+		return
+	}
+
+	if to.kind == TY_BOOL {
+		cmpZero(from)
+		sout("  setne %%al")
+		sout("  movzb %%al, %%rax")
 		return
 	}
 

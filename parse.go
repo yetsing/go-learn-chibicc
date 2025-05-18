@@ -454,7 +454,7 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "char", "short", "int", "long", "struct", "union", "typedef"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef"}
 	for _, k := range kw {
 		if tok.equal(k) {
 			return true
@@ -476,7 +476,7 @@ func pushTagScope(tok *Token, ty *Type) {
 	scope.tags = sc
 }
 
-// declspec = ("void" | "char" | "short" | "int" | "long"
+// declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
 // .           | struct-decl | union-decl)+
 //
 // The order of typenames in a type-specifier doesn't matter. For
@@ -496,11 +496,12 @@ func declspec(attr *VarAttr) *Type {
 	// keyword "void" so far. With this, we can use a switch statement
 	// as you can see below.
 	VOID := 1 << 0
-	CHAR := 1 << 2
-	SHORT := 1 << 4
-	INT := 1 << 6
-	LONG := 1 << 8
-	OTHER := 1 << 10
+	BOOL := 1 << 2
+	CHAR := 1 << 4
+	SHORT := 1 << 6
+	INT := 1 << 8
+	LONG := 1 << 10
+	OTHER := 1 << 12
 
 	ty := intType()
 	counter := 0
@@ -541,6 +542,8 @@ func declspec(attr *VarAttr) *Type {
 		// Handle built-in types.
 		if gtok.equal("void") {
 			counter += VOID
+		} else if gtok.equal("_Bool") {
+			counter += BOOL
 		} else if gtok.equal("char") {
 			counter += CHAR
 		} else if gtok.equal("short") {
@@ -556,6 +559,8 @@ func declspec(attr *VarAttr) *Type {
 		switch counter {
 		case VOID:
 			ty = voidType()
+		case BOOL:
+			ty = boolType()
 		case CHAR:
 			ty = charType()
 		case SHORT:

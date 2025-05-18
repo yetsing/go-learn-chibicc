@@ -4,6 +4,7 @@ type TypeKind int
 
 const (
 	TY_VOID   TypeKind = iota // void
+	TY_BOOL                   // bool
 	TY_CHAR                   // char
 	TY_SHORT                  // short
 	TY_INT                    // int
@@ -57,6 +58,15 @@ func newType(kind TypeKind, size int, align int) *Type {
 func voidType() *Type {
 	t := &Type{
 		kind:  TY_VOID,
+		size:  1,
+		align: 1,
+	}
+	return t
+}
+
+func boolType() *Type {
+	t := &Type{
+		kind:  TY_BOOL,
 		size:  1,
 		align: 1,
 	}
@@ -129,7 +139,7 @@ func arrayOf(base *Type, len int) *Type {
 }
 
 func (t *Type) isInteger() bool {
-	return t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG
+	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG
 }
 
 func getCommonType(ty1 *Type, ty2 *Type) *Type {

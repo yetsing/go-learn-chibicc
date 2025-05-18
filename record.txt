@@ -609,3 +609,12 @@ Date:   Sun Aug 11 16:06:14 2019 +0900
     Add type cast
 
 = easy
+
+commit 8b430a6c5fd6d33a637f2c615f8e5ec59e7be30e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 10:24:45 2020 +0900
+
+    Implement usual arithmetic conversion
+
+= 优势一个地方没有改到，一顿 debug
+= easy

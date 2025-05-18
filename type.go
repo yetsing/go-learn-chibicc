@@ -132,6 +132,28 @@ func (t *Type) isInteger() bool {
 	return t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG
 }
 
+func getCommonType(ty1 *Type, ty2 *Type) *Type {
+	if ty1.base != nil {
+		return pointerTo(ty1.base)
+	}
+	if ty1.size == 8 || ty2.size == 8 {
+		return longType()
+	}
+	return intType()
+}
+
+// For many binary operators, we implicitly promote operands so that
+// both operands have the same type. Any integral type smaller than
+// int is always promoted to int. If the type of one operand is larger
+// than the other's (e.g. "long" vs. "int"), the smaller operand will
+// be promoted to match with the other.
+//
+// This operation is called the "usual arithmetic conversion".
+func usualArithmeticConversion(lhs *Node, rhs *Node) (*Node, *Node) {
+	ty := getCommonType(lhs.ty, rhs.ty)
+	return NewCast(lhs, ty), NewCast(rhs, ty)
+}
+
 func addType(node *Node) {
 	if node == nil || node.ty != nil {
 		return
@@ -153,38 +175,49 @@ func addType(node *Node) {
 	}
 
 	switch node.kind {
+	case ND_NUM:
+		if node.val == int64(int(node.val)) {
+			node.ty = intType()
+		} else {
+			node.ty = longType()
+		}
+		return
 	case ND_ADD:
-		node.ty = node.lhs.ty
-		return
+		fallthrough
 	case ND_SUB:
-		node.ty = node.lhs.ty
-		return
+		fallthrough
 	case ND_MUL:
-		node.ty = node.lhs.ty
-		return
+		fallthrough
 	case ND_DIV:
+		node.lhs, node.rhs = usualArithmeticConversion(node.lhs, node.rhs)
 		node.ty = node.lhs.ty
 		return
 	case ND_NEG:
-		node.ty = node.lhs.ty
+		ty := getCommonType(intType(), node.lhs.ty)
+		node.lhs = NewCast(node.lhs, ty)
+		node.ty = ty
 		return
 	case ND_ASSIGN:
 		if node.lhs.ty.kind == TY_ARRAY {
 			errorTok(node.tok, "cannot assign to array")
 		}
+		if node.lhs.ty.kind != TY_STRUCT {
+			node.rhs = NewCast(node.rhs, node.lhs.ty)
+		}
 		node.ty = node.lhs.ty
 		return
 	case ND_EQ:
-		node.ty = intType()
-		return
+		fallthrough
 	case ND_NE:
-		node.ty = intType()
-		return
+		fallthrough
 	case ND_LT:
+		fallthrough
+	case ND_LE:
+		usualArithmeticConversion(node.lhs, node.rhs)
 		node.ty = intType()
 		return
-	case ND_LE:
-		node.ty = intType()
+	case ND_FUNCALL:
+		node.ty = longType()
 		return
 	case ND_VAR:
 		node.ty = node.variable.ty
@@ -194,12 +227,6 @@ func addType(node *Node) {
 		return
 	case ND_MEMBER:
 		node.ty = node.member.ty
-		return
-	case ND_NUM:
-		node.ty = longType()
-		return
-	case ND_FUNCALL:
-		node.ty = longType()
 		return
 	case ND_ADDR:
 		if node.lhs.ty.kind == TY_ARRAY {

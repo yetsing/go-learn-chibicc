@@ -332,6 +332,17 @@ func NewNumber(val int64, tok *Token) *Node {
 	}
 }
 
+func NewLong(val int64, tok *Token) *Node {
+	return &Node{
+		kind: ND_NUM,
+		lhs:  nil,
+		rhs:  nil,
+		val:  val,
+		tok:  tok,
+		ty:   longType(),
+	}
+}
+
 func NewVarNode(variable *Obj, tok *Token) *Node {
 	return &Node{
 		kind:     ND_VAR,
@@ -388,7 +399,7 @@ func newAdd(lhs, rhs *Node, tok *Token) *Node {
 	}
 
 	// ptr + num
-	rhs = NewBinary(ND_MUL, rhs, NewNumber(int64(lhs.ty.base.size), tok), tok)
+	rhs = NewBinary(ND_MUL, rhs, NewLong(int64(lhs.ty.base.size), tok), tok)
 	return NewBinary(ND_ADD, lhs, rhs, tok)
 }
 
@@ -404,7 +415,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 
 	// ptr - num
 	if lhs.ty.base != nil && rhs.ty.isInteger() {
-		rhs = NewBinary(ND_MUL, rhs, NewNumber(int64(lhs.ty.base.size), tok), tok)
+		rhs = NewBinary(ND_MUL, rhs, NewLong(int64(lhs.ty.base.size), tok), tok)
 		addType(rhs)
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
 		node.ty = lhs.ty

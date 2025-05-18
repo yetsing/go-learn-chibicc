@@ -98,12 +98,16 @@ func load(ty *Type) {
 		return
 	}
 
+	// When we load a char or a short value to a register, we always
+	// extend them to the size of int, so we can assume the lower half of
+	// a register always contains a valid value. The upper half of a
+	// register for char, short and int may contain garbage. When we load
+	// a long value to a register, it simply occupies the entire register.
 	// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
 	if ty.size == 1 {
-		// 1 byte
-		sout("  movsbq (%%rax), %%rax")
+		sout("  movsbl (%%rax), %%eax")
 	} else if ty.size == 2 {
-		sout("  movswq (%%rax), %%rax")
+		sout("  movswl (%%rax), %%eax")
 	} else if ty.size == 4 {
 		sout("  movsxd (%%rax), %%rax")
 	} else {

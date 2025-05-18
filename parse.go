@@ -1172,6 +1172,15 @@ func funcall() *Node {
 	st := gtok
 	gtok = gtok.next.next // skip ident "("
 
+	sc := findVar(st.literal)
+	if sc == nil {
+		errorTok(st, "implicit declaration of a function")
+	}
+	if sc.variable == nil || sc.variable.ty.kind != TY_FUNC {
+		errorTok(st, "not a function: %s", st.literal)
+	}
+
+	ty := sc.variable.ty.returnTy
 	var head Node
 	cur := &head
 
@@ -1181,12 +1190,14 @@ func funcall() *Node {
 		}
 		cur.next = assign()
 		cur = cur.next
+		addType(cur)
 	}
 
 	gtok = gtok.consume(")")
 
 	node := NewNode(ND_FUNCALL, st)
 	node.funcname = st.literal
+	node.ty = ty
 	node.args = head.next
 	return node
 }

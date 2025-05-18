@@ -618,3 +618,11 @@ Date:   Sat Sep 26 10:24:45 2020 +0900
 
 = 优势一个地方没有改到，一顿 debug
 = easy
+
+commit 9e211cbf1d459babf035fd6b3407c2bd184cb639
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 21 17:16:28 2020 +0900
+
+    Report an error on undefined/undeclared functions
+
+= easy

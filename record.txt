@@ -601,3 +601,11 @@ Date:   Fri Aug 28 15:44:40 2020 +0900
 = 之前一个地方类型没改到，又是一顿 debug
 = 因为有对照组，到是容易发现问题所在
 = middle
+
+commit cfc4fa94c1eb17f37466571f74bbdfae03a6e11f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 16:06:14 2019 +0900
+
+    Add type cast
+
+= easy

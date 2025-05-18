@@ -202,6 +202,7 @@ const (
 	ND_STMT_EXPR                 // Statement expression
 	ND_VAR                       // Variable
 	ND_NUM                       // Integer
+	ND_CAST                      // Type cast
 )
 
 // NodeKind string
@@ -339,6 +340,19 @@ func NewVarNode(variable *Obj, tok *Token) *Node {
 		variable: variable,
 		tok:      tok,
 	}
+}
+
+func NewCast(expr *Node, ty *Type) *Node {
+	addType(expr)
+
+	node := &Node{
+		kind: ND_CAST,
+		tok:  expr.tok,
+		lhs:  expr,
+		rhs:  nil,
+		ty:   ty,
+	}
+	return node
 }
 
 func pushScope(name string) *VarScope {
@@ -925,19 +939,19 @@ func add() *Node {
 	}
 }
 
-// mul = unary ( ('*' | '/') unary)*
+// mul = cast ( ('*' | '/') cast)*
 func mul() *Node {
-	node := unary()
+	node := cast()
 	for {
 		st := gtok
 		if gtok.equal("*") {
 			gtok = gtok.next
-			node = NewBinary(ND_MUL, node, unary(), st)
+			node = NewBinary(ND_MUL, node, cast(), st)
 			continue
 		}
 		if gtok.equal("/") {
 			gtok = gtok.next
-			node = NewBinary(ND_DIV, node, unary(), st)
+			node = NewBinary(ND_DIV, node, cast(), st)
 			continue
 		}
 
@@ -945,27 +959,42 @@ func mul() *Node {
 	}
 }
 
-// unary = ( ("+" | "-" | "*" | "&") unary )
+// cast = "(" type-name ")" cast | unary
+func cast() *Node {
+	if gtok.equal("(") && isTypename(gtok.next) {
+		st := gtok
+		gtok = gtok.next
+		ty := typename()
+		gtok = gtok.consume(")")
+		node := NewCast(cast(), ty)
+		node.tok = st
+		return node
+	}
+
+	return unary()
+}
+
+// unary = ( ("+" | "-" | "*" | "&") cast )
 // .     | postfix
 func unary() *Node {
 	if gtok.equal("+") {
 		gtok = gtok.next
-		return unary()
+		return cast()
 	}
 	st := gtok
 	if gtok.equal("-") {
 		gtok = gtok.next
-		return NewUnary(ND_NEG, unary(), st)
+		return NewUnary(ND_NEG, cast(), st)
 	}
 
 	if gtok.equal("&") {
 		gtok = gtok.next
-		return NewUnary(ND_ADDR, unary(), st)
+		return NewUnary(ND_ADDR, cast(), st)
 	}
 
 	if gtok.equal("*") {
 		gtok = gtok.next
-		return NewUnary(ND_DEREF, unary(), st)
+		return NewUnary(ND_DEREF, cast(), st)
 	}
 
 	return postfix()

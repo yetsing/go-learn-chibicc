@@ -138,6 +138,73 @@ func store(ty *Type) {
 	}
 }
 
+const (
+	I8 int = iota
+	I16
+	I32
+	I64
+)
+
+func getTypeId(ty *Type) int {
+	switch ty.kind {
+	case TY_CHAR:
+		return I8
+	case TY_SHORT:
+		return I16
+	case TY_INT:
+		return I32
+	default:
+		return I64
+	}
+}
+
+const (
+	i32i8  string = "movsbl %al, %eax"
+	i32i16 string = "movswl %ax, %eax"
+	i32i64 string = "movsxd %eax, %rax"
+)
+
+var castTable = map[int]map[int]string{
+	I8: {
+		I8:  "",
+		I16: "",
+		I32: "",
+		I64: i32i64,
+	},
+	I16: {
+		I8:  i32i8,
+		I16: "",
+		I32: "",
+		I64: i32i64,
+	},
+	I32: {
+		I8:  i32i8,
+		I16: i32i16,
+		I32: "",
+		I64: i32i64,
+	},
+	I64: {
+		I8:  i32i8,
+		I16: i32i16,
+		I32: "",
+		I64: "",
+	},
+}
+
+func genCast(from, to *Type) {
+	if to.kind == TY_VOID {
+		return
+	}
+
+	t1 := getTypeId(from)
+	t2 := getTypeId(to)
+	s, ok := castTable[t1][t2]
+	if ok {
+		sout("  %s", s)
+		return
+	}
+}
+
 // Generate code for a given node.
 func genExpr(node *Node) {
 	sout("  .loc 1 %d", node.tok.lineno)
@@ -179,6 +246,10 @@ func genExpr(node *Node) {
 	case ND_COMMA:
 		genExpr(node.lhs)
 		genExpr(node.rhs)
+		return
+	case ND_CAST:
+		genExpr(node.lhs)
+		genCast(node.lhs.ty, node.ty)
 		return
 	case ND_FUNCALL:
 		nargs := 0

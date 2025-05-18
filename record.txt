@@ -591,3 +591,13 @@ Date:   Sun Aug 11 15:04:35 2019 +0900
 
 = C 的类型语法有点复杂，写 C 代码的时候没有注意到
 = easy
+
+commit cb81a379d9f7aef32fb1bbebd18f8618e1617a3f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 28 15:44:40 2020 +0900
+
+    Use 32 bit registers for char, short and int
+
+= 之前一个地方类型没改到，又是一顿 debug
+= 因为有对照组，到是容易发现问题所在
+= middle

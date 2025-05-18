@@ -202,19 +202,32 @@ func genExpr(node *Node) {
 	genExpr(node.lhs)
 	pop("%rdi")
 
+	var ax, di string
+	if node.lhs.ty.kind == TY_LONG || node.lhs.ty.base != nil {
+		ax = "%rax"
+		di = "%rdi"
+	} else {
+		ax = "%eax"
+		di = "%edi"
+	}
+
 	switch node.kind {
 	case ND_ADD:
-		sout("  add %%rdi, %%rax")
+		sout("  add %s, %s", di, ax)
 		return
 	case ND_SUB:
-		sout("  sub %%rdi, %%rax")
+		sout("  sub %s, %s", di, ax)
 		return
 	case ND_MUL:
-		sout("  imul %%rdi, %%rax")
+		sout("  imul %s, %s", di, ax)
 		return
 	case ND_DIV:
-		sout("  cqo")
-		sout("  idiv %%rdi")
+		if node.lhs.ty.size == 8 {
+			sout("  cqo")
+		} else {
+			sout("  cdq")
+		}
+		sout("  idiv %s", di)
 		return
 	case ND_EQ:
 		fallthrough
@@ -223,7 +236,7 @@ func genExpr(node *Node) {
 	case ND_LT:
 		fallthrough
 	case ND_LE:
-		sout("  cmp %%rdi, %%rax")
+		sout("  cmp %s, %s", di, ax)
 
 		if node.kind == ND_EQ {
 			sout("  sete %%al")
@@ -327,7 +340,7 @@ func emitData(prog *Obj) {
 		}
 
 		sout("  .data")
-		sout("  .global %s", g.name)
+		sout("  .globl %s", g.name)
 		sout("%s:", g.name)
 
 		if g.initData != "" {
@@ -366,7 +379,7 @@ func emitText(prog *Obj) {
 			continue
 		}
 
-		sout("  .global %s", fn.name)
+		sout("  .globl %s", fn.name)
 		sout("  .text")
 		sout("%s:", fn.name)
 		currentFn = fn

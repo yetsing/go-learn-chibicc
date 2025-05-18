@@ -626,3 +626,11 @@ Date:   Fri Aug 21 17:16:28 2020 +0900
     Report an error on undefined/undeclared functions
 
 = easy
+
+commit 818352acc07d0a982076b4b49345b42be706f5e1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Apr 18 09:27:47 2020 +0900
+
+    Handle return type conversion
+
+= easy

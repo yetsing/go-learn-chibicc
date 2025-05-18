@@ -82,6 +82,9 @@ var locals *Obj
 // Likewise, global variables are accumulated to this list.
 var globals *Obj
 
+// Points to the function object the parser is currently parsing.
+var pcurrentFn *Obj
+
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
@@ -736,6 +739,9 @@ func stmt() *Node {
 		gtok = gtok.next
 		node := NewUnary(ND_RETURN, expr(), st)
 		gtok = gtok.consume(";")
+
+		addType(node)
+		node.lhs = NewCast(node.lhs, pcurrentFn.ty.returnTy)
 		return node
 	}
 
@@ -1307,6 +1313,7 @@ func function(basety *Type) *Obj {
 		return fn
 	}
 
+	pcurrentFn = fn
 	locals = nil
 	enterScope()
 	createParamLvars(ty.params)

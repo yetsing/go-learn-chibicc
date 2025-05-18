@@ -634,3 +634,11 @@ Date:   Sat Apr 18 09:27:47 2020 +0900
     Handle return type conversion
 
 = easy
+
+commit fdc80bc6b5faa058b88d838332c71b7101712896
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 22 18:43:16 2020 +0900
+
+    Handle function argument type conversion
+
+= easy

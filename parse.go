@@ -288,6 +288,7 @@ type Node struct {
 
 	// Function call
 	funcname string
+	funcTy   *Type
 	args     *Node
 
 	variable *Obj // Used if kind is ND_VAR
@@ -1186,7 +1187,8 @@ func funcall() *Node {
 		errorTok(st, "not a function: %s", st.literal)
 	}
 
-	ty := sc.variable.ty.returnTy
+	ty := sc.variable.ty
+	paramTy := ty.params
 	var head Node
 	cur := &head
 
@@ -1194,16 +1196,27 @@ func funcall() *Node {
 		if cur != &head {
 			gtok = gtok.consume(",")
 		}
-		cur.next = assign()
+		arg := assign()
+		addType(arg)
+
+		if paramTy != nil {
+			if paramTy.kind == TY_STRUCT || paramTy.kind == TY_UNION {
+				errorTok(gtok, "passing struct or union is not supported yet")
+			}
+			arg = NewCast(arg, paramTy)
+			paramTy = paramTy.next
+		}
+
+		cur.next = arg
 		cur = cur.next
-		addType(cur)
 	}
 
 	gtok = gtok.consume(")")
 
 	node := NewNode(ND_FUNCALL, st)
 	node.funcname = st.literal
-	node.ty = ty
+	node.funcTy = ty
+	node.ty = ty.returnTy
 	node.args = head.next
 	return node
 }

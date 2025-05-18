@@ -667,3 +667,11 @@ Date:   Sun Aug 11 16:27:43 2019 +0900
 
 = golang byte 是 uint8 ， C char 是 int8
 = easy
+
+commit 48ba2656fecc646ec4eb7f943fa94b02ed9725c7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 19:59:27 2019 +0900
+
+    Add enum
+
+= easy

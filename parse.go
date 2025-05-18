@@ -4,15 +4,18 @@ import "fmt"
 
 // #region Scope
 
-// Scope for local, global variables or typedefs.
+// Scope for local variables, global variables, typedefs
+// or enum constants
 type VarScope struct {
 	next     *VarScope // Next scope
 	name     string    // Scope name
 	variable *Obj      // Variable
 	typedef  *Type     // Typedef
+	enumTy   *Type     // Enum type
+	enumVal  int       // Enum value
 }
 
-// Scope for struct or union tags (结构体/union 名字)
+// Scope for struct, union or enum tags (结构体/union 名字)
 type TagScope struct {
 	next *TagScope // Next scope
 	name string    // Tag name
@@ -23,8 +26,8 @@ type TagScope struct {
 type Scope struct {
 	next *Scope // Next scope
 
-	// C has two block scopes; one is for variables and the other is
-	// for struct tags.
+	// C has two block scopes; one is for variables/typedefs and
+	// the other is for struct/union/enum tags.
 	vars *VarScope
 	tags *TagScope
 }
@@ -454,7 +457,7 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum"}
 	for _, k := range kw {
 		if tok.equal(k) {
 			return true
@@ -477,7 +480,9 @@ func pushTagScope(tok *Token, ty *Type) {
 }
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
-// .           | struct-decl | union-decl)+
+// .           | "typedef"
+// .           | struct-decl | union-decl | typedef-name
+// .           | enum-specifier)+
 //
 // The order of typenames in a type-specifier doesn't matter. For
 // example, `int long static` means the same as `static long int`.
@@ -519,7 +524,7 @@ func declspec(attr *VarAttr) *Type {
 
 		// Handle user-defined types.
 		ty2 := findTypedef(gtok)
-		if gtok.equal("struct") || gtok.equal("union") || ty2 != nil {
+		if gtok.equal("struct") || gtok.equal("union") || gtok.equal("enum") || ty2 != nil {
 			if counter != 0 {
 				break
 			}
@@ -530,6 +535,9 @@ func declspec(attr *VarAttr) *Type {
 			} else if gtok.equal("union") {
 				gtok = gtok.next
 				ty = unionDecl()
+			} else if gtok.equal("enum") {
+				gtok = gtok.next
+				ty = enumSpecifier()
 			} else {
 				ty = ty2
 				gtok = gtok.next
@@ -692,6 +700,65 @@ func abstractDeclarator(ty *Type) *Type {
 func typename() *Type {
 	ty := declspec(nil)
 	return abstractDeclarator(ty)
+}
+
+// enum-specifier = ident? "{" enum-list? "}"
+// .              | ident ("{" enum-list? "}")?
+//
+// enum-list      = ident ("=" num)? ("," ident ("=" num)?)*
+func enumSpecifier() *Type {
+	ty := enumType()
+
+	// Read a struct tag.
+	var tag *Token = nil
+	if gtok.kind == TK_IDENT {
+		tag = gtok
+		gtok = gtok.next
+	}
+
+	if tag != nil && !gtok.equal("{") {
+		ty = findTag(tag)
+		if ty == nil {
+			errorTok(tag, "unknown enum type")
+		}
+		if ty.kind != TY_ENUM {
+			errorTok(tag, "not an enum tag")
+		}
+		return ty
+	}
+
+	gtok = gtok.consume("{")
+
+	// Read an enum-list.
+	i := 0
+	val := 0
+	for !gtok.equal("}") {
+		if i > 0 {
+			gtok = gtok.consume(",")
+		}
+		i++
+
+		name := gtok.literal
+		gtok = gtok.next
+
+		if gtok.equal("=") {
+			gtok = gtok.next
+			val = int(gtok.getNumber())
+			gtok = gtok.next
+		}
+
+		sc := pushScope(name)
+		sc.enumTy = ty
+		sc.enumVal = val
+		val++
+	}
+
+	gtok = gtok.consume("}")
+
+	if tag != nil {
+		pushTagScope(tag, ty)
+	}
+	return ty
 }
 
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
@@ -1273,11 +1340,17 @@ func primary() *Node {
 			return funcall()
 		}
 
+		// Variable or enum constant
 		sc := findVar(gtok.literal)
-		if sc == nil || sc.variable == nil {
+		if sc == nil || (sc.variable == nil && sc.enumTy == nil) {
 			errorTok(gtok, "undefined variable: %s", gtok.literal)
 		}
-		node := NewVarNode(sc.variable, st)
+		var node *Node
+		if sc.variable != nil {
+			node = NewVarNode(sc.variable, st)
+		} else {
+			node = NewNumber(int64(sc.enumVal), st)
+		}
 		gtok = gtok.next
 		return node
 	}

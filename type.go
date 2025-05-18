@@ -9,6 +9,7 @@ const (
 	TY_SHORT                  // short
 	TY_INT                    // int
 	TY_LONG                   // long
+	TY_ENUM                   // enum
 	TY_PTR                    // pointer
 	TY_FUNC                   // function
 	TY_ARRAY                  // array
@@ -138,8 +139,17 @@ func arrayOf(base *Type, len int) *Type {
 	return t
 }
 
+func enumType() *Type {
+	t := &Type{
+		kind:  TY_ENUM,
+		size:  4,
+		align: 4,
+	}
+	return t
+}
+
 func (t *Type) isInteger() bool {
-	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG
+	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG || t.kind == TY_ENUM
 }
 
 func getCommonType(ty1 *Type, ty2 *Type) *Type {

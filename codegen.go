@@ -430,7 +430,11 @@ func emitData(prog *Obj) {
 		}
 
 		sout("  .data")
-		sout("  .globl %s", g.name)
+		if g.isStatic {
+			sout("  .local %s", g.name)
+		} else {
+			sout("  .globl %s", g.name)
+		}
 		sout("%s:", g.name)
 
 		if g.initData != "" {

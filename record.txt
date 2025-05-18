@@ -675,3 +675,11 @@ Date:   Sun Aug 11 19:59:27 2019 +0900
     Add enum
 
 = easy
+
+commit 736232f3d672dae9a1ddae800909204c17fbe37c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:25:15 2020 +0900
+
+    Support file-scope functions
+
+= easy

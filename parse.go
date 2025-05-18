@@ -35,6 +35,7 @@ type Scope struct {
 // Variable attributes such as typedef or extern.
 type VarAttr struct {
 	isTypedef bool
+	isStatic  bool
 }
 
 var scope = &Scope{}
@@ -66,6 +67,7 @@ type Obj struct {
 	// Global variable or function
 	isFunction   bool
 	isDefinition bool
+	isStatic     bool
 
 	// Global variable
 	initData string
@@ -457,7 +459,7 @@ func tryConsume(s string) bool {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static"}
 	for _, k := range kw {
 		if tok.equal(k) {
 			return true
@@ -480,7 +482,7 @@ func pushTagScope(tok *Token, ty *Type) {
 }
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
-// .           | "typedef"
+// .           | "typedef" | "static"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier)+
 //
@@ -512,12 +514,21 @@ func declspec(attr *VarAttr) *Type {
 	counter := 0
 
 	for isTypename(gtok) {
-		// Handle "typedef" keyword
-		if gtok.equal("typedef") {
+		// Handle storage class specifiers.
+		if gtok.equal("typedef") || gtok.equal("static") {
 			if attr == nil {
 				errorTok(gtok, "storage class specifier is not allowed in this context")
 			}
-			attr.isTypedef = true
+
+			if gtok.equal("typedef") {
+				attr.isTypedef = true
+			} else {
+				attr.isStatic = true
+			}
+
+			if attr.isTypedef && attr.isStatic {
+				errorTok(gtok, "typedef and static may not be used together")
+			}
 			gtok = gtok.next
 			continue
 		}
@@ -1393,12 +1404,13 @@ func createParamLvars(param *Type) {
 	}
 }
 
-func function(basety *Type) *Obj {
+func function(basety *Type, attr *VarAttr) *Obj {
 	ty := declarator(basety)
 
 	fn := newGVar(ty.name.literal, ty)
 	fn.isFunction = true
 	fn.isDefinition = !tryConsume(";")
+	fn.isStatic = attr.isStatic
 
 	if !fn.isDefinition {
 		return fn
@@ -1460,7 +1472,7 @@ func program() *Obj {
 
 		// Function
 		if isFunctionDefinition() {
-			function(basety)
+			function(basety, &attr)
 			continue
 		}
 

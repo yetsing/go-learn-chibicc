@@ -968,6 +968,11 @@ func expr() *Node {
 	return node
 }
 
+// 转换 `A op= B` 为 `tmp = &A, *tmp = *tmp op B` 的主要原因是为了确保左值只被求值一次，从而避免重复计算可能带来的副作用。
+//
+// - 当 A 是一个复杂表达式（例如数组元素或结构体成员）时，直接写成 `A = A op B` 可能会导致 A 表达式被求值两次，从而出现不确定性或副作用。
+// - 通过先取 A 的地址，将它保存到一个临时变量 tmp 中，然后通过解引用 tmp 来进行操作，可以保证 A 只被计算一次，同时保持正确的赋值语义。
+//
 // Convert `A op= B` to `tmp = &A, *tmp = *tmp op B`
 // where tmp is a fresh pointer variable.
 func toAssign(binary *Node) *Node {
@@ -1135,6 +1140,7 @@ func cast() *Node {
 }
 
 // unary = ( ("+" | "-" | "*" | "&") cast )
+// .     | ("++" | "--") unary
 // .     | postfix
 func unary() *Node {
 	if gtok.equal("+") {
@@ -1155,6 +1161,24 @@ func unary() *Node {
 	if gtok.equal("*") {
 		gtok = gtok.next
 		return NewUnary(ND_DEREF, cast(), st)
+	}
+
+	// Read ++i as i+=1
+	if gtok.equal("++") {
+		st := gtok
+		gtok = gtok.next
+		return toAssign(
+			newAdd(unary(), NewNumber(1, st), st),
+		)
+	}
+
+	// Read --i as i-=1
+	if gtok.equal("--") {
+		st := gtok
+		gtok = gtok.next
+		return toAssign(
+			newSub(unary(), NewNumber(1, st), st),
+		)
 	}
 
 	return postfix()

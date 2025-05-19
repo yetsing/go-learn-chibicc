@@ -248,6 +248,10 @@ func addType(node *Node) {
 		node.ty = longType()
 		return
 	case ND_NOT:
+		fallthrough
+	case ND_LOGAND:
+		fallthrough
+	case ND_LOGOR:
 		node.ty = intType()
 		return
 	case ND_BITNOT:

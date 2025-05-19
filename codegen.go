@@ -280,6 +280,34 @@ func genExpr(node *Node) {
 		genExpr(node.lhs)
 		sout("  not %%rax")
 		return
+	case ND_LOGAND:
+		c := count()
+		genExpr(node.lhs)
+		sout("  cmp $0, %%rax")
+		sout("  je .L.false.%d", c)
+		genExpr(node.rhs)
+		sout("  cmp $0, %%rax")
+		sout("  je .L.false.%d", c)
+		sout("  mov $1, %%rax")
+		sout("  jmp .L.end.%d", c)
+		sout(".L.false.%d:", c)
+		sout("  mov $0, %%rax")
+		sout(".L.end.%d:", c)
+		return
+	case ND_LOGOR:
+		c := count()
+		genExpr(node.lhs)
+		sout("  cmp $0, %%rax")
+		sout("  jne .L.true.%d", c)
+		genExpr(node.rhs)
+		sout("  cmp $0, %%rax")
+		sout("  jne .L.true.%d", c)
+		sout("  mov $0, %%rax")
+		sout("  jmp .L.end.%d", c)
+		sout(".L.true.%d:", c)
+		sout("  mov $1, %%rax")
+		sout(".L.end.%d:", c)
+		return
 	case ND_FUNCALL:
 		nargs := 0
 		for arg := node.args; arg != nil; arg = arg.next {

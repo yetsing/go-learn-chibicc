@@ -7,7 +7,7 @@ TEST_SRCS=$(wildcard test/*.c)
 TESTS=$(TEST_SRCS:.c=.exe)
 
 chibicc: *.go
-	go build -o chibicc .
+	go generate . && go build -o chibicc .
 
 test/%.exe: chibicc test/%.c
 	$(CC) -o- -E -P -C test/$*.c | ./chibicc -o test/$*.s -

@@ -755,3 +755,11 @@ Date:   Wed Oct 7 20:19:35 2020 +0900
     Add &, |, ^, &=, |= and ^=
 
 = easy
+
+commit f30f78175c1fd50c8cdd132ca804573ae0d18453
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:22:11 2020 +0900
+
+    Add && and ||
+
+= easy

@@ -691,3 +691,11 @@ Date:   Sun Aug 11 22:53:26 2019 +0900
     Allow for-loops to define local variables
 
 = easy
+
+commit 01a94c04aa2b5a95ac4038bd0d6fd5334fcbf882
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:17:30 2020 +0900
+
+    Add +=, -=, *= and /=
+
+= easy

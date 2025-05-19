@@ -968,7 +968,36 @@ func expr() *Node {
 	return node
 }
 
-// assign = equality ("=" assign)?
+// Convert `A op= B` to `tmp = &A, *tmp = *tmp op B`
+// where tmp is a fresh pointer variable.
+func toAssign(binary *Node) *Node {
+	addType(binary.lhs)
+	addType(binary.rhs)
+	tok := binary.tok
+
+	variable := newLVar("", pointerTo(binary.lhs.ty))
+
+	expr1 := NewBinary(
+		ND_ASSIGN,
+		NewVarNode(variable, tok),
+		NewUnary(ND_ADDR, binary.lhs, tok),
+		tok)
+
+	expr2 := NewBinary(
+		ND_ASSIGN,
+		NewUnary(ND_DEREF,
+			NewVarNode(variable, tok), tok),
+		NewBinary(binary.kind,
+			NewUnary(ND_DEREF, NewVarNode(variable, tok), tok),
+			binary.rhs,
+			tok),
+		tok)
+
+	return NewBinary(ND_COMMA, expr1, expr2, tok)
+}
+
+// assign    = equality (assign-op assign)?
+// assign-op = "=" | "+=" | "-=" | "*=" | "/="
 func assign() *Node {
 	node := equality()
 	if gtok.equal("=") {
@@ -976,6 +1005,27 @@ func assign() *Node {
 		gtok = gtok.next
 		node = NewBinary(ND_ASSIGN, node, assign(), st)
 	}
+
+	if gtok.equal("+=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_ADD, node, assign(), gtok))
+	}
+
+	if gtok.equal("-=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_SUB, node, assign(), gtok))
+	}
+
+	if gtok.equal("*=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_MUL, node, assign(), gtok))
+	}
+
+	if gtok.equal("/=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_DIV, node, assign(), gtok))
+	}
+
 	return node
 }
 

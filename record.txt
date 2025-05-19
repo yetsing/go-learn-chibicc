@@ -763,3 +763,11 @@ Date:   Wed Oct 7 20:22:11 2020 +0900
     Add && and ||
 
 = easy
+
+commit 29ed294906ebc271c32a755e1aefc360df4d3863
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 13 21:03:20 2019 +0900
+
+    Add a notion of an incomplete array type
+
+= easy

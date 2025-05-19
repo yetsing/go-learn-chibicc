@@ -175,6 +175,7 @@ func findTypedef(tok *Token) *Type {
 type Member struct {
 	next   *Member // Next member
 	ty     *Type
+	tok    *Token // for error message
 	name   *Token
 	offset int
 }
@@ -585,8 +586,22 @@ func funcParams(ty *Type) *Type {
 	return ty
 }
 
+// array-dimensions = num? "]" type-suffix
+func arrayDimensions(ty *Type) *Type {
+	if gtok.equal("]") {
+		gtok = gtok.next
+		ty = typeSuffix(ty)
+		return arrayOf(ty, -1)
+	}
+
+	sz := gtok.getNumber()
+	gtok = gtok.next.consume("]")
+	ty = typeSuffix(ty)
+	return arrayOf(ty, int(sz))
+}
+
 // type-suffix = "(" func-params
-// .           | "[" num "]" type-suffix
+// .           | "[" array-dimensions
 // .           | ε
 func typeSuffix(ty *Type) *Type {
 	if gtok.equal("(") {
@@ -596,10 +611,7 @@ func typeSuffix(ty *Type) *Type {
 
 	if gtok.equal("[") {
 		gtok = gtok.next
-		length := gtok.getNumber()
-		gtok = gtok.next.consume("]")
-		ty = typeSuffix(ty)
-		return arrayOf(ty, int(length))
+		return arrayDimensions(ty)
 	}
 	return ty
 }
@@ -742,6 +754,9 @@ func declaration(basety *Type) *Node {
 		i++
 
 		ty := declarator(basety)
+		if ty.size < 0 {
+			errorTok(gtok, "variable has incomplete type")
+		}
 		if ty.kind == TY_VOID {
 			errorTok(ty.name, "variable declared void")
 		}

@@ -787,3 +787,11 @@ Date:   Wed Oct 7 11:10:28 2020 +0900
     Add a notion of an incomplete struct type
 
 = easy
+
+commit 6116cae4c4b98ef9ed55736f3a6c1d872de97767
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 12:27:21 2020 +0900
+
+    Add goto and labeled statement
+
+= easy

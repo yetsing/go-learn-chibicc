@@ -436,6 +436,13 @@ func genStmt(node *Node) {
 			genStmt(n)
 		}
 		return
+	case ND_GOTO:
+		sout("  jmp %s", node.uniqueLabel)
+		return
+	case ND_LABEL:
+		sout("%s:", node.uniqueLabel)
+		genStmt(node.lhs)
+		return
 	case ND_RETURN:
 		genExpr(node.lhs)
 		sout("  jmp .L.return.%s", currentFn.name)

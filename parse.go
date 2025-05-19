@@ -90,6 +90,10 @@ var globals *Obj
 // Points to the function object the parser is currently parsing.
 var pcurrentFn *Obj
 
+// Lists of all goto statements and labels in the curent function.
+var gotos *Node
+var labels *Node
+
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
@@ -215,6 +219,8 @@ const (
 	ND_IF                        // if
 	ND_FOR                       // for or while
 	ND_BLOCK                     // Block { ... }
+	ND_GOTO                      // "goto"
+	ND_LABEL                     // Labeled statement
 	ND_FUNCALL                   // Function call
 	ND_EXPR_STMT                 // Expression statement
 	ND_STMT_EXPR                 // Statement expression
@@ -251,6 +257,11 @@ type Node struct {
 	funcname string
 	funcTy   *Type
 	args     *Node
+
+	// Goto or labeled statement
+	label       string
+	uniqueLabel string
+	gotoNext    *Node
 
 	variable *Obj // Used if kind is ND_VAR
 
@@ -793,6 +804,8 @@ func declaration(basety *Type) *Node {
 // .    | if-stmt
 // .    | for-stmt
 // .    | while-stmt
+// .    | "goto" ident ";"
+// .    | ident ":" stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
 func stmt() *Node {
@@ -817,6 +830,27 @@ func stmt() *Node {
 
 	if gtok.equal("while") {
 		return whileStmt()
+	}
+
+	if gtok.equal("goto") {
+		node := NewNode(ND_GOTO, gtok)
+		node.label = gtok.next.literal
+		node.gotoNext = gotos
+		gotos = node
+		gtok = gtok.next.next
+		gtok = gtok.consume(";")
+		return node
+	}
+
+	if gtok.kind == TK_IDENT && gtok.next.equal(":") {
+		node := NewNode(ND_LABEL, gtok)
+		node.label = gtok.literal
+		node.uniqueLabel = newUniqueName()
+		gtok = gtok.next.next
+		node.lhs = stmt()
+		node.gotoNext = labels
+		labels = node
+		return node
 	}
 
 	if gtok.equal("{") {
@@ -1599,6 +1633,29 @@ func createParamLvars(param *Type) {
 	}
 }
 
+// This function matches gotos with labels.
+//
+// We cannot resolve gotos as we parse a function because gotos
+// can refer a label that appears later in the function.
+// So, we need to do this after we parse the entire function.
+func resolveGotoLabels() {
+	for node := gotos; node != nil; node = node.gotoNext {
+		for label := labels; label != nil; label = label.gotoNext {
+			if node.label == label.label {
+				node.uniqueLabel = label.uniqueLabel
+				break
+			}
+		}
+
+		if node.uniqueLabel == "" {
+			errorTok(node.tok.next, "use of undeclared label")
+		}
+	}
+
+	labels = nil
+	gotos = nil
+}
+
 func function(basety *Type, attr *VarAttr) *Obj {
 	ty := declarator(basety)
 
@@ -1620,6 +1677,7 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	fn.body = compoundStmt()
 	fn.locals = locals
 	leaveScope()
+	resolveGotoLabels()
 	return fn
 }
 

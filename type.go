@@ -152,6 +152,15 @@ func (t *Type) isInteger() bool {
 	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG || t.kind == TY_ENUM
 }
 
+func structType() *Type {
+	t := &Type{
+		kind:  TY_STRUCT,
+		size:  0,
+		align: 1,
+	}
+	return t
+}
+
 func getCommonType(ty1 *Type, ty2 *Type) *Type {
 	if ty1.base != nil {
 		return pointerTo(ty1.base)

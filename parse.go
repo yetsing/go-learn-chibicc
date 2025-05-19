@@ -1293,22 +1293,35 @@ func structUnionDecl() *Type {
 
 	if tag != nil && !gtok.equal("{") {
 		ty := findTag(tag)
-		if ty == nil {
-			errorTok(gtok, "unknown struct type: %s", tag.literal)
+		if ty != nil {
+			return ty
 		}
+
+		ty = structType()
+		ty.size = -1
+		pushTagScope(tag, ty)
 		return ty
 	}
 
-	// Construct a struct object.
-	ty := newType(TY_STRUCT, 0, 1)
 	gtok = gtok.consume("{")
-	structMembers(ty)
-	ty.align = 1
 
-	// Register the struct type if a name was given.
+	// Construct a struct object.
+	ty := structType()
+	structMembers(ty)
+
 	if tag != nil {
+		// If this is a redefinition, overwrite a previous type.
+		// Otherwise, register the struct type.
+		for sc := scope.tags; sc != nil; sc = sc.next {
+			if tag.equal(sc.name) {
+				*sc.ty = *ty
+				return sc.ty
+			}
+		}
+
 		pushTagScope(tag, ty)
 	}
+
 	return ty
 }
 
@@ -1316,6 +1329,10 @@ func structUnionDecl() *Type {
 func structDecl() *Type {
 	ty := structUnionDecl()
 	ty.kind = TY_STRUCT
+
+	if ty.size < 0 {
+		return ty
+	}
 
 	// Assign offsets within the struct to members.
 	offset := 0
@@ -1338,6 +1355,10 @@ func structDecl() *Type {
 func unionDecl() *Type {
 	ty := structUnionDecl()
 	ty.kind = TY_UNION
+
+	if ty.size < 0 {
+		return ty
+	}
 
 	// If union, we don't have to assign offsets because they
 	// are already initialized to zero. We need to compute the

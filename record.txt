@@ -779,3 +779,11 @@ Date:   Wed Aug 14 11:00:05 2019 +0900
     Decay an array to a pointer in the func param context
 
 = easy
+
+commit 61a10551209a0d3770449862152e1b73b584d771
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 11:10:28 2020 +0900
+
+    Add a notion of an incomplete struct type
+
+= easy

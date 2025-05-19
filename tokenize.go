@@ -293,6 +293,52 @@ func readCharLiteral(input string, p int) *Token {
 	return tok
 }
 
+func hasCasePrefix(input string, prefix string) bool {
+	if len(input) < len(prefix) {
+		return false
+	}
+	start := strings.ToLower(input[:len(prefix)])
+	prefix = strings.ToLower(prefix)
+	return start == prefix
+}
+
+func isNumChar(b byte) bool {
+	return (b >= '0' && b <= '9') || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F')
+}
+
+func readIntLiteral(input string, start int) *Token {
+	p := start
+
+	base := 10
+	if hasCasePrefix(input[p:], "0x") && isNumChar(input[p+2]) {
+		base = 16
+		p += 2
+	} else if hasCasePrefix(input[p:], "0b") && isNumChar(input[p+2]) {
+		base = 2
+		p += 2
+	} else if input[p] == '0' {
+		if !isNumChar(input[p+1]) {
+			// 0
+			tok := NewToken(TK_NUM, input[start:p+1], start)
+			tok.val = 0
+			return tok
+		}
+		base = 8
+		p++
+	}
+
+	numStart := p
+	for p < len(input) && isNumChar(input[p]) {
+		p++
+	}
+
+	val, err := strconv.ParseInt(input[numStart:p], base, 64)
+	check(err)
+	tok := NewToken(TK_NUM, input[start:p], start)
+	tok.val = val
+	return tok
+}
+
 var keywords = map[string]TokenKind{
 	"return":  TK_KEYWORD,
 	"if":      TK_KEYWORD,
@@ -375,16 +421,9 @@ func tokenize(filename, input string) *Token {
 		// Handle numbers
 		start := p
 		if ch >= '0' && ch <= '9' {
-			start := p
-			for p < len(input) && input[p] >= '0' && input[p] <= '9' {
-				p++
-			}
-			numStr := input[start:p]
-			cur.next = NewToken(TK_NUM, numStr, start)
-			val, err := strconv.ParseInt(numStr, 10, 64)
-			check(err)
-			cur.next.val = val
+			cur.next = readIntLiteral(input, p)
 			cur = cur.next
+			p += len(cur.literal)
 			continue
 		}
 

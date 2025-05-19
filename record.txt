@@ -715,3 +715,11 @@ Date:   Mon Apr 13 21:44:21 2020 +0900
     Add post ++ and --
 
 = easy
+
+commit 7df934d2b63727d67d1c054975893930fa6aff44
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 13 18:39:56 2019 +0900
+
+    Add hexadecimal, octal and binary number literals
+
+= easy

@@ -209,6 +209,8 @@ func addType(node *Node) {
 	case ND_MUL:
 		fallthrough
 	case ND_DIV:
+		fallthrough
+	case ND_MOD:
 		node.lhs, node.rhs = usualArithmeticConversion(node.lhs, node.rhs)
 		node.ty = node.lhs.ty
 		return

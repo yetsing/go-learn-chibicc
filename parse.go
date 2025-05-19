@@ -183,6 +183,7 @@ type Member struct {
 
 // #region AST Node
 
+//go:generate stringer -type=NodeKind
 type NodeKind int
 
 // AST node kinds
@@ -192,6 +193,7 @@ const (
 	ND_MUL                       // *
 	ND_DIV                       // /
 	ND_NEG                       // unary -
+	ND_MOD                       // %
 	ND_EQ                        // ==
 	ND_NE                        // !=
 	ND_LT                        // <
@@ -214,60 +216,6 @@ const (
 	ND_NUM                       // Integer
 	ND_CAST                      // Type cast
 )
-
-// NodeKind string
-func (nk NodeKind) String() string {
-	switch nk {
-	case ND_ADD:
-		return "ND_ADD"
-	case ND_SUB:
-		return "ND_SUB"
-	case ND_MUL:
-		return "ND_MUL"
-	case ND_DIV:
-		return "ND_DIV"
-	case ND_NEG:
-		return "ND_NEG"
-	case ND_EQ:
-		return "ND_EQ"
-	case ND_NE:
-		return "ND_NE"
-	case ND_LT:
-		return "ND_LT"
-	case ND_LE:
-		return "ND_LE"
-	case ND_ASSIGN:
-		return "ND_ASSIGN"
-	case ND_COMMA:
-		return "ND_COMMA"
-	case ND_MEMBER:
-		return "ND_MEMBER"
-	case ND_ADDR:
-		return "ND_ADDR"
-	case ND_DEREF:
-		return "ND_DEREF"
-	case ND_RETURN:
-		return "ND_RETURN"
-	case ND_IF:
-		return "ND_IF"
-	case ND_FOR:
-		return "ND_FOR"
-	case ND_BLOCK:
-		return "ND_BLOCK"
-	case ND_FUNCALL:
-		return "ND_FUNCALL"
-	case ND_EXPR_STMT:
-		return "ND_EXPR_STMT"
-	case ND_STMT_EXPR:
-		return "ND_STMT_EXPR"
-	case ND_VAR:
-		return "ND_VAR"
-	case ND_NUM:
-		return "ND_NUM"
-	default:
-		return "UNKNOWN"
-	}
-}
 
 // AST node
 // all nodes are linked in a list
@@ -1004,7 +952,7 @@ func toAssign(binary *Node) *Node {
 }
 
 // assign    = equality (assign-op assign)?
-// assign-op = "=" | "+=" | "-=" | "*=" | "/="
+// assign-op = "=" | "+=" | "-=" | "*=" | "/=" | "%="
 func assign() *Node {
 	node := equality()
 	if gtok.equal("=") {
@@ -1013,24 +961,30 @@ func assign() *Node {
 		node = NewBinary(ND_ASSIGN, node, assign(), st)
 	}
 
+	st := gtok
 	if gtok.equal("+=") {
 		gtok = gtok.next
-		return toAssign(NewBinary(ND_ADD, node, assign(), gtok))
+		return toAssign(NewBinary(ND_ADD, node, assign(), st))
 	}
 
 	if gtok.equal("-=") {
 		gtok = gtok.next
-		return toAssign(NewBinary(ND_SUB, node, assign(), gtok))
+		return toAssign(NewBinary(ND_SUB, node, assign(), st))
 	}
 
 	if gtok.equal("*=") {
 		gtok = gtok.next
-		return toAssign(NewBinary(ND_MUL, node, assign(), gtok))
+		return toAssign(NewBinary(ND_MUL, node, assign(), st))
 	}
 
 	if gtok.equal("/=") {
 		gtok = gtok.next
-		return toAssign(NewBinary(ND_DIV, node, assign(), gtok))
+		return toAssign(NewBinary(ND_DIV, node, assign(), st))
+	}
+
+	if gtok.equal("%=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_MOD, node, assign(), st))
 	}
 
 	return node
@@ -1106,7 +1060,7 @@ func add() *Node {
 	}
 }
 
-// mul = cast ( ('*' | '/') cast)*
+// mul = cast ("*" cast | "/" cast | "%" cast)*
 func mul() *Node {
 	node := cast()
 	for {
@@ -1116,9 +1070,16 @@ func mul() *Node {
 			node = NewBinary(ND_MUL, node, cast(), st)
 			continue
 		}
+
 		if gtok.equal("/") {
 			gtok = gtok.next
 			node = NewBinary(ND_DIV, node, cast(), st)
+			continue
+		}
+
+		if gtok.equal("%") {
+			gtok = gtok.next
+			node = NewBinary(ND_MOD, node, cast(), st)
 			continue
 		}
 

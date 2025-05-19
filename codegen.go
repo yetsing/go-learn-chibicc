@@ -322,12 +322,18 @@ func genExpr(node *Node) {
 		sout("  imul %s, %s", di, ax)
 		return
 	case ND_DIV:
+		fallthrough
+	case ND_MOD:
 		if node.lhs.ty.size == 8 {
 			sout("  cqo")
 		} else {
 			sout("  cdq")
 		}
 		sout("  idiv %s", di)
+
+		if node.kind == ND_MOD {
+			sout("  mov %%rdx, %%rax")
+		}
 		return
 	case ND_EQ:
 		fallthrough

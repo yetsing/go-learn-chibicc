@@ -739,3 +739,11 @@ Date:   Tue Aug 13 19:41:11 2019 +0900
     Add ~ operator
 
 = easy
+
+commit daa739817c58baa8dcd0c23bb403d27d5907abfb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:18:57 2020 +0900
+
+    Add % and %=
+
+= easy

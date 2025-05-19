@@ -771,3 +771,11 @@ Date:   Tue Aug 13 21:03:20 2019 +0900
     Add a notion of an incomplete array type
 
 = easy
+
+commit 79632219d0991aae83e1de3c56df7d664205c2b6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 14 11:00:05 2019 +0900
+
+    Decay an array to a pointer in the func param context
+
+= easy

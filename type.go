@@ -211,6 +211,12 @@ func addType(node *Node) {
 	case ND_DIV:
 		fallthrough
 	case ND_MOD:
+		fallthrough
+	case ND_BITAND:
+		fallthrough
+	case ND_BITOR:
+		fallthrough
+	case ND_BITXOR:
 		node.lhs, node.rhs = usualArithmeticConversion(node.lhs, node.rhs)
 		node.ty = node.lhs.ty
 		return

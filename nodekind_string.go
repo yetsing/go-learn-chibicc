@@ -14,32 +14,35 @@ func _() {
 	_ = x[ND_DIV-3]
 	_ = x[ND_NEG-4]
 	_ = x[ND_MOD-5]
-	_ = x[ND_EQ-6]
-	_ = x[ND_NE-7]
-	_ = x[ND_LT-8]
-	_ = x[ND_LE-9]
-	_ = x[ND_ASSIGN-10]
-	_ = x[ND_COMMA-11]
-	_ = x[ND_MEMBER-12]
-	_ = x[ND_ADDR-13]
-	_ = x[ND_DEREF-14]
-	_ = x[ND_NOT-15]
-	_ = x[ND_BITNOT-16]
-	_ = x[ND_RETURN-17]
-	_ = x[ND_IF-18]
-	_ = x[ND_FOR-19]
-	_ = x[ND_BLOCK-20]
-	_ = x[ND_FUNCALL-21]
-	_ = x[ND_EXPR_STMT-22]
-	_ = x[ND_STMT_EXPR-23]
-	_ = x[ND_VAR-24]
-	_ = x[ND_NUM-25]
-	_ = x[ND_CAST-26]
+	_ = x[ND_BITAND-6]
+	_ = x[ND_BITOR-7]
+	_ = x[ND_BITXOR-8]
+	_ = x[ND_EQ-9]
+	_ = x[ND_NE-10]
+	_ = x[ND_LT-11]
+	_ = x[ND_LE-12]
+	_ = x[ND_ASSIGN-13]
+	_ = x[ND_COMMA-14]
+	_ = x[ND_MEMBER-15]
+	_ = x[ND_ADDR-16]
+	_ = x[ND_DEREF-17]
+	_ = x[ND_NOT-18]
+	_ = x[ND_BITNOT-19]
+	_ = x[ND_RETURN-20]
+	_ = x[ND_IF-21]
+	_ = x[ND_FOR-22]
+	_ = x[ND_BLOCK-23]
+	_ = x[ND_FUNCALL-24]
+	_ = x[ND_EXPR_STMT-25]
+	_ = x[ND_STMT_EXPR-26]
+	_ = x[ND_VAR-27]
+	_ = x[ND_NUM-28]
+	_ = x[ND_CAST-29]
 }
 
-const _NodeKind_name = "ND_ADDND_SUBND_MULND_DIVND_NEGND_MODND_EQND_NEND_LTND_LEND_ASSIGNND_COMMAND_MEMBERND_ADDRND_DEREFND_NOTND_BITNOTND_RETURNND_IFND_FORND_BLOCKND_FUNCALLND_EXPR_STMTND_STMT_EXPRND_VARND_NUMND_CAST"
+const _NodeKind_name = "ND_ADDND_SUBND_MULND_DIVND_NEGND_MODND_BITANDND_BITORND_BITXORND_EQND_NEND_LTND_LEND_ASSIGNND_COMMAND_MEMBERND_ADDRND_DEREFND_NOTND_BITNOTND_RETURNND_IFND_FORND_BLOCKND_FUNCALLND_EXPR_STMTND_STMT_EXPRND_VARND_NUMND_CAST"
 
-var _NodeKind_index = [...]uint8{0, 6, 12, 18, 24, 30, 36, 41, 46, 51, 56, 65, 73, 82, 89, 97, 103, 112, 121, 126, 132, 140, 150, 162, 174, 180, 186, 193}
+var _NodeKind_index = [...]uint8{0, 6, 12, 18, 24, 30, 36, 45, 53, 62, 67, 72, 77, 82, 91, 99, 108, 115, 123, 129, 138, 147, 152, 158, 166, 176, 188, 200, 206, 212, 219}
 
 func (i NodeKind) String() string {
 	if i < 0 || i >= NodeKind(len(_NodeKind_index)-1) {

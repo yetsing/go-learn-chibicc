@@ -335,6 +335,15 @@ func genExpr(node *Node) {
 			sout("  mov %%rdx, %%rax")
 		}
 		return
+	case ND_BITAND:
+		sout("  and %%rdi, %%rax")
+		return
+	case ND_BITOR:
+		sout("  or %%rdi, %%rax")
+		return
+	case ND_BITXOR:
+		sout("  xor %%rdi, %%rax")
+		return
 	case ND_EQ:
 		fallthrough
 	case ND_NE:

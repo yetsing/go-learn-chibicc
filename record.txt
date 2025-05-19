@@ -747,3 +747,11 @@ Date:   Wed Oct 7 20:18:57 2020 +0900
     Add % and %=
 
 = easy
+
+commit 86440068b43d6f9c93fdb07c1c2279cbab579e73
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:19:35 2020 +0900
+
+    Add &, |, ^, &=, |= and ^=
+
+= easy

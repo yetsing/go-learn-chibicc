@@ -194,6 +194,9 @@ const (
 	ND_DIV                       // /
 	ND_NEG                       // unary -
 	ND_MOD                       // %
+	ND_BITAND                    // &
+	ND_BITOR                     // |
+	ND_BITXOR                    // ^
 	ND_EQ                        // ==
 	ND_NE                        // !=
 	ND_LT                        // <
@@ -951,10 +954,10 @@ func toAssign(binary *Node) *Node {
 	return NewBinary(ND_COMMA, expr1, expr2, tok)
 }
 
-// assign    = equality (assign-op assign)?
+// assign    = bitor (assign-op assign)?
 // assign-op = "=" | "+=" | "-=" | "*=" | "/=" | "%="
 func assign() *Node {
-	node := equality()
+	node := bitor()
 	if gtok.equal("=") {
 		st := gtok
 		gtok = gtok.next
@@ -987,6 +990,54 @@ func assign() *Node {
 		return toAssign(NewBinary(ND_MOD, node, assign(), st))
 	}
 
+	if gtok.equal("&=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_BITAND, node, assign(), st))
+	}
+
+	if gtok.equal("|=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_BITOR, node, assign(), st))
+	}
+
+	if gtok.equal("^=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_BITXOR, node, assign(), st))
+	}
+
+	return node
+}
+
+// bitor = bitxor ("|" bitxor)*
+func bitor() *Node {
+	node := bitxor()
+	for gtok.equal("|") {
+		st := gtok
+		gtok = gtok.next
+		node = NewBinary(ND_BITOR, node, bitxor(), st)
+	}
+	return node
+}
+
+// bitxor = bitand ("^" bitand)*
+func bitxor() *Node {
+	node := bitand()
+	for gtok.equal("^") {
+		st := gtok
+		gtok = gtok.next
+		node = NewBinary(ND_BITXOR, node, bitand(), st)
+	}
+	return node
+}
+
+// bitand = equality ("&" equality)*
+func bitand() *Node {
+	node := equality()
+	for gtok.equal("&") {
+		st := gtok
+		gtok = gtok.next
+		node = NewBinary(ND_BITAND, node, equality(), st)
+	}
 	return node
 }
 

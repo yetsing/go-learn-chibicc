@@ -239,6 +239,9 @@ func addType(node *Node) {
 	case ND_FUNCALL:
 		node.ty = longType()
 		return
+	case ND_NOT:
+		node.ty = intType()
+		return
 	case ND_VAR:
 		node.ty = node.variable.ty
 		return

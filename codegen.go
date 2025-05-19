@@ -270,6 +270,12 @@ func genExpr(node *Node) {
 		genExpr(node.lhs)
 		genCast(node.lhs.ty, node.ty)
 		return
+	case ND_NOT:
+		genExpr(node.lhs)
+		sout("  cmp $0, %%rax")
+		sout("  sete %%al")
+		sout("  movzx %%al, %%rax")
+		return
 	case ND_FUNCALL:
 		nargs := 0
 		for arg := node.args; arg != nil; arg = arg.next {

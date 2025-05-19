@@ -723,3 +723,11 @@ Date:   Tue Aug 13 18:39:56 2019 +0900
     Add hexadecimal, octal and binary number literals
 
 = easy
+
+commit 6b88bcb306ef80b65d7f99c081ba83283b4ffac5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 13 19:31:04 2019 +0900
+
+    Add ! operator
+
+= easy

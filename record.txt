@@ -731,3 +731,11 @@ Date:   Tue Aug 13 19:31:04 2019 +0900
     Add ! operator
 
 = easy
+
+commit 46a96d6862e4c1317ff48df69391fd98a1ae5e3d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 13 19:41:11 2019 +0900
+
+    Add ~ operator
+
+= easy

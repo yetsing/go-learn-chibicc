@@ -242,6 +242,9 @@ func addType(node *Node) {
 	case ND_NOT:
 		node.ty = intType()
 		return
+	case ND_BITNOT:
+		node.ty = node.lhs.ty
+		return
 	case ND_VAR:
 		node.ty = node.variable.ty
 		return

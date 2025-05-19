@@ -202,6 +202,7 @@ const (
 	ND_ADDR                      // unary &
 	ND_DEREF                     // unary *
 	ND_NOT                       // unary !
+	ND_BITNOT                    // unary ~
 	ND_RETURN                    // return
 	ND_IF                        // if
 	ND_FOR                       // for or while
@@ -1140,7 +1141,7 @@ func cast() *Node {
 	return unary()
 }
 
-// unary = ( ("+" | "-" | "*" | "&" | "!") cast )
+// unary = ( ("+" | "-" | "*" | "&" | "!" | "~") cast )
 // .     | ("++" | "--") unary
 // .     | postfix
 func unary() *Node {
@@ -1167,6 +1168,11 @@ func unary() *Node {
 	if gtok.equal("!") {
 		gtok = gtok.next
 		return NewUnary(ND_NOT, cast(), st)
+	}
+
+	if gtok.equal("~") {
+		gtok = gtok.next
+		return NewUnary(ND_BITNOT, cast(), st)
 	}
 
 	// Read ++i as i+=1

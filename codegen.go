@@ -276,6 +276,10 @@ func genExpr(node *Node) {
 		sout("  sete %%al")
 		sout("  movzx %%al, %%rax")
 		return
+	case ND_BITNOT:
+		genExpr(node.lhs)
+		sout("  not %%rax")
+		return
 	case ND_FUNCALL:
 		nargs := 0
 		for arg := node.args; arg != nil; arg = arg.next {

@@ -867,7 +867,15 @@ func forStmt() *Node {
 	gtok = gtok.consume("(")
 	node := NewNode(ND_FOR, st)
 
-	node.init = exprStmt()
+	enterScope()
+
+	if isTypename(gtok) {
+		basety := declspec(nil)
+		node.init = declaration(basety)
+	} else {
+		node.init = exprStmt()
+	}
+
 	if !gtok.equal(";") {
 		node.cond = expr()
 	}
@@ -879,6 +887,7 @@ func forStmt() *Node {
 	gtok = gtok.consume(")")
 
 	node.then = stmt()
+	leaveScope()
 	return node
 }
 

@@ -683,3 +683,11 @@ Date:   Fri Sep 4 17:25:15 2020 +0900
     Support file-scope functions
 
 = easy
+
+commit a4fea2ba3edeb8ab5a0812a09f14c2a771aa196c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 11 22:53:26 2019 +0900
+
+    Allow for-loops to define local variables
+
+= easy

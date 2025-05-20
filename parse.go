@@ -930,7 +930,7 @@ func compoundStmt() *Node {
 	enterScope()
 
 	for !gtok.equal("}") {
-		if isTypename(gtok) {
+		if isTypename(gtok) && !gtok.next.equal(":") {
 			var attr VarAttr = VarAttr{}
 			basety := declspec(&attr)
 

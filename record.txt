@@ -795,3 +795,11 @@ Date:   Fri Sep 4 12:27:21 2020 +0900
     Add goto and labeled statement
 
 = easy
+
+commit a4be55b333c9f712c334aac81e7ef4e076c2bc9b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 16:44:12 2020 +0900
+
+    Resolve conflict between labels and typedefs
+
+= easy

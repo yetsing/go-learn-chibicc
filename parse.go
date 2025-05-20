@@ -98,6 +98,10 @@ var labels *Node
 var brkLabel string
 var contLabel string
 
+// Points to a node representing a switch if we are parsing
+// a switch statement. Otherwise, NULL.
+var currentSwitch *Node
+
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
@@ -222,6 +226,8 @@ const (
 	ND_RETURN                    // return
 	ND_IF                        // if
 	ND_FOR                       // for or while
+	ND_SWITCH                    // switch
+	ND_CASE                      // case
 	ND_BLOCK                     // Block { ... }
 	ND_GOTO                      // "goto"
 	ND_LABEL                     // Labeled statement
@@ -271,8 +277,14 @@ type Node struct {
 	uniqueLabel string
 	gotoNext    *Node
 
+	// Switch-cases
+	caseNext    *Node
+	defaultCase *Node
+
+	// Variable
 	variable *Obj // Used if kind is ND_VAR
 
+	// Numeric literal
 	val int64 // Used if kind is ND_NUM
 }
 
@@ -810,6 +822,9 @@ func declaration(basety *Type) *Node {
 
 // stmt = "return" expr ";"
 // .    | if-stmt
+// .    | "switch" "(" expr ")" stmt
+// .    | "case" num ":" stmt
+// .    | "default" ":" stmt
 // .    | for-stmt
 // .    | while-stmt
 // .    | "goto" ident ";"
@@ -832,6 +847,55 @@ func stmt() *Node {
 
 	if gtok.equal("if") {
 		return ifStmt()
+	}
+
+	if gtok.equal("switch") {
+		node := NewNode(ND_SWITCH, gtok)
+		gtok = gtok.next.consume("(")
+		node.cond = expr()
+		gtok = gtok.consume(")")
+
+		sw := currentSwitch
+		currentSwitch = node
+
+		brk := brkLabel // 保存当前的 break label
+		node.breakLabel = newUniqueName()
+		brkLabel = node.breakLabel
+
+		node.then = stmt()
+
+		currentSwitch = sw
+		brkLabel = brk // 恢复当前的 break label
+		return node
+	}
+
+	if gtok.equal("case") {
+		if currentSwitch == nil {
+			errorTok(gtok, "case label not within switch")
+		}
+		val := gtok.next.getNumber()
+
+		node := NewNode(ND_CASE, gtok)
+		gtok = gtok.next.next.consume(":")
+		node.label = newUniqueName()
+		node.lhs = stmt()
+		node.val = int64(val)
+		node.caseNext = currentSwitch.caseNext
+		currentSwitch.caseNext = node
+		return node
+	}
+
+	if gtok.equal("default") {
+		if currentSwitch == nil {
+			errorTok(gtok, "default label not within switch")
+		}
+
+		node := NewNode(ND_CASE, gtok)
+		gtok = gtok.next.consume(":")
+		node.label = newUniqueName()
+		node.lhs = stmt()
+		currentSwitch.defaultCase = node
+		return node
 	}
 
 	if gtok.equal("for") {

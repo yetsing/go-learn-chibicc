@@ -819,3 +819,11 @@ Date:   Thu Aug 27 21:59:19 2020 +0900
     Add continue statement
 
 = easy
+
+commit 044d9ae07ba700c52d8342e4eee26e07eea11619
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 15 16:43:24 2019 +0900
+
+    Add switch-case
+
+= easy

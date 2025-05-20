@@ -432,6 +432,30 @@ func genStmt(node *Node) {
 		sout("  jmp .L.begin.%d", c)
 		sout("%s:", node.breakLabel)
 		return
+	case ND_SWITCH:
+		genExpr(node.cond)
+
+		for n := node.caseNext; n != nil; n = n.caseNext {
+			reg := "%eax"
+			if node.cond.ty.size == 8 {
+				reg = "%rax"
+			}
+			sout("  cmp $%d, %s", n.val, reg)
+			sout("  je %s", n.label)
+		}
+
+		if node.defaultCase != nil {
+			sout("  jmp %s", node.defaultCase.label)
+		}
+
+		sout("  jmp %s", node.breakLabel)
+		genStmt(node.then)
+		sout("%s:", node.breakLabel)
+		return
+	case ND_CASE:
+		sout("%s:", node.label)
+		genStmt(node.lhs)
+		return
 	case ND_BLOCK:
 		for n := node.body; n != nil; n = n.next {
 			genStmt(n)

@@ -360,6 +360,9 @@ var keywords = map[string]TokenKind{
 	"goto":     TK_KEYWORD,
 	"break":    TK_KEYWORD,
 	"continue": TK_KEYWORD,
+	"switch":   TK_KEYWORD,
+	"case":     TK_KEYWORD,
+	"default":  TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

@@ -358,6 +358,7 @@ var keywords = map[string]TokenKind{
 	"enum":    TK_KEYWORD,
 	"static":  TK_KEYWORD,
 	"goto":    TK_KEYWORD,
+	"break":   TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

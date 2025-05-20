@@ -400,24 +400,6 @@ func genStmt(node *Node) {
 	sout("  .loc 1 %d", node.tok.lineno)
 
 	switch node.kind {
-	case ND_FOR:
-		c := count()
-		if node.init != nil {
-			genStmt(node.init)
-		}
-		sout(".L.begin.%d:", c)
-		if node.cond != nil {
-			genExpr(node.cond)
-			sout("  cmp $0, %%rax")
-			sout("  je .L.end.%d", c)
-		}
-		genStmt(node.then)
-		if node.inc != nil {
-			genExpr(node.inc)
-		}
-		sout("  jmp .L.begin.%d", c)
-		sout(".L.end.%d:", c)
-		return
 	case ND_IF:
 		c := count()
 		genExpr(node.cond)
@@ -430,6 +412,24 @@ func genStmt(node *Node) {
 			genStmt(node.els)
 		}
 		sout(".L.end.%d:", c)
+		return
+	case ND_FOR:
+		c := count()
+		if node.init != nil {
+			genStmt(node.init)
+		}
+		sout(".L.begin.%d:", c)
+		if node.cond != nil {
+			genExpr(node.cond)
+			sout("  cmp $0, %%rax")
+			sout("  je %s", node.breakLabel)
+		}
+		genStmt(node.then)
+		if node.inc != nil {
+			genExpr(node.inc)
+		}
+		sout("  jmp .L.begin.%d", c)
+		sout("%s:", node.breakLabel)
 		return
 	case ND_BLOCK:
 		for n := node.body; n != nil; n = n.next {

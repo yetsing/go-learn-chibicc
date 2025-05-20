@@ -94,6 +94,9 @@ var pcurrentFn *Obj
 var gotos *Node
 var labels *Node
 
+// Current "goto" jump target.
+var brkLabel string
+
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
@@ -246,6 +249,9 @@ type Node struct {
 	els  *Node // if Else branch
 	init *Node // for Initialization
 	inc  *Node // for Increment
+
+	// "break" label
+	breakLabel string
 
 	// Block or statement expression
 	body *Node
@@ -805,6 +811,7 @@ func declaration(basety *Type) *Node {
 // .    | for-stmt
 // .    | while-stmt
 // .    | "goto" ident ";"
+// .    | "break" ";"
 // .    | ident ":" stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
@@ -842,6 +849,16 @@ func stmt() *Node {
 		return node
 	}
 
+	if gtok.equal("break") {
+		if brkLabel == "" {
+			errorTok(gtok, "break statement not within loop")
+		}
+		node := NewNode(ND_GOTO, gtok)
+		node.uniqueLabel = brkLabel
+		gtok = gtok.next.consume(";")
+		return node
+	}
+
 	if gtok.kind == TK_IDENT && gtok.next.equal(":") {
 		node := NewNode(ND_LABEL, gtok)
 		node.label = gtok.literal
@@ -868,7 +885,12 @@ func whileStmt() *Node {
 	node := NewNode(ND_FOR, st)
 	node.cond = expr()
 	gtok = gtok.consume(")")
+
+	brk := brkLabel // 保存之前的 break label
+	node.breakLabel = newUniqueName()
+	brkLabel = node.breakLabel
 	node.then = stmt()
+	brkLabel = brk // 恢复之前的 break label
 	return node
 }
 
@@ -880,6 +902,10 @@ func forStmt() *Node {
 	node := NewNode(ND_FOR, st)
 
 	enterScope()
+
+	brk := brkLabel // 保存之前的 break label
+	node.breakLabel = newUniqueName()
+	brkLabel = node.breakLabel
 
 	if isTypename(gtok) {
 		basety := declspec(nil)
@@ -900,6 +926,8 @@ func forStmt() *Node {
 
 	node.then = stmt()
 	leaveScope()
+
+	brkLabel = brk // 恢复之前的 break label
 	return node
 }
 

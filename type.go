@@ -264,6 +264,10 @@ func addType(node *Node) {
 		node.ty = intType()
 		return
 	case ND_BITNOT:
+		fallthrough
+	case ND_SHL:
+		fallthrough
+	case ND_SHR:
 		node.ty = node.lhs.ty
 		return
 	case ND_VAR:

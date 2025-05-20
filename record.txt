@@ -827,3 +827,12 @@ Date:   Thu Aug 15 16:43:24 2019 +0900
     Add switch-case
 
 = easy
+
+
+commit d0c0cb74b21f431c62f7eeb8dbc0d6e14c1eff14
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 20:23:22 2020 +0900
+
+    Add <<, >>, <<= and >>=
+
+= easy

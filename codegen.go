@@ -392,7 +392,20 @@ func genExpr(node *Node) {
 		}
 		sout("  movzb %%al, %%rax")
 		return
+	case ND_SHL:
+		sout("  mov %%rdi, %%rcx")
+		sout("  shl %%cl, %s", ax)
+		return
+	case ND_SHR:
+		sout("  mov %%rdi, %%rcx")
+		if node.ty.size == 8 {
+			sout("  sar %%cl, %s", ax)
+		} else {
+			sout("  sar %%cl, %s", ax)
+		}
+		return
 	}
+
 	errorTok(node.tok, "invalid expression %s", node.kind)
 }
 

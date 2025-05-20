@@ -210,6 +210,8 @@ const (
 	ND_BITAND                    // &
 	ND_BITOR                     // |
 	ND_BITXOR                    // ^
+	ND_SHL                       // <<
+	ND_SHR                       // >>
 	ND_EQ                        // ==
 	ND_NE                        // !=
 	ND_LT                        // <
@@ -1129,7 +1131,8 @@ func toAssign(binary *Node) *Node {
 }
 
 // assign    = logor (assign-op assign)?
-// assign-op = "=" | "+=" | "-=" | "*=" | "/=" | "%="
+// assign-op = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^="
+// .         | "<<=" | ">>="
 func assign() *Node {
 	node := logor()
 	if gtok.equal("=") {
@@ -1177,6 +1180,16 @@ func assign() *Node {
 	if gtok.equal("^=") {
 		gtok = gtok.next
 		return toAssign(NewBinary(ND_BITXOR, node, assign(), st))
+	}
+
+	if gtok.equal("<<=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_SHL, node, assign(), st))
+	}
+
+	if gtok.equal(">>=") {
+		gtok = gtok.next
+		return toAssign(NewBinary(ND_SHR, node, assign(), st))
 	}
 
 	return node
@@ -1257,34 +1270,58 @@ func equality() *Node {
 	}
 }
 
-// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+// relational = shift ("<" shift | "<=" shift | ">" shift | ">=" shift)*
 func relational() *Node {
-	node := add()
+	node := shift()
 	for {
 		st := gtok
 		if gtok.equal("<") {
 			gtok = gtok.next
-			node = NewBinary(ND_LT, node, add(), st)
+			node = NewBinary(ND_LT, node, shift(), st)
 			continue
 		}
 		if gtok.equal("<=") {
 			gtok = gtok.next
-			node = NewBinary(ND_LE, node, add(), st)
+			node = NewBinary(ND_LE, node, shift(), st)
 			continue
 		}
 		if gtok.equal(">") {
 			gtok = gtok.next
-			node = NewBinary(ND_LT, add(), node, st)
+			node = NewBinary(ND_LT, shift(), node, st)
 			continue
 		}
 		if gtok.equal(">=") {
 			gtok = gtok.next
-			node = NewBinary(ND_LE, add(), node, st)
+			node = NewBinary(ND_LE, shift(), node, st)
 			continue
 		}
 
 		return node
 	}
+}
+
+// shift = add ("<<" add | ">>" add)*
+func shift() *Node {
+	node := add()
+
+	for {
+		st := gtok
+
+		if gtok.equal("<<") {
+			gtok = gtok.next
+			node = NewBinary(ND_SHL, node, add(), st)
+			continue
+		}
+
+		if gtok.equal(">>") {
+			gtok = gtok.next
+			node = NewBinary(ND_SHR, node, add(), st)
+			continue
+		}
+
+		return node
+	}
+
 }
 
 // add = mul ("+" mul | "-" mul)*

@@ -811,3 +811,11 @@ Date:   Thu Aug 15 13:48:41 2019 +0900
     Add break statement
 
 = easy
+
+commit 3c83dfd8af045ae6923d4ccb3a3a5a50f4012346
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 21:59:19 2020 +0900
+
+    Add continue statement
+
+= easy

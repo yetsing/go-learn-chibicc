@@ -94,8 +94,9 @@ var pcurrentFn *Obj
 var gotos *Node
 var labels *Node
 
-// Current "goto" jump target.
+// Current "goto" and "continue" jump target.
 var brkLabel string
+var contLabel string
 
 // Find a local variable by name
 func findVar(name string) *VarScope {
@@ -250,8 +251,9 @@ type Node struct {
 	init *Node // for Initialization
 	inc  *Node // for Increment
 
-	// "break" label
-	breakLabel string
+	// "break" and "continue" label
+	breakLabel    string
+	continueLabel string
 
 	// Block or statement expression
 	body *Node
@@ -812,6 +814,7 @@ func declaration(basety *Type) *Node {
 // .    | while-stmt
 // .    | "goto" ident ";"
 // .    | "break" ";"
+// .    | "continue" ";"
 // .    | ident ":" stmt
 // .    | "{" compound-stmt
 // .    | expr-stmt
@@ -859,6 +862,16 @@ func stmt() *Node {
 		return node
 	}
 
+	if gtok.equal("continue") {
+		if contLabel == "" {
+			errorTok(gtok, "continue statement not within loop")
+		}
+		node := NewNode(ND_GOTO, gtok)
+		node.uniqueLabel = contLabel
+		gtok = gtok.next.consume(";")
+		return node
+	}
+
 	if gtok.kind == TK_IDENT && gtok.next.equal(":") {
 		node := NewNode(ND_LABEL, gtok)
 		node.label = gtok.literal
@@ -886,11 +899,17 @@ func whileStmt() *Node {
 	node.cond = expr()
 	gtok = gtok.consume(")")
 
-	brk := brkLabel // 保存之前的 break label
+	brk := brkLabel // 保存当前的 break label
 	node.breakLabel = newUniqueName()
+	cont := contLabel // 保存当前的 continue label
+	node.continueLabel = newUniqueName()
+	contLabel = node.continueLabel
 	brkLabel = node.breakLabel
+
 	node.then = stmt()
-	brkLabel = brk // 恢复之前的 break label
+
+	brkLabel = brk   // 恢复当前的 break label
+	contLabel = cont // 恢复当前的 continue label
 	return node
 }
 
@@ -903,9 +922,12 @@ func forStmt() *Node {
 
 	enterScope()
 
-	brk := brkLabel // 保存之前的 break label
+	brk := brkLabel // 保存当前的 break label
 	node.breakLabel = newUniqueName()
 	brkLabel = node.breakLabel
+	cont := contLabel // 保存当前的 continue label
+	node.continueLabel = newUniqueName()
+	contLabel = node.continueLabel
 
 	if isTypename(gtok) {
 		basety := declspec(nil)
@@ -927,7 +949,8 @@ func forStmt() *Node {
 	node.then = stmt()
 	leaveScope()
 
-	brkLabel = brk // 恢复之前的 break label
+	brkLabel = brk   // 恢复当前的 break label
+	contLabel = cont // 恢复当前的 continue label
 	return node
 }
 

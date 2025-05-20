@@ -425,6 +425,7 @@ func genStmt(node *Node) {
 			sout("  je %s", node.breakLabel)
 		}
 		genStmt(node.then)
+		sout("%s:", node.continueLabel)
 		if node.inc != nil {
 			genExpr(node.inc)
 		}

@@ -217,6 +217,7 @@ const (
 	ND_LT                        // <
 	ND_LE                        // <=
 	ND_ASSIGN                    // =
+	ND_COND                      // ?:
 	ND_COMMA                     // ,
 	ND_MEMBER                    // . (struct member access)
 	ND_ADDR                      // unary &
@@ -1130,11 +1131,11 @@ func toAssign(binary *Node) *Node {
 	return NewBinary(ND_COMMA, expr1, expr2, tok)
 }
 
-// assign    = logor (assign-op assign)?
+// assign    = conditional (assign-op assign)?
 // assign-op = "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^="
 // .         | "<<=" | ">>="
 func assign() *Node {
-	node := logor()
+	node := conditional()
 	if gtok.equal("=") {
 		st := gtok
 		gtok = gtok.next
@@ -1192,6 +1193,23 @@ func assign() *Node {
 		return toAssign(NewBinary(ND_SHR, node, assign(), st))
 	}
 
+	return node
+}
+
+// conditional = logor ("?" expr ":" conditional)?
+func conditional() *Node {
+	cond := logor()
+
+	if !gtok.equal("?") {
+		return cond
+	}
+
+	node := NewNode(ND_COND, gtok)
+	node.cond = cond
+	gtok = gtok.next
+	node.then = expr()
+	gtok = gtok.consume(":")
+	node.els = conditional()
 	return node
 }
 

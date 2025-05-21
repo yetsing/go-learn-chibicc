@@ -270,6 +270,17 @@ func genExpr(node *Node) {
 		genExpr(node.lhs)
 		genCast(node.lhs.ty, node.ty)
 		return
+	case ND_COND:
+		c := count()
+		genExpr(node.cond)
+		sout("  cmp $0, %%rax")
+		sout("  je .L.else.%d", c)
+		genExpr(node.then)
+		sout("  jmp .L.end.%d", c)
+		sout(".L.else.%d:", c)
+		genExpr(node.els)
+		sout(".L.end.%d:", c)
+		return
 	case ND_NOT:
 		genExpr(node.lhs)
 		sout("  cmp $0, %%rax")

@@ -273,6 +273,14 @@ func addType(node *Node) {
 	case ND_VAR:
 		node.ty = node.variable.ty
 		return
+	case ND_COND:
+		if node.then.ty.kind == TY_VOID || node.els.ty.kind == TY_VOID {
+			node.ty = voidType()
+		} else {
+			node.then, node.els = usualArithmeticConversion(node.then, node.els)
+			node.ty = node.then.ty
+		}
+		return
 	case ND_COMMA:
 		node.ty = node.rhs.ty
 		return

@@ -828,11 +828,18 @@ Date:   Thu Aug 15 16:43:24 2019 +0900
 
 = easy
 
-
 commit d0c0cb74b21f431c62f7eeb8dbc0d6e14c1eff14
 Author: Rui Ueyama <ruiu@cs.stanford.edu>
 Date:   Wed Oct 7 20:23:22 2020 +0900
 
     Add <<, >>, <<= and >>=
+
+= easy
+
+commit 447ee098c51f6f615ef560b35d429f32f0cb5a35
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 17 10:27:35 2019 +0900
+
+    Add ?: operator
 
 = easy

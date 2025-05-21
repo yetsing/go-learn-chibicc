@@ -843,3 +843,14 @@ Date:   Sat Aug 17 10:27:35 2019 +0900
     Add ?: operator
 
 = easy
+
+commit 79f5de21eb706ea5486fd682a83ffbde7e4d16a9
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 17 10:38:20 2019 +0900
+
+    Add constant expression
+
+= int 类型转换， debug 整个晚上
+= golang 在 32 位系统上，int 是 32 位在 64 位系统上，int 是 64 位。
+= C int 通常是 32 位，并不会随着平台从 32 位到 64 位而变化。
+= middle

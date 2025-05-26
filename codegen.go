@@ -229,6 +229,8 @@ func genExpr(node *Node) {
 	sout("  .loc 1 %d", node.tok.lineno)
 
 	switch node.kind {
+	case ND_NULL_EXPR:
+		return
 	case ND_NUM:
 		sout("  mov $%d, %%rax", node.val)
 		return

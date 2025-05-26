@@ -38,6 +38,30 @@ type VarAttr struct {
 	isStatic  bool
 }
 
+// This struct represents a variable initializer. Since initializers
+// can be nested (e.g. `int x[2][2] = {{1, 2}, {3, 4}}`), this struct
+// is a tree data structure.
+type Initializer struct {
+	next *Initializer // Next initializer
+	ty   *Type        // Type of the initializer
+	tok  *Token
+
+	// If it's not an aggregate type and has an initializer,
+	// `expr` has an initialization expression.
+	expr *Node
+
+	// If it's an initializer for an aggregate type (e.g. array or struct),
+	// `children` has initializers for its children.
+	children []*Initializer
+}
+
+// For local variable initializer.
+type InitDesg struct {
+	next *InitDesg // Next initializer
+	idx  int
+	var_ *Obj // Variable
+}
+
 var scope = &Scope{}
 
 func enterScope() {
@@ -201,45 +225,46 @@ type NodeKind int
 
 // AST node kinds
 const (
-	ND_ADD       NodeKind = iota // +
-	ND_SUB                       // -
-	ND_MUL                       // *
-	ND_DIV                       // /
-	ND_NEG                       // unary -
-	ND_MOD                       // %
-	ND_BITAND                    // &
-	ND_BITOR                     // |
-	ND_BITXOR                    // ^
-	ND_SHL                       // <<
-	ND_SHR                       // >>
-	ND_EQ                        // ==
-	ND_NE                        // !=
-	ND_LT                        // <
-	ND_LE                        // <=
-	ND_ASSIGN                    // =
-	ND_COND                      // ?:
-	ND_COMMA                     // ,
-	ND_MEMBER                    // . (struct member access)
-	ND_ADDR                      // unary &
-	ND_DEREF                     // unary *
-	ND_NOT                       // unary !
-	ND_BITNOT                    // unary ~
-	ND_LOGAND                    // &&
-	ND_LOGOR                     // ||
-	ND_RETURN                    // return
-	ND_IF                        // if
-	ND_FOR                       // for or while
-	ND_SWITCH                    // switch
-	ND_CASE                      // case
-	ND_BLOCK                     // Block { ... }
-	ND_GOTO                      // "goto"
-	ND_LABEL                     // Labeled statement
-	ND_FUNCALL                   // Function call
-	ND_EXPR_STMT                 // Expression statement
-	ND_STMT_EXPR                 // Statement expression
-	ND_VAR                       // Variable
-	ND_NUM                       // Integer
-	ND_CAST                      // Type cast
+	ND_NULL_EXPR NodeKind = iota
+	ND_ADD                // +
+	ND_SUB                // -
+	ND_MUL                // *
+	ND_DIV                // /
+	ND_NEG                // unary -
+	ND_MOD                // %
+	ND_BITAND             // &
+	ND_BITOR              // |
+	ND_BITXOR             // ^
+	ND_SHL                // <<
+	ND_SHR                // >>
+	ND_EQ                 // ==
+	ND_NE                 // !=
+	ND_LT                 // <
+	ND_LE                 // <=
+	ND_ASSIGN             // =
+	ND_COND               // ?:
+	ND_COMMA              // ,
+	ND_MEMBER             // . (struct member access)
+	ND_ADDR               // unary &
+	ND_DEREF              // unary *
+	ND_NOT                // unary !
+	ND_BITNOT             // unary ~
+	ND_LOGAND             // &&
+	ND_LOGOR              // ||
+	ND_RETURN             // return
+	ND_IF                 // if
+	ND_FOR                // for or while
+	ND_SWITCH             // switch
+	ND_CASE               // case
+	ND_BLOCK              // Block { ... }
+	ND_GOTO               // "goto"
+	ND_LABEL              // Labeled statement
+	ND_FUNCALL            // Function call
+	ND_EXPR_STMT          // Expression statement
+	ND_STMT_EXPR          // Statement expression
+	ND_VAR                // Variable
+	ND_NUM                // Integer
+	ND_CAST               // Type cast
 )
 
 // AST node
@@ -374,6 +399,20 @@ func pushScope(name string) *VarScope {
 	return vsc
 }
 
+func newInitializer(ty *Type) *Initializer {
+	init := &Initializer{}
+	init.ty = ty
+
+	if ty.kind == TY_ARRAY {
+		init.children = make([]*Initializer, ty.arrayLen)
+		for i := range ty.arrayLen {
+			init.children[i] = newInitializer(ty.base)
+		}
+	}
+
+	return init
+}
+
 // In C, `+` operator is overloaded to perform the pointer arithmetic.
 // If p is a pointer, p+n adds not n but sizeof(*p)*n to the value of p,
 // so that p+n points to the location n elements (not bytes) ahead of p.
@@ -445,6 +484,74 @@ func tryConsume(s string) bool {
 		return true
 	}
 	return false
+}
+
+// initializer = "{" initializer ("," initializer)* "}"
+// .           | assign
+func initializer2(init *Initializer) {
+	if init.ty.kind == TY_ARRAY {
+		gtok = gtok.consume("{")
+
+		for i := range init.ty.arrayLen {
+			if i > 0 {
+				gtok = gtok.consume(",")
+			}
+			initializer2(init.children[i])
+		}
+		gtok = gtok.consume("}")
+		return
+	}
+
+	init.expr = assign()
+}
+
+func initializer(ty *Type) *Initializer {
+	init := newInitializer(ty)
+	initializer2(init)
+	return init
+}
+
+func initDesgExpr(desg *InitDesg, tok *Token) *Node {
+	if desg.var_ != nil {
+		return NewVarNode(desg.var_, tok)
+	}
+
+	lhs := initDesgExpr(desg.next, tok)
+	rhs := NewNumber(int64(desg.idx), tok)
+	return NewUnary(ND_DEREF, newAdd(lhs, rhs, tok), tok)
+}
+
+func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *Node {
+	if ty.kind == TY_ARRAY {
+		node := NewNode(ND_NULL_EXPR, tok)
+		for i := range ty.arrayLen {
+			desg2 := InitDesg{desg, i, nil}
+			rhs := createLvarInit(init.children[i], ty.base, &desg2, tok)
+			node = NewBinary(ND_COMMA, node, rhs, tok)
+		}
+		return node
+	}
+
+	lhs := initDesgExpr(desg, tok)
+	rhs := init.expr
+	return NewBinary(ND_ASSIGN, lhs, rhs, tok)
+}
+
+// A variable definition with an initializer is a shorthand notation
+// for a variable definition followed by assignments. This function
+// generates assignment expressions for an initializer. For example,
+// `int x[2][2] = {{6, 7}, {8, 9}}` is converted to the following
+// expressions:
+//
+//	x[0][0] = 6;
+//	x[0][1] = 7;
+//	x[1][0] = 8;
+//	x[1][1] = 9;
+func lvarInitializer(var_ *Obj) *Node {
+	st := gtok
+	init := initializer(var_.ty)
+	desg := InitDesg{nil, 0, var_}
+	return createLvarInit(init, var_.ty, &desg, st)
 }
 
 // Returns true if a given token represents a type.
@@ -803,17 +910,15 @@ func declaration(basety *Type) *Node {
 		}
 		variable := newLVar(ty.name.literal, ty)
 
-		if !gtok.equal("=") {
-			continue
+		if gtok.equal("=") {
+			// lhs = rhs
+			st := gtok
+			gtok = gtok.next
+			expr := lvarInitializer(variable)
+			cur.next = NewUnary(ND_EXPR_STMT, expr, st)
+			cur = cur.next
 		}
 
-		// lhs = rhs
-		lhs := NewVarNode(variable, ty.name)
-		gtok = gtok.next
-		rhs := assign()
-		node := NewBinary(ND_ASSIGN, lhs, rhs, gtok)
-		cur.next = NewUnary(ND_EXPR_STMT, node, gtok)
-		cur = cur.next
 	}
 
 	node := NewNode(ND_BLOCK, st)

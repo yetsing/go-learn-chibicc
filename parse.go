@@ -265,6 +265,7 @@ const (
 	ND_VAR                // Variable
 	ND_NUM                // Integer
 	ND_CAST               // Type cast
+	ND_MEMZERO            // Zero-clear a stack variable
 )
 
 // AST node
@@ -492,7 +493,7 @@ func initializer2(init *Initializer) {
 	if init.ty.kind == TY_ARRAY {
 		gtok = gtok.consume("{")
 
-		for i := range init.ty.arrayLen {
+		for i := 0; i < init.ty.arrayLen && !gtok.equal("}"); i++ {
 			if i > 0 {
 				gtok = gtok.consume(",")
 			}
@@ -532,9 +533,12 @@ func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *No
 		return node
 	}
 
+	if init.expr == nil {
+		return NewNode(ND_NULL_EXPR, tok)
+	}
+
 	lhs := initDesgExpr(desg, tok)
-	rhs := init.expr
-	return NewBinary(ND_ASSIGN, lhs, rhs, tok)
+	return NewBinary(ND_ASSIGN, lhs, init.expr, tok)
 }
 
 // A variable definition with an initializer is a shorthand notation
@@ -551,7 +555,16 @@ func lvarInitializer(var_ *Obj) *Node {
 	st := gtok
 	init := initializer(var_.ty)
 	desg := InitDesg{nil, 0, var_}
-	return createLvarInit(init, var_.ty, &desg, st)
+
+	// If a partial initializer list is given, the standard requires
+	// that unspecified elements are set to 0. Here, we simply
+	// zero-initialize the entire memory region of a variable before
+	// initializing it with user-supplied values.
+	lhs := NewNode(ND_MEMZERO, st)
+	lhs.variable = var_
+
+	rhs := createLvarInit(init, var_.ty, &desg, st)
+	return NewBinary(ND_COMMA, lhs, rhs, st)
 }
 
 // Returns true if a given token represents a type.

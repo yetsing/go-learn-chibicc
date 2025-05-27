@@ -272,6 +272,13 @@ func genExpr(node *Node) {
 		genExpr(node.lhs)
 		genCast(node.lhs.ty, node.ty)
 		return
+	case ND_MEMZERO:
+		// `rep stosb` is equivalent to `memset(%rdi, %al, %rcx)`.
+		sout("  mov $%d, %%rcx", node.variable.ty.size)
+		sout("  lea %d(%%rbp), %%rdi", node.variable.offset)
+		sout("  mov $0, %%al")
+		sout("  rep stosb")
+		return
 	case ND_COND:
 		c := count()
 		genExpr(node.cond)

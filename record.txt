@@ -862,3 +862,12 @@ Date:   Sun Aug 18 12:01:02 2019 +0900
     Support local variable initializers
 
 = middle
+
+commit ae0a37dc4b39018a95616836ae4aaf4c8bfd779b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 18 13:36:43 2020 +0900
+
+    Initialize excess array elements with zero
+
+= 数组初始化这些 parse 代码，完全没有看懂 (´・Å・`)
+= middle

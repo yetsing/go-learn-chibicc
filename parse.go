@@ -487,19 +487,33 @@ func tryConsume(s string) bool {
 	return false
 }
 
+func skipExcessElement() *Token {
+	if gtok.equal("{") {
+		gtok = gtok.next
+		gtok = skipExcessElement()
+		return gtok.consume("}")
+	}
+
+	assign()
+	return gtok
+}
+
 // initializer = "{" initializer ("," initializer)* "}"
 // .           | assign
 func initializer2(init *Initializer) {
 	if init.ty.kind == TY_ARRAY {
 		gtok = gtok.consume("{")
 
-		for i := 0; i < init.ty.arrayLen && !gtok.equal("}"); i++ {
+		for i := 0; !tryConsume("}"); i++ {
 			if i > 0 {
 				gtok = gtok.consume(",")
 			}
-			initializer2(init.children[i])
+			if i < init.ty.arrayLen {
+				initializer2(init.children[i])
+			} else {
+				gtok = skipExcessElement()
+			}
 		}
-		gtok = gtok.consume("}")
 		return
 	}
 

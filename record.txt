@@ -871,3 +871,11 @@ Date:   Fri Sep 18 13:36:43 2020 +0900
 
 = 数组初始化这些 parse 代码，完全没有看懂 (´・Å・`)
 = middle
+
+commit a754732c046939cd87ac9fc8e9483ae9b3369449
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 16 23:34:05 2020 +0900
+
+    Skip excess initializer elements
+
+= easy

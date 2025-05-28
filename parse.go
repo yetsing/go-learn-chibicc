@@ -498,22 +498,43 @@ func skipExcessElement() *Token {
 	return gtok
 }
 
-// initializer = "{" initializer ("," initializer)* "}"
-// .           | assign
-func initializer2(init *Initializer) {
-	if init.ty.kind == TY_ARRAY {
-		gtok = gtok.consume("{")
+// string-initializer = string-literal
+func stringInitializer(init *Initializer) {
+	length := min(init.ty.arrayLen, gtok.ty.arrayLen)
+	for i := range length - 1 {
+		init.children[i].expr = NewNumber(int64(gtok.str[i]), gtok)
+	}
+	// C 字符串以 '\0' 结尾
+	init.children[length-1].expr = NewNumber(0, gtok)
+	gtok = gtok.next
+}
 
-		for i := 0; !tryConsume("}"); i++ {
-			if i > 0 {
-				gtok = gtok.consume(",")
-			}
-			if i < init.ty.arrayLen {
-				initializer2(init.children[i])
-			} else {
-				gtok = skipExcessElement()
-			}
+// array-initializer = "{" initializer ("," initializer)* "}"
+func arrayInitializer(init *Initializer) {
+	gtok = gtok.consume("{")
+
+	for i := 0; !tryConsume("}"); i++ {
+		if i > 0 {
+			gtok = gtok.consume(",")
 		}
+
+		if i < init.ty.arrayLen {
+			initializer2(init.children[i])
+		} else {
+			gtok = skipExcessElement()
+		}
+	}
+}
+
+// initializer = string-initializer | array-initializer | assign
+func initializer2(init *Initializer) {
+	if init.ty.kind == TY_ARRAY && gtok.kind == TK_STR {
+		stringInitializer(init)
+		return
+	}
+
+	if init.ty.kind == TY_ARRAY {
+		arrayInitializer(init)
 		return
 	}
 

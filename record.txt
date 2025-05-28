@@ -879,3 +879,12 @@ Date:   Thu Apr 16 23:34:05 2020 +0900
     Skip excess initializer elements
 
 = easy
+
+commit 0d717373cc9e247fc6f6a0e02b0bbd424f0d70b0
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 18 16:34:39 2019 +0900
+
+    Add string literal initializer
+
+= C 语言的一些隐式规则，不注意就会出错
+= easy

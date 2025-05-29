@@ -420,7 +420,7 @@ func newInitializer(ty *Type, isFlexible bool) *Initializer {
 		return init
 	}
 
-	if ty.kind == TY_STRUCT {
+	if ty.kind == TY_STRUCT || ty.kind == TY_UNION {
 		// Count the number of struct members.
 		length := 0
 		for mem := ty.members; mem != nil; mem = mem.next {
@@ -594,8 +594,17 @@ func structInitializer(init *Initializer) {
 	}
 }
 
+func unionInitializer(init *Initializer) {
+	// Unlike structs, union initializers take only one initializer,
+	// and that initializes the first union member.
+	gtok = gtok.consume("{")
+	initializer2(init.children[0])
+	gtok = gtok.consume("}")
+}
+
 // initializer = string-initializer | array-initializer
-// .           | struct-initializer | assign
+// .           | struct-initializer | union-initializer
+// .           | assign
 func initializer2(init *Initializer) {
 	if init.ty.kind == TY_ARRAY && gtok.kind == TK_STR {
 		stringInitializer(init)
@@ -621,6 +630,11 @@ func initializer2(init *Initializer) {
 		}
 
 		structInitializer(init)
+		return
+	}
+
+	if init.ty.kind == TY_UNION {
+		unionInitializer(init)
 		return
 	}
 
@@ -670,6 +684,11 @@ func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *No
 			node = NewBinary(ND_COMMA, node, rhs, tok)
 		}
 		return node
+	}
+
+	if ty.kind == TY_UNION {
+		desg2 := InitDesg{desg, 0, ty.members, nil}
+		return createLvarInit(init.children[0], ty.members.ty, &desg2, tok)
 	}
 
 	if init.expr == nil {

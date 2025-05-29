@@ -917,3 +917,12 @@ Date:   Thu Jul 9 22:05:46 2020 +0900
     Allow to initialize a struct with other struct
 
 = easy
+
+commit 483b194a80e904c11c5c6d855303596145adacee
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Jul 20 23:23:27 2020 +0900
+
+    Handle union initializers for local variables
+
+= 持续不懂 -`д´-
+= easy

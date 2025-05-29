@@ -888,3 +888,15 @@ Date:   Sun Aug 18 16:34:39 2019 +0900
 
 = C 语言的一些隐式规则，不注意就会出错
 = easy
+
+commit 5b955336032881edf835a50fb63f9581af1efd73
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 14:39:22 2020 +0900
+
+    Allow to omit array length if an initializer is given
+
+    So that you can write something like `int x[] = {1, 2, 3}`
+    instead of `int x[3] = {1, 2, 3}`.
+
+= 数组初始化相关的代码真是完全没看懂 -`д´-
+= middle

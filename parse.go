@@ -42,9 +42,10 @@ type VarAttr struct {
 // can be nested (e.g. `int x[2][2] = {{1, 2}, {3, 4}}`), this struct
 // is a tree data structure.
 type Initializer struct {
-	next *Initializer // Next initializer
-	ty   *Type        // Type of the initializer
-	tok  *Token
+	next       *Initializer // Next initializer
+	ty         *Type        // Type of the initializer
+	tok        *Token
+	isFlexible bool
 
 	// If it's not an aggregate type and has an initializer,
 	// `expr` has an initialization expression.
@@ -400,14 +401,19 @@ func pushScope(name string) *VarScope {
 	return vsc
 }
 
-func newInitializer(ty *Type) *Initializer {
+func newInitializer(ty *Type, isFlexible bool) *Initializer {
 	init := &Initializer{}
 	init.ty = ty
 
 	if ty.kind == TY_ARRAY {
+		if isFlexible && ty.size < 0 {
+			init.isFlexible = true
+			return init
+		}
+
 		init.children = make([]*Initializer, ty.arrayLen)
 		for i := range ty.arrayLen {
-			init.children[i] = newInitializer(ty.base)
+			init.children[i] = newInitializer(ty.base, false)
 		}
 	}
 
@@ -500,6 +506,10 @@ func skipExcessElement() *Token {
 
 // string-initializer = string-literal
 func stringInitializer(init *Initializer) {
+	if init.isFlexible {
+		*init = *newInitializer(arrayOf(init.ty.base, gtok.ty.arrayLen), false)
+	}
+
 	length := min(init.ty.arrayLen, gtok.ty.arrayLen)
 	for i := range length - 1 {
 		init.children[i].expr = NewNumber(int64(gtok.str[i]), gtok)
@@ -509,9 +519,29 @@ func stringInitializer(init *Initializer) {
 	gtok = gtok.next
 }
 
+func countArrayInitElements(ty *Type) int {
+	dummy := newInitializer(ty.base, false)
+
+	i := 0
+	for ; !gtok.equal("}"); i++ {
+		if i > 0 {
+			gtok = gtok.consume(",")
+		}
+		initializer2(dummy)
+	}
+	return i
+}
+
 // array-initializer = "{" initializer ("," initializer)* "}"
 func arrayInitializer(init *Initializer) {
 	gtok = gtok.consume("{")
+
+	if init.isFlexible {
+		tok := gtok
+		length := countArrayInitElements(init.ty)
+		*init = *newInitializer(arrayOf(init.ty.base, length), false)
+		gtok = tok
+	}
 
 	for i := 0; !tryConsume("}"); i++ {
 		if i > 0 {
@@ -541,9 +571,10 @@ func initializer2(init *Initializer) {
 	init.expr = assign()
 }
 
-func initializer(ty *Type) *Initializer {
-	init := newInitializer(ty)
+func initializer(ty *Type, newTy **Type) *Initializer {
+	init := newInitializer(ty, true)
 	initializer2(init)
+	*newTy = init.ty
 	return init
 }
 
@@ -588,7 +619,7 @@ func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *No
 //	x[1][1] = 9;
 func lvarInitializer(var_ *Obj) *Node {
 	st := gtok
-	init := initializer(var_.ty)
+	init := initializer(var_.ty, &var_.ty)
 	desg := InitDesg{nil, 0, var_}
 
 	// If a partial initializer list is given, the standard requires
@@ -950,9 +981,6 @@ func declaration(basety *Type) *Node {
 		i++
 
 		ty := declarator(basety)
-		if ty.size < 0 {
-			errorTok(gtok, "variable has incomplete type")
-		}
 		if ty.kind == TY_VOID {
 			errorTok(ty.name, "variable declared void")
 		}
@@ -965,6 +993,13 @@ func declaration(basety *Type) *Node {
 			expr := lvarInitializer(variable)
 			cur.next = NewUnary(ND_EXPR_STMT, expr, st)
 			cur = cur.next
+		}
+
+		if variable.ty.size < 0 {
+			errorTok(ty.name, "variable has incomplete type")
+		}
+		if variable.ty.kind == TY_VOID {
+			errorTok(ty.name, "variable declared void")
 		}
 
 	}

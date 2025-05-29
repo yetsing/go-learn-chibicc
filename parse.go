@@ -608,6 +608,18 @@ func initializer2(init *Initializer) {
 	}
 
 	if init.ty.kind == TY_STRUCT {
+		// A struct can be initialized with another struct. E.g.
+		// `struct T x = y;` where y is a variable of type `struct T`.
+		// Handle that case first.
+		if !gtok.equal("{") {
+			expr := assign()
+			addType(expr)
+			if expr.ty.kind == TY_STRUCT {
+				init.expr = expr
+				return
+			}
+		}
+
 		structInitializer(init)
 		return
 	}
@@ -649,7 +661,7 @@ func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *No
 		return node
 	}
 
-	if ty.kind == TY_STRUCT {
+	if ty.kind == TY_STRUCT && init.expr == nil {
 		node := NewNode(ND_NULL_EXPR, tok)
 
 		for mem := ty.members; mem != nil; mem = mem.next {

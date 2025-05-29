@@ -909,3 +909,11 @@ Date:   Sun Aug 18 17:56:36 2019 +0900
 
 = 这些 initializers 逐渐累积不懂
 = easy
+
+commit aca19dd35027a12e245bfa52e6a98968e0cd2a9c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Jul 9 22:05:46 2020 +0900
+
+    Allow to initialize a struct with other struct
+
+= easy

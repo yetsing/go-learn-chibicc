@@ -900,3 +900,12 @@ Date:   Fri Sep 4 14:39:22 2020 +0900
 
 = 数组初始化相关的代码真是完全没看懂 -`д´-
 = middle
+
+commit e9d2c46ab3cc8b8518df289a4fc24a9e3fc9b3fe
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 18 17:56:36 2019 +0900
+
+    Handle struct initializers for local variables
+
+= 这些 initializers 逐渐累积不懂
+= easy

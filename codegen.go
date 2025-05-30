@@ -555,12 +555,10 @@ func emitData(prog *Obj) {
 		}
 		sout("%s:", g.name)
 
-		if g.initData != "" {
-			for i := range len(g.initData) {
-				sout("  .byte %d", g.initData[i])
+		if len(g.initData) > 0 {
+			for _, b := range g.initData {
+				sout("  .byte %d", b)
 			}
-			// C 语言中，字符串是以 \0 结尾的
-			sout("  .byte 0")
 		} else {
 			sout("  .zero %d", g.ty.size)
 		}

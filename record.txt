@@ -926,3 +926,12 @@ Date:   Mon Jul 20 23:23:27 2020 +0900
 
 = 持续不懂 -`д´-
 = easy
+
+commit bbfe3f4369e1dd2266b827c81d7d9078ab1d301f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:26:34 2020 +0900
+
+    Add global initializer for scalar and string
+
+= 转义字符串的长度计算错误， debug 了好几通
+= middle

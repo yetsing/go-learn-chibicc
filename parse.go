@@ -96,7 +96,7 @@ type Obj struct {
 	isStatic     bool
 
 	// Global variable
-	initData string
+	initData []byte
 
 	// Function
 	params    *Obj
@@ -195,7 +195,8 @@ func newAnonGvar(ty *Type) *Obj {
 
 func newStringLiteral(s string, ty *Type) *Obj {
 	variable := newAnonGvar(ty)
-	variable.initData = s
+	variable.initData = make([]byte, len(s)+1) // +1 for '\0'
+	copy(variable.initData, s)
 	return variable
 }
 
@@ -723,6 +724,61 @@ func lvarInitializer(var_ *Obj) *Node {
 
 	rhs := createLvarInit(init, var_.ty, &desg, st)
 	return NewBinary(ND_COMMA, lhs, rhs, st)
+}
+
+func writeBuf(val uint64, sz int) (buf []byte) {
+	buf = make([]byte, sz)
+	switch sz {
+	case 1:
+		buf[0] = byte(val)
+	case 2:
+		buf[0] = byte(val)
+		buf[1] = byte(val >> 8)
+	case 4:
+		buf[0] = byte(val)
+		buf[1] = byte(val >> 8)
+		buf[2] = byte(val >> 16)
+		buf[3] = byte(val >> 24)
+	case 8:
+		buf[0] = byte(val)
+		buf[1] = byte(val >> 8)
+		buf[2] = byte(val >> 16)
+		buf[3] = byte(val >> 24)
+		buf[4] = byte(val >> 32)
+		buf[5] = byte(val >> 40)
+		buf[6] = byte(val >> 48)
+		buf[7] = byte(val >> 56)
+	default:
+		unreachable()
+	}
+	return buf
+}
+
+func writeGvarData(init *Initializer, ty *Type, buf []byte, offset int) {
+	if ty.kind == TY_ARRAY {
+		sz := ty.base.size
+		for i := range ty.arrayLen {
+			writeGvarData(init.children[i], ty.base, buf, offset+i*sz)
+		}
+		return
+	}
+
+	if init.expr != nil {
+		res := writeBuf(uint64(eval(init.expr)), ty.size)
+		copy(buf[offset:], res)
+	}
+}
+
+// Initializers for global variables are evaluated at compile-time and
+// embedded to .data section. This function serializes Initializer
+// objects to a flat byte array. It is a compile error if an
+// initializer list contains a non-constant expression.
+func gvarInitializer(var_ *Obj) {
+	init := initializer(var_.ty, &var_.ty)
+
+	buf := make([]byte, var_.ty.size)
+	writeGvarData(init, var_.ty, buf, 0)
+	var_.initData = buf
 }
 
 // Returns true if a given token represents a type.
@@ -2250,7 +2306,11 @@ func globalVariable(basety *Type) {
 		first = false
 
 		ty := declarator(basety)
-		newGVar(ty.name.literal, ty)
+		var_ := newGVar(ty.name.literal, ty)
+		if gtok.equal("=") {
+			gtok = gtok.next
+			gvarInitializer(var_)
+		}
 	}
 }
 

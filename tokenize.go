@@ -256,8 +256,8 @@ func readStringLiteral(input string, p int) *Token {
 	}
 
 	tok := NewToken(TK_STR, input[start:end+1], start)
-	tok.ty = arrayOf(charType(), p-start)
 	tok.str = sb.String()
+	tok.ty = arrayOf(charType(), len(tok.str)+1) // +1 for null terminator
 	return tok
 }
 

@@ -567,15 +567,15 @@ func countArrayInitElements(ty *Type) int {
 	return i
 }
 
-// array-initializer = "{" initializer ("," initializer)* "}"
-func arrayInitializer(init *Initializer) {
+// array-initializer1 = "{" initializer ("," initializer)* "}"
+func arrayInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
 
 	if init.isFlexible {
 		tok := gtok
 		length := countArrayInitElements(init.ty)
-		*init = *newInitializer(arrayOf(init.ty.base, length), false)
 		gtok = tok
+		*init = *newInitializer(arrayOf(init.ty.base, length), false)
 	}
 
 	for i := 0; !tryConsume("}"); i++ {
@@ -591,8 +591,25 @@ func arrayInitializer(init *Initializer) {
 	}
 }
 
-// struct-initializer = "{" initializer ("," initializer)* "}"
-func structInitializer(init *Initializer) {
+// array-initializer2 = initializer ("," initializer)*
+func arrayInitializer2(init *Initializer) {
+	if init.isFlexible {
+		tok := gtok
+		length := countArrayInitElements(init.ty)
+		gtok = tok
+		*init = *newInitializer(arrayOf(init.ty.base, length), false)
+	}
+
+	for i := 0; i < init.ty.arrayLen && !gtok.equal("}"); i++ {
+		if i > 0 {
+			gtok = gtok.consume(",")
+		}
+		initializer2(init.children[i])
+	}
+}
+
+// struct-initializer1 = "{" initializer ("," initializer)* "}"
+func structInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
 
 	mem := init.ty.members
@@ -611,12 +628,29 @@ func structInitializer(init *Initializer) {
 	}
 }
 
+// struct-initializer2 = initializer ("," initializer)*
+func structInitializer2(init *Initializer) {
+	first := true
+
+	for mem := init.ty.members; mem != nil && !gtok.equal("}"); mem = mem.next {
+		if !first {
+			gtok = gtok.consume(",")
+		}
+		first = false
+		initializer2(init.children[mem.idx])
+	}
+}
+
 func unionInitializer(init *Initializer) {
 	// Unlike structs, union initializers take only one initializer,
 	// and that initializes the first union member.
-	gtok = gtok.consume("{")
-	initializer2(init.children[0])
-	gtok = gtok.consume("}")
+	if gtok.equal("{") {
+		gtok = gtok.next
+		initializer2(init.children[0])
+		gtok = gtok.consume("}")
+	} else {
+		initializer2(init.children[0])
+	}
 }
 
 // initializer = string-initializer | array-initializer
@@ -629,24 +663,33 @@ func initializer2(init *Initializer) {
 	}
 
 	if init.ty.kind == TY_ARRAY {
-		arrayInitializer(init)
+		if gtok.equal("{") {
+			arrayInitializer1(init)
+		} else {
+			arrayInitializer2(init)
+		}
 		return
 	}
 
 	if init.ty.kind == TY_STRUCT {
+		if gtok.equal("{") {
+			structInitializer1(init)
+			return
+		}
+
 		// A struct can be initialized with another struct. E.g.
 		// `struct T x = y;` where y is a variable of type `struct T`.
 		// Handle that case first.
-		if !gtok.equal("{") {
-			expr := assign()
-			addType(expr)
-			if expr.ty.kind == TY_STRUCT {
-				init.expr = expr
-				return
-			}
+		tok := gtok
+		expr := assign()
+		addType(expr)
+		if expr.ty.kind == TY_STRUCT {
+			init.expr = expr
+			return
 		}
 
-		structInitializer(init)
+		gtok = tok
+		structInitializer2(init)
 		return
 	}
 
@@ -2313,7 +2356,8 @@ func primary() *Node {
 		return node
 	}
 
-	errorTok(gtok, "expected an expression")
+	// panic("expected an expression: " + gtok.literal)
+	errorTok(gtok, "expected an expression: "+gtok.literal)
 	return nil
 }
 

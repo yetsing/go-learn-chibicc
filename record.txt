@@ -953,3 +953,13 @@ Date:   Mon Jul 20 23:53:12 2020 +0900
 = 又被 C 语言字符串末尾 \0 坑了
 = debug 了好久
 = middle
+
+commit efa0f3366ddb914cc29f96fcdf10f99ded61775c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 19 06:53:50 2019 +0900
+
+    Allow parentheses in initializers to be omitted
+
+= 啊啊啊啊， rest tok 指针变换又坑了一把
+= 有些 parse 函数是先 try 一遍，如果可以才真正推进 token
+= middle

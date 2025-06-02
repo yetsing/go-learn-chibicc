@@ -935,3 +935,11 @@ Date:   Fri Sep 4 17:26:34 2020 +0900
 
 = 转义字符串的长度计算错误， debug 了好几通
 = middle
+
+commit eeb62b6dd547da5742f3ed74f8c8ae534d883dd9
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 18 20:35:17 2019 +0900
+
+    Add struct initializer for global variable
+
+= easy

@@ -556,8 +556,17 @@ func emitData(prog *Obj) {
 		sout("%s:", g.name)
 
 		if len(g.initData) > 0 {
-			for _, b := range g.initData {
-				sout("  .byte %d", b)
+			rel := g.rel
+			pos := 0
+			for pos < g.ty.size {
+				if rel != nil && pos == rel.offset {
+					sout("  .quad %s%+d", rel.label, rel.addend)
+					rel = rel.next
+					pos += 8
+				} else {
+					sout("  .byte %d", g.initData[pos])
+					pos++
+				}
 			}
 		} else {
 			sout("  .zero %d", g.ty.size)

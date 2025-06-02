@@ -943,3 +943,13 @@ Date:   Sun Aug 18 20:35:17 2019 +0900
     Add struct initializer for global variable
 
 = easy
+
+commit 1eae5ae3678d079efc7d2807f10439e53932f811
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Jul 20 23:53:12 2020 +0900
+
+    Handle union initializers for global variable
+
+= 又被 C 语言字符串末尾 \0 坑了
+= debug 了好久
+= middle

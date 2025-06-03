@@ -2087,6 +2087,13 @@ func structMembers(ty *Type) {
 		}
 	}
 
+	// If the last element is an array of incomplete type, it's
+	// called a "flexible array member". It should behave as if
+	// if were a zero-sized array.
+	if cur != &head && cur.ty.kind == TY_ARRAY && cur.ty.arrayLen < 0 {
+		cur.ty = arrayOf(cur.ty.base, 0)
+	}
+
 	gtok = gtok.consume("}")
 	ty.members = head.next
 }

@@ -990,3 +990,12 @@ Date:   Wed Aug 19 17:15:03 2020 +0900
     Emit uninitialized global data to .bss instead of .data
 
 = easy
+
+commit 824543bb2f2b2e4f445d8c58b32f53bf1eec63ce
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 16:11:55 2020 +0900
+
+    Add flexible array member
+
+= 柔性数组，结构体最后一个字段类型为不定长度的数组
+= easy

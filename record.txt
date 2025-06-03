@@ -999,3 +999,11 @@ Date:   Sun Sep 20 16:11:55 2020 +0900
 
 = 柔性数组，结构体最后一个字段类型为不定长度的数组
 = easy
+
+commit cd688a89b8a57e9614f278e29a9267709494d236
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 16:16:00 2020 +0900
+
+    Allow to initialize struct flexible array member
+
+=

@@ -39,7 +39,8 @@ type Type struct {
 	arrayLen int // array length
 
 	// Struct
-	members *Member
+	members    *Member
+	isFlexible bool
 
 	// Function Type
 	returnTy *Type
@@ -150,6 +151,23 @@ func enumType() *Type {
 
 func (t *Type) isInteger() bool {
 	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG || t.kind == TY_ENUM
+}
+
+func (t *Type) copy() *Type {
+	c := &Type{
+		kind:       t.kind,
+		size:       t.size,
+		align:      t.align,
+		base:       t.base,
+		name:       t.name,
+		arrayLen:   t.arrayLen,
+		members:    t.members,
+		isFlexible: t.isFlexible,
+		returnTy:   t.returnTy,
+		params:     t.params,
+		next:       t.next,
+	}
+	return c
 }
 
 func structType() *Type {

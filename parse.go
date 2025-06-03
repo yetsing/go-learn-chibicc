@@ -558,7 +558,7 @@ func countArrayInitElements(ty *Type) int {
 	dummy := newInitializer(ty.base, false)
 
 	i := 0
-	for ; !gtok.equal("}"); i++ {
+	for ; !consumeEnd(); i++ {
 		if i > 0 {
 			gtok = gtok.consume(",")
 		}
@@ -567,7 +567,7 @@ func countArrayInitElements(ty *Type) int {
 	return i
 }
 
-// array-initializer1 = "{" initializer ("," initializer)* "}"
+// array-initializer1 = "{" initializer ("," initializer)* ","? "}"
 func arrayInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
 
@@ -578,7 +578,7 @@ func arrayInitializer1(init *Initializer) {
 		*init = *newInitializer(arrayOf(init.ty.base, length), false)
 	}
 
-	for i := 0; !tryConsume("}"); i++ {
+	for i := 0; !consumeEnd(); i++ {
 		if i > 0 {
 			gtok = gtok.consume(",")
 		}
@@ -600,7 +600,7 @@ func arrayInitializer2(init *Initializer) {
 		*init = *newInitializer(arrayOf(init.ty.base, length), false)
 	}
 
-	for i := 0; i < init.ty.arrayLen && !gtok.equal("}"); i++ {
+	for i := 0; i < init.ty.arrayLen && !isEnd(gtok); i++ {
 		if i > 0 {
 			gtok = gtok.consume(",")
 		}
@@ -608,13 +608,13 @@ func arrayInitializer2(init *Initializer) {
 	}
 }
 
-// struct-initializer1 = "{" initializer ("," initializer)* "}"
+// struct-initializer1 = "{" initializer ("," initializer)* ","? "}"
 func structInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
 
 	mem := init.ty.members
 
-	for !tryConsume("}") {
+	for !consumeEnd() {
 		if mem != init.ty.members {
 			gtok = gtok.consume(",")
 		}
@@ -632,7 +632,7 @@ func structInitializer1(init *Initializer) {
 func structInitializer2(init *Initializer) {
 	first := true
 
-	for mem := init.ty.members; mem != nil && !gtok.equal("}"); mem = mem.next {
+	for mem := init.ty.members; mem != nil && !isEnd(gtok); mem = mem.next {
 		if !first {
 			gtok = gtok.consume(",")
 		}
@@ -647,6 +647,7 @@ func unionInitializer(init *Initializer) {
 	if gtok.equal("{") {
 		gtok = gtok.next
 		initializer2(init.children[0])
+		tryConsume(",")
 		gtok = gtok.consume("}")
 	} else {
 		initializer2(init.children[0])
@@ -1154,10 +1155,28 @@ func typename() *Type {
 	return abstractDeclarator(ty)
 }
 
+func isEnd(tok *Token) bool {
+	return tok.equal("}") || (tok.equal(",") && tok.next.equal("}"))
+}
+
+func consumeEnd() bool {
+	if gtok.equal("}") {
+		gtok = gtok.next
+		return true
+	}
+
+	if gtok.equal(",") && gtok.next.equal("}") {
+		gtok = gtok.next.next
+		return true
+	}
+
+	return false
+}
+
 // enum-specifier = ident? "{" enum-list? "}"
 // .              | ident ("{" enum-list? "}")?
 //
-// enum-list      = ident ("=" num)? ("," ident ("=" num)?)*
+// enum-list      = ident ("=" num)? ("," ident ("=" num)?)* ","?
 func enumSpecifier() *Type {
 	ty := enumType()
 
@@ -1184,7 +1203,7 @@ func enumSpecifier() *Type {
 	// Read an enum-list.
 	i := 0
 	val := 0
-	for !gtok.equal("}") {
+	for !consumeEnd() {
 		if i > 0 {
 			gtok = gtok.consume(",")
 		}
@@ -1203,8 +1222,6 @@ func enumSpecifier() *Type {
 		sc.enumVal = val
 		val++
 	}
-
-	gtok = gtok.consume("}")
 
 	if tag != nil {
 		pushTagScope(tag, ty)

@@ -973,3 +973,12 @@ Date:   Thu Apr 16 22:57:32 2020 +0900
 = extraneous 无关的
 = 允许多余的花括号，奇怪的语法
 = easy
+
+commit fde464c47cb69e030b58d8d204a508d6babd3e09
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Oct 6 13:08:41 2020 +0900
+
+    Allow extraneous comma at the end of enum or initializer list
+
+= 允许末尾多余的逗号，JSON 痛点之一
+= easy

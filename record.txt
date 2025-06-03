@@ -1006,4 +1006,15 @@ Date:   Sun Sep 20 16:16:00 2020 +0900
 
     Allow to initialize struct flexible array member
 
-=
+= 虽然我已经看不懂结构体和数组初始化的解析逻辑，但是就先这样了
+= easy
+
+commit 7a1f816783064a12156807fe0a4d760c2e212d4e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 20 08:30:43 2019 +0900
+
+    Accept `void` as a parameter list
+
+    `foo(void)` indicate that function foo does not take a parameter.
+
+= easy

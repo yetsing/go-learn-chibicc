@@ -1071,6 +1071,11 @@ func declspec(attr *VarAttr) *Type {
 // func-params = (param ("," param)*)? ")"
 // param       = declspec declarator
 func funcParams(ty *Type) *Type {
+	if gtok.equal("void") && gtok.next.equal(")") {
+		gtok = gtok.next.next
+		return funcType(ty)
+	}
+
 	var head = Type{}
 	cur := &head
 

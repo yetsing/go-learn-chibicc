@@ -1026,3 +1026,12 @@ Date:   Wed Aug 19 17:16:58 2020 +0900
     Align global variables
 
 = easy
+
+commit 006a45ccd475296ee19ec87891523d89ce3f2f24
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:27:22 2020 +0900
+
+    Add extern
+
+= extern 声明的变量在汇编不用做任何特殊标记，忽略即可 (｡•ㅅ•｡)♡
+= easy

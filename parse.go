@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"slices"
+)
 
 // #region Scope
 
@@ -36,6 +39,7 @@ type Scope struct {
 type VarAttr struct {
 	isTypedef bool
 	isStatic  bool
+	isExtern  bool
 }
 
 // This struct represents a variable initializer. Since initializers
@@ -188,6 +192,7 @@ func newGVar(name string, ty *Type) *Obj {
 		isLocal: false,
 	}
 	pushScope(name).variable = g
+	g.isDefinition = true
 	globals = g
 	return g
 }
@@ -921,11 +926,9 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static"}
-	for _, k := range kw {
-		if tok.equal(k) {
-			return true
-		}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern"}
+	if slices.ContainsFunc(kw, tok.equal) {
+		return true
 	}
 	return findTypedef(tok) != nil
 }
@@ -944,7 +947,7 @@ func pushTagScope(tok *Token, ty *Type) {
 }
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
-// .           | "typedef" | "static"
+// .           | "typedef" | "static" | "extern"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier)+
 //
@@ -977,19 +980,21 @@ func declspec(attr *VarAttr) *Type {
 
 	for isTypename(gtok) {
 		// Handle storage class specifiers.
-		if gtok.equal("typedef") || gtok.equal("static") {
+		if gtok.equal("typedef") || gtok.equal("static") || gtok.equal("extern") {
 			if attr == nil {
 				errorTok(gtok, "storage class specifier is not allowed in this context")
 			}
 
 			if gtok.equal("typedef") {
 				attr.isTypedef = true
-			} else {
+			} else if gtok.equal("static") {
 				attr.isStatic = true
+			} else {
+				attr.isExtern = true
 			}
 
-			if attr.isTypedef && attr.isStatic {
-				errorTok(gtok, "typedef and static may not be used together")
+			if attr.isTypedef && (attr.isStatic || attr.isExtern) {
+				errorTok(gtok, "typedef may not be used together with static or extern")
 			}
 			gtok = gtok.next
 			continue
@@ -2509,7 +2514,7 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	return fn
 }
 
-func globalVariable(basety *Type) {
+func globalVariable(basety *Type, attr *VarAttr) {
 	first := true
 
 	for !tryConsume(";") {
@@ -2520,6 +2525,7 @@ func globalVariable(basety *Type) {
 
 		ty := declarator(basety)
 		var_ := newGVar(ty.name.literal, ty)
+		var_.isDefinition = !attr.isExtern
 		if gtok.equal("=") {
 			gtok = gtok.next
 			gvarInitializer(var_)
@@ -2562,7 +2568,7 @@ func program() *Obj {
 		}
 
 		// Global variable
-		globalVariable(basety)
+		globalVariable(basety, &attr)
 	}
 
 	return globals

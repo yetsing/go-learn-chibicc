@@ -543,7 +543,7 @@ func assignLVarOffsets(prog *Obj) {
 
 func emitData(prog *Obj) {
 	for g := prog; g != nil; g = g.next {
-		if g.isFunction {
+		if g.isFunction || !g.isDefinition {
 			continue
 		}
 

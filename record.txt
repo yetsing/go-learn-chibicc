@@ -1018,3 +1018,11 @@ Date:   Tue Aug 20 08:30:43 2019 +0900
     `foo(void)` indicate that function foo does not take a parameter.
 
 = easy
+
+commit 157356c769d777b1721da8218724608081137fe2
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 19 17:16:58 2020 +0900
+
+    Align global variables
+
+= easy

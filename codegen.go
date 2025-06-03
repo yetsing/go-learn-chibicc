@@ -548,6 +548,7 @@ func emitData(prog *Obj) {
 		}
 
 		sout("  .globl %s", g.name)
+		sout("  .align %d", g.ty.align)
 
 		if len(g.initData) > 0 {
 			sout("  .data")

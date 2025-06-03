@@ -982,3 +982,11 @@ Date:   Tue Oct 6 13:08:41 2020 +0900
 
 = 允许末尾多余的逗号，JSON 痛点之一
 = easy
+
+commit 3d216e3e06eee7ea3679503867a619c28458e8a7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 19 17:15:03 2020 +0900
+
+    Emit uninitialized global data to .bss instead of .data
+
+= easy

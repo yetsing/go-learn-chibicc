@@ -547,15 +547,12 @@ func emitData(prog *Obj) {
 			continue
 		}
 
-		sout("  .data")
-		if g.isStatic {
-			sout("  .local %s", g.name)
-		} else {
-			sout("  .globl %s", g.name)
-		}
-		sout("%s:", g.name)
+		sout("  .globl %s", g.name)
 
 		if len(g.initData) > 0 {
+			sout("  .data")
+			sout("%s:", g.name)
+
 			rel := g.rel
 			pos := 0
 			for pos < g.ty.size {
@@ -568,10 +565,14 @@ func emitData(prog *Obj) {
 					pos++
 				}
 			}
-		} else {
-			sout("  .zero %d", g.ty.size)
+			continue
 		}
+
+		sout("  .bss")
+		sout("%s:", g.name)
+		sout("  .zero %d", g.ty.size)
 	}
+
 }
 
 func storeGP(r, offset, sz int) {
@@ -598,7 +599,12 @@ func emitText(prog *Obj) {
 			continue
 		}
 
-		sout("  .globl %s", fn.name)
+		if fn.isStatic {
+			sout("  .local %s", fn.name)
+		} else {
+			sout("  .globl %s", fn.name)
+		}
+
 		sout("  .text")
 		sout("%s:", fn.name)
 		currentFn = fn

@@ -963,3 +963,13 @@ Date:   Mon Aug 19 06:53:50 2019 +0900
 = 啊啊啊啊， rest tok 指针变换又坑了一把
 = 有些 parse 函数是先 try 一遍，如果可以才真正推进 token
 = middle
+
+commit a58958ccb40a127a83e3383ef3887e4721352238
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 16 22:57:32 2020 +0900
+
+    Allow extraneous braces for scalar initializer
+
+= extraneous 无关的
+= 允许多余的花括号，奇怪的语法
+= easy

@@ -698,6 +698,15 @@ func initializer2(init *Initializer) {
 		return
 	}
 
+	if gtok.equal("{") {
+		// An initializer for a scalar variable can be surrounded by
+		// braces. E.g. `int x = {3};`. Handle that case.
+		gtok = gtok.next
+		initializer2(init)
+		gtok = gtok.consume("}")
+		return
+	}
+
 	init.expr = assign()
 }
 

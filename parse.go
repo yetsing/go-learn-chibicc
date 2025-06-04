@@ -1708,6 +1708,16 @@ func compoundStmt() *Node {
 				continue
 			}
 
+			if isFunctionDefinition() {
+				function(basety, &attr)
+				continue
+			}
+
+			if attr.isExtern {
+				globalVariable(basety, &attr)
+				continue
+			}
+
 			cur.next = declaration(basety)
 			cur = cur.next
 		} else {

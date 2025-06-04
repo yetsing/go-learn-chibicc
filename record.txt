@@ -1035,3 +1035,11 @@ Date:   Fri Sep 4 17:27:22 2020 +0900
 
 = extern 声明的变量在汇编不用做任何特殊标记，忽略即可 (｡•ㅅ•｡)♡
 = easy
+
+commit 27647455e4cb7db1545a7b69c3a324aa025a471a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 18:08:32 2020 +0900
+
+    Handle extern declarations in a block
+
+= easy

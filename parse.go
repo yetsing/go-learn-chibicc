@@ -1316,6 +1316,18 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 		if ty.kind == TY_VOID {
 			errorTok(ty.name, "variable declared void")
 		}
+
+		if attr != nil && attr.isStatic {
+			// static local variable
+			var_ := newAnonGvar(ty)
+			pushScope(ty.name.literal).variable = var_
+			if gtok.equal("=") {
+				gtok = gtok.next
+				gvarInitializer(var_)
+			}
+			continue
+		}
+
 		variable := newLVar(ty.name.literal, ty)
 		if attr != nil && attr.align > 0 {
 			variable.align = attr.align

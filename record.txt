@@ -1069,3 +1069,11 @@ Date:   Sat Sep 26 08:09:59 2020 +0900
     [GNU] Allow a variable as an operand of _Alignof
 
 = easy
+
+commit 319772b42ebc2311a56ef54e1e9a60c5583971b1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 14:41:55 2020 +0900
+
+    Add static local variables
+
+=

@@ -529,7 +529,7 @@ func assignLVarOffsets(prog *Obj) {
 		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
 			offset += lvar.ty.size
 			// 每个局部变量的地址必须是其类型大小的整数倍（对齐要求）
-			offset = alignTo(offset, lvar.ty.align)
+			offset = alignTo(offset, lvar.align)
 			lvar.offset = -offset
 		}
 
@@ -548,7 +548,7 @@ func emitData(prog *Obj) {
 		}
 
 		sout("  .globl %s", g.name)
-		sout("  .align %d", g.ty.align)
+		sout("  .align %d", g.align)
 
 		if len(g.initData) > 0 {
 			sout("  .data")

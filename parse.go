@@ -40,6 +40,7 @@ type VarAttr struct {
 	isTypedef bool
 	isStatic  bool
 	isExtern  bool
+	align     int
 }
 
 // This struct represents a variable initializer. Since initializers
@@ -90,6 +91,7 @@ type Obj struct {
 	name    string // Variable name
 	ty      *Type  // Variable type
 	isLocal bool   // local or global/function
+	align   int    // Alignment in bytes
 
 	// Local variable
 	offset int // Offset from RBP
@@ -178,6 +180,7 @@ func newLVar(name string, ty *Type) *Obj {
 		next:    locals,
 		ty:      ty,
 		isLocal: true,
+		align:   ty.align,
 	}
 	pushScope(name).variable = l
 	locals = l
@@ -190,6 +193,7 @@ func newGVar(name string, ty *Type) *Obj {
 		next:    globals,
 		ty:      ty,
 		isLocal: false,
+		align:   ty.align,
 	}
 	pushScope(name).variable = g
 	g.isDefinition = true
@@ -233,6 +237,7 @@ type Member struct {
 	tok    *Token // for error message
 	name   *Token
 	idx    int
+	align  int
 	offset int
 }
 
@@ -926,7 +931,7 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas"}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
 	}
@@ -997,6 +1002,21 @@ func declspec(attr *VarAttr) *Type {
 				errorTok(gtok, "typedef may not be used together with static or extern")
 			}
 			gtok = gtok.next
+			continue
+		}
+
+		if gtok.equal("_Alignas") {
+			if attr == nil {
+				errorTok(gtok, "_Alignas is not allowed in this context")
+			}
+			gtok = gtok.next.consume("(")
+
+			if isTypename(gtok) {
+				attr.align = typename().align
+			} else {
+				attr.align = int(constExpr())
+			}
+			gtok = gtok.consume(")")
 			continue
 		}
 
@@ -1279,7 +1299,7 @@ func enumSpecifier() *Type {
 }
 
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
-func declaration(basety *Type) *Node {
+func declaration(basety *Type, attr *VarAttr) *Node {
 	st := gtok
 
 	var head Node
@@ -1297,6 +1317,9 @@ func declaration(basety *Type) *Node {
 			errorTok(ty.name, "variable declared void")
 		}
 		variable := newLVar(ty.name.literal, ty)
+		if attr != nil && attr.align > 0 {
+			variable.align = attr.align
+		}
 
 		if gtok.equal("=") {
 			// lhs = rhs
@@ -1649,7 +1672,7 @@ func forStmt() *Node {
 
 	if isTypename(gtok) {
 		basety := declspec(nil)
-		node.init = declaration(basety)
+		node.init = declaration(basety, nil)
 	} else {
 		node.init = exprStmt()
 	}
@@ -1718,7 +1741,7 @@ func compoundStmt() *Node {
 				continue
 			}
 
-			cur.next = declaration(basety)
+			cur.next = declaration(basety, &attr)
 			cur = cur.next
 		} else {
 			cur.next = stmt()
@@ -2127,7 +2150,8 @@ func structMembers(ty *Type) {
 	idx := 0
 
 	for !gtok.equal("}") {
-		basety := declspec(nil)
+		attr := VarAttr{}
+		basety := declspec(&attr)
 		first := true
 
 		for !tryConsume(";") {
@@ -2140,6 +2164,11 @@ func structMembers(ty *Type) {
 			mem.ty = declarator(basety)
 			mem.name = mem.ty.name
 			mem.idx = idx
+			if attr.align != 0 {
+				mem.align = attr.align
+			} else {
+				mem.align = mem.ty.align
+			}
 			idx++
 			cur.next = mem
 			cur = cur.next
@@ -2214,13 +2243,13 @@ func structDecl() *Type {
 	offset := 0
 	for m := ty.members; m != nil; m = m.next {
 		// 每个成员的地址必须是其类型大小的整数倍（对齐要求）
-		offset = alignTo(offset, m.ty.align)
+		offset = alignTo(offset, m.align)
 		m.offset = offset
 		offset += m.ty.size
 
 		// 结构体的整体大小必须是其最大对齐要求的整数倍
-		if ty.align < m.ty.align {
-			ty.align = m.ty.align
+		if ty.align < m.align {
+			ty.align = m.align
 		}
 	}
 	ty.size = alignTo(offset, ty.align)
@@ -2240,8 +2269,8 @@ func unionDecl() *Type {
 	// are already initialized to zero. We need to compute the
 	// alignment and the size though.
 	for mem := ty.members; mem != nil; mem = mem.next {
-		if ty.align < mem.ty.align {
-			ty.align = mem.ty.align
+		if ty.align < mem.align {
+			ty.align = mem.align
 		}
 		if ty.size < mem.ty.size {
 			ty.size = mem.ty.size
@@ -2379,6 +2408,7 @@ func funcall() *Node {
 // .       | "(" expr ")"
 // .       | "sizeof" "(" type-name ")"
 // .       | "sizeof" unary
+// .       | "_Alignof" "(" type-name ")"
 // .       | ident
 // .       | funcall
 // .       | str
@@ -2414,6 +2444,13 @@ func primary() *Node {
 		node := unary()
 		addType(node)
 		return NewNumber(int64(node.ty.size), st)
+	}
+
+	if gtok.equal("_Alignof") {
+		gtok = gtok.next.consume("(")
+		ty := typename()
+		gtok = gtok.consume(")")
+		return NewNumber(int64(ty.align), st)
 	}
 
 	if gtok.kind == TK_IDENT {
@@ -2536,6 +2573,10 @@ func globalVariable(basety *Type, attr *VarAttr) {
 		ty := declarator(basety)
 		var_ := newGVar(ty.name.literal, ty)
 		var_.isDefinition = !attr.isExtern
+		if attr.align != 0 {
+			var_.align = attr.align
+		}
+
 		if gtok.equal("=") {
 			gtok = gtok.next
 			gvarInitializer(var_)

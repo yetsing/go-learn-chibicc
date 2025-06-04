@@ -1043,3 +1043,21 @@ Date:   Fri Sep 4 18:08:32 2020 +0900
     Handle extern declarations in a block
 
 = easy
+
+commit 9df51789e7fd36fc1580bcd80676f9bcc4e24be1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:20:55 2020 +0900
+
+    Add _Alignof and _Alignas
+
+= `_Alignas` 和 `_Alignof` 是 C11 标准引入的关键字，用于控制和查询类型的内存对齐方式。
+= _Alignas 用于指定变量或类型的对齐要求。例如，可以声明一个变量必须按照 16 字节对齐：
+= _Alignas(16) int x;
+= 这保证了变量 `x` 的地址是 16 的倍数，有助于满足硬件要求或优化内存访问。
+= _Alignof 用于查询某个类型的对齐单位，返回一个常量表达式（以字节为单位）。例如：
+= size_t alignment = _Alignof(double);
+= 上述代码将返回 `double` 类型的对齐要求。
+= 总结：
+= `_Alignas` 用来设置变量或类型的对齐方式；
+= `_Alignof` 用来查询一个类型的对齐要求。
+= easy

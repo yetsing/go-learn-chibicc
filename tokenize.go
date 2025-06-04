@@ -367,6 +367,9 @@ var keywords = map[string]TokenKind{
 	"switch":   TK_KEYWORD,
 	"case":     TK_KEYWORD,
 	"default":  TK_KEYWORD,
+	"extern":   TK_KEYWORD,
+	"_Alignof": TK_KEYWORD,
+	"_Alignas": TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

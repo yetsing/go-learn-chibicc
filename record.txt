@@ -1061,3 +1061,11 @@ Date:   Fri Sep 4 11:20:55 2020 +0900
 = `_Alignas` 用来设置变量或类型的对齐方式；
 = `_Alignof` 用来查询一个类型的对齐要求。
 = easy
+
+commit 310a87e15e98bb5abfd86ea7bb2a1cca1f5243c7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 08:09:59 2020 +0900
+
+    [GNU] Allow a variable as an operand of _Alignof
+
+= easy

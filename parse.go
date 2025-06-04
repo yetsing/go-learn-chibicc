@@ -2409,6 +2409,7 @@ func funcall() *Node {
 // .       | "sizeof" "(" type-name ")"
 // .       | "sizeof" unary
 // .       | "_Alignof" "(" type-name ")"
+// .       | "_Alignof" unary
 // .       | ident
 // .       | funcall
 // .       | str
@@ -2446,11 +2447,18 @@ func primary() *Node {
 		return NewNumber(int64(node.ty.size), st)
 	}
 
-	if gtok.equal("_Alignof") {
-		gtok = gtok.next.consume("(")
+	if gtok.equal("_Alignof") && gtok.next.equal("(") && isTypename(gtok.next.next) {
+		gtok = gtok.next.next
 		ty := typename()
 		gtok = gtok.consume(")")
 		return NewNumber(int64(ty.align), st)
+	}
+
+	if gtok.equal("_Alignof") {
+		gtok = gtok.next
+		node := unary()
+		addType(node)
+		return NewNumber(int64(node.ty.align), st)
 	}
 
 	if gtok.kind == TK_IDENT {

@@ -1357,7 +1357,7 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 	return node
 }
 
-// stmt = "return" expr ";"
+// stmt = "return" expr? ";"
 // .    | if-stmt
 // .    | "switch" "(" expr ")" stmt
 // .    | "case" const-expr ":" stmt
@@ -1374,11 +1374,16 @@ func stmt() *Node {
 	if gtok.equal("return") {
 		st := gtok
 		gtok = gtok.next
-		node := NewUnary(ND_RETURN, expr(), st)
+		node := NewNode(ND_RETURN, st)
+		if tryConsume(";") {
+			return node
+		}
+
+		expr := expr()
 		gtok = gtok.consume(";")
 
-		addType(node)
-		node.lhs = NewCast(node.lhs, pcurrentFn.ty.returnTy)
+		addType(expr)
+		node.lhs = NewCast(expr, pcurrentFn.ty.returnTy)
 		return node
 	}
 

@@ -1085,3 +1085,12 @@ Date:   Sat Aug 24 07:45:14 2019 +0900
     Add compound literals
 
 = easy
+
+commit 30b3e216cd4eca3b8a13cb0a0613f053ac1d4925
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 22:01:34 2020 +0900
+
+    Add return that doesn't take any value
+
+= sb 了，弄了好多个差不多名字的全局变量，写错成另外一个了
+= easy

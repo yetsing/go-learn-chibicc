@@ -1094,3 +1094,11 @@ Date:   Thu Aug 27 22:01:34 2020 +0900
 
 = sb 了，弄了好多个差不多名字的全局变量，写错成另外一个了
 = easy
+
+commit eb85527656f77b9532f3a78cefde7a2eb739189e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:21:12 2020 +0900
+
+    Add static global variables
+
+= easy

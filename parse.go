@@ -195,6 +195,7 @@ func newGVar(name string, ty *Type) *Obj {
 		isLocal: false,
 		align:   ty.align,
 	}
+	g.isStatic = true
 	pushScope(name).variable = g
 	g.isDefinition = true
 	globals = g
@@ -2627,6 +2628,7 @@ func globalVariable(basety *Type, attr *VarAttr) {
 		ty := declarator(basety)
 		var_ := newGVar(ty.name.literal, ty)
 		var_.isDefinition = !attr.isExtern
+		var_.isStatic = attr.isStatic
 		if attr.align != 0 {
 			var_.align = attr.align
 		}

@@ -1076,4 +1076,12 @@ Date:   Fri Sep 4 14:41:55 2020 +0900
 
     Add static local variables
 
-=
+= easy
+
+commit 127056dc1de6ddad280f6cf09cb15538dca22f43
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 24 07:45:14 2019 +0900
+
+    Add compound literals
+
+= easy

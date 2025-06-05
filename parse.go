@@ -2092,6 +2092,14 @@ func cast() *Node {
 		gtok = gtok.next
 		ty := typename()
 		gtok = gtok.consume(")")
+
+		// compound literal
+		if gtok.equal("{") {
+			gtok = st
+			return unary()
+		}
+
+		// type cast
 		node := NewCast(cast(), ty)
 		node.tok = st
 		return node
@@ -2321,8 +2329,29 @@ func newIncDec(node *Node, tok *Token, addend int) *Node {
 	return NewCast(add, node.ty)
 }
 
-// postfix = primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
+// postfix = "(" type-name ")" "{" initializer-list "}"
+// .       | primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
 func postfix() *Node {
+	if gtok.equal("(") && isTypename(gtok.next) {
+		// compound literal
+		start := gtok
+		gtok = gtok.next
+		ty := typename()
+		gtok = gtok.consume(")")
+
+		if scope.next == nil {
+			var_ := newAnonGvar(ty)
+			gvarInitializer(var_)
+			return NewVarNode(var_, start)
+		}
+
+		var_ := newLVar("", ty)
+		start2 := gtok
+		lhs := lvarInitializer(var_)
+		rhs := NewVarNode(var_, start2)
+		return NewBinary(ND_COMMA, lhs, rhs, start)
+	}
+
 	node := primary()
 
 	for {

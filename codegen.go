@@ -465,6 +465,16 @@ func genStmt(node *Node) {
 		sout("  jmp .L.begin.%d", c)
 		sout("%s:", node.breakLabel)
 		return
+	case ND_DO:
+		c := count()
+		sout(".L.begin.%d:", c)
+		genStmt(node.then)
+		sout("%s:", node.continueLabel)
+		genExpr(node.cond)
+		sout("  cmp $0, %%rax")
+		sout("  jne .L.begin.%d", c)
+		sout("%s:", node.breakLabel)
+		return
 	case ND_SWITCH:
 		genExpr(node.cond)
 

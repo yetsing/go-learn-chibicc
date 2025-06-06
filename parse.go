@@ -280,6 +280,7 @@ const (
 	ND_RETURN             // return
 	ND_IF                 // if
 	ND_FOR                // for or while
+	ND_DO                 // "do"
 	ND_SWITCH             // switch
 	ND_CASE               // case
 	ND_BLOCK              // Block { ... }
@@ -1365,6 +1366,7 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 // .    | "default" ":" stmt
 // .    | for-stmt
 // .    | while-stmt
+// .    | "do" stmt "while" "(" expr ")" ";"
 // .    | "goto" ident ";"
 // .    | "break" ";"
 // .    | "continue" ";"
@@ -1448,6 +1450,30 @@ func stmt() *Node {
 
 	if gtok.equal("while") {
 		return whileStmt()
+	}
+
+	if gtok.equal("do") {
+		node := NewNode(ND_DO, gtok)
+
+		brk := brkLabel   // 保存当前的 break label
+		cont := contLabel // 保存当前的 continue label
+		brkLabel = newUniqueName()
+		contLabel = newUniqueName()
+		node.breakLabel = brkLabel
+		node.continueLabel = contLabel
+
+		gtok = gtok.next
+		node.then = stmt()
+
+		brkLabel = brk   // 恢复当前的 break label
+		contLabel = cont // 恢复当前的 continue label
+
+		gtok = gtok.consume("while")
+		gtok = gtok.consume("(")
+		node.cond = expr()
+		gtok = gtok.consume(")")
+		gtok = gtok.consume(";")
+		return node
 	}
 
 	if gtok.equal("goto") {

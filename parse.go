@@ -1095,7 +1095,7 @@ func declspec(attr *VarAttr) *Type {
 	return ty
 }
 
-// func-params = ("void " | param ("," param)*?)? ")"
+// func-params = ("void" | param ("," param)* ("," "...")?)? ")"
 // param       = declspec declarator
 func funcParams(ty *Type) *Type {
 	if gtok.equal("void") && gtok.next.equal(")") {
@@ -1105,10 +1105,17 @@ func funcParams(ty *Type) *Type {
 
 	var head = Type{}
 	cur := &head
+	isVariadic := false
 
 	for !gtok.equal(")") {
 		if cur != &head {
 			gtok = gtok.consume(",")
+		}
+
+		if gtok.equal("...") {
+			isVariadic = true
+			gtok = gtok.next
+			break
 		}
 
 		ty2 := declspec(nil)
@@ -1129,6 +1136,7 @@ func funcParams(ty *Type) *Type {
 	gtok = gtok.consume(")")
 	ty = funcType(ty)
 	ty.params = head.next
+	ty.isVariadic = isVariadic
 	return ty
 }
 

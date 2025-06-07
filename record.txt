@@ -1140,3 +1140,11 @@ Date:   Wed Oct 7 20:24:13 2020 +0900
     Allow to call a variadic function
 
 = easy
+
+commit 754a24fafcea637cab8bc01bb2702069109a0358
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 25 11:48:44 2019 +0900
+
+    Add va_start to support variadic functions
+
+= easy

@@ -652,6 +652,37 @@ func emitText(prog *Obj) {
 		sout("  mov %%rsp, %%rbp")
 		sout("  sub $%d, %%rsp", fn.stackSize)
 
+		// Save arg registers if function is variadic
+		if fn.vaArea != nil {
+			gp := 0
+			for variable := fn.params; variable != nil; variable = variable.next {
+				gp++
+			}
+			off := fn.vaArea.offset
+
+			// va_elem
+			sout("  movl $%d, %d(%%rbp)", gp*8, off)
+			sout("  movl $0, %d(%%rbp)", off+4)
+			sout("  movq %%rbp, %d(%%rbp)", off+16)
+			sout("  addq $%d, %d(%%rbp)", off+24, off+16)
+
+			// __reg_save_area__
+			sout("  movq %%rdi, %d(%%rbp)", off+24)
+			sout("  movq %%rsi, %d(%%rbp)", off+32)
+			sout("  movq %%rdx, %d(%%rbp)", off+40)
+			sout("  movq %%rcx, %d(%%rbp)", off+48)
+			sout("  movq %%r8, %d(%%rbp)", off+56)
+			sout("  movq %%r9, %d(%%rbp)", off+64)
+			sout("  movsd %%xmm0, %d(%%rbp)", off+72)
+			sout("  movsd %%xmm1, %d(%%rbp)", off+80)
+			sout("  movsd %%xmm2, %d(%%rbp)", off+88)
+			sout("  movsd %%xmm3, %d(%%rbp)", off+96)
+			sout("  movsd %%xmm4, %d(%%rbp)", off+104)
+			sout("  movsd %%xmm5, %d(%%rbp)", off+112)
+			sout("  movsd %%xmm6, %d(%%rbp)", off+120)
+			sout("  movsd %%xmm7, %d(%%rbp)", off+128)
+		}
+
 		// Save passed-by-register arguments to the stack
 		i := 0
 		for variable := fn.params; variable != nil; variable = variable.next {

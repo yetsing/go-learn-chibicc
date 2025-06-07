@@ -109,6 +109,7 @@ type Obj struct {
 	params    *Obj
 	body      *Node
 	locals    *Obj
+	vaArea    *Obj
 	stackSize int // Stack size
 }
 
@@ -2642,6 +2643,9 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	enterScope()
 	createParamLvars(ty.params)
 	fn.params = locals
+	if ty.isVariadic {
+		fn.vaArea = newLVar("__va_area__", arrayOf(charType(), 136))
+	}
 
 	fn.body = compoundStmt()
 	fn.locals = locals

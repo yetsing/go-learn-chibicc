@@ -370,6 +370,8 @@ var keywords = map[string]TokenKind{
 	"extern":   TK_KEYWORD,
 	"_Alignof": TK_KEYWORD,
 	"_Alignas": TK_KEYWORD,
+	"do":       TK_KEYWORD,
+	"signed":   TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

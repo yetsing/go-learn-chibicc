@@ -934,7 +934,7 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas", "signed"}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
 	}
@@ -956,6 +956,7 @@ func pushTagScope(tok *Token, ty *Type) {
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
 // .           | "typedef" | "static" | "extern"
+// .           | "signed"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier)+
 //
@@ -982,6 +983,7 @@ func declspec(attr *VarAttr) *Type {
 	INT := 1 << 8
 	LONG := 1 << 10
 	OTHER := 1 << 12
+	SIGNED := 1 << 13
 
 	ty := intType()
 	counter := 0
@@ -1061,6 +1063,8 @@ func declspec(attr *VarAttr) *Type {
 			counter += INT
 		} else if gtok.equal("long") {
 			counter += LONG
+		} else if gtok.equal("signed") {
+			counter |= SIGNED
 		} else {
 			unreachable()
 		}
@@ -1071,20 +1075,38 @@ func declspec(attr *VarAttr) *Type {
 		case BOOL:
 			ty = boolType()
 		case CHAR:
+			fallthrough
+		case SIGNED + CHAR:
 			ty = charType()
 		case SHORT:
-			ty = shortType()
+			fallthrough
 		case SHORT + INT:
+			fallthrough
+		case SIGNED + SHORT:
+			fallthrough
+		case SIGNED + SHORT + INT:
 			ty = shortType()
 		case INT:
+			fallthrough
+		case SIGNED:
+			fallthrough
+		case SIGNED + INT:
 			ty = intType()
 		case LONG:
-			ty = longType()
+			fallthrough
 		case LONG + INT:
-			ty = longType()
+			fallthrough
 		case LONG + LONG:
-			ty = longType()
+			fallthrough
 		case LONG + LONG + INT:
+			fallthrough
+		case SIGNED + LONG:
+			fallthrough
+		case SIGNED + LONG + INT:
+			fallthrough
+		case SIGNED + LONG + LONG:
+			fallthrough
+		case SIGNED + LONG + LONG + INT:
 			ty = longType()
 		default:
 			errorTok(gtok, "invalid type specifier")

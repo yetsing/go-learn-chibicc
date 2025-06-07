@@ -1134,6 +1134,10 @@ func funcParams(ty *Type) *Type {
 		cur = cur.next
 	}
 
+	if cur == &head {
+		isVariadic = true
+	}
+
 	gtok = gtok.consume(")")
 	ty = funcType(ty)
 	ty.params = head.next
@@ -2464,6 +2468,10 @@ func funcall() *Node {
 		arg := assign()
 		addType(arg)
 
+		if paramTy == nil && !ty.isVariadic {
+			errorTok(gtok, "too many arguments")
+		}
+
 		if paramTy != nil {
 			if paramTy.kind == TY_STRUCT || paramTy.kind == TY_UNION {
 				errorTok(gtok, "passing struct or union is not supported yet")
@@ -2474,6 +2482,10 @@ func funcall() *Node {
 
 		cur.next = arg
 		cur = cur.next
+	}
+
+	if paramTy != nil {
+		errorTok(gtok, "too few arguments")
 	}
 
 	gtok = gtok.consume(")")

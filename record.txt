@@ -1148,3 +1148,11 @@ Date:   Sun Aug 25 11:48:44 2019 +0900
     Add va_start to support variadic functions
 
 = easy
+
+commit 197689a22b38df2ced90e03117914a2248238c20
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 14:29:06 2020 +0900
+
+    Check the number of function arguments
+
+=

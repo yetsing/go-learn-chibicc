@@ -1095,7 +1095,7 @@ func declspec(attr *VarAttr) *Type {
 	return ty
 }
 
-// func-params = (param ("," param)*)? ")"
+// func-params = ("void " | param ("," param)*?)? ")"
 // param       = declspec declarator
 func funcParams(ty *Type) *Type {
 	if gtok.equal("void") && gtok.next.equal(")") {

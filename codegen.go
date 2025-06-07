@@ -352,6 +352,21 @@ func genExpr(node *Node) {
 			sout("  call %s", node.funcname)
 			sout("  add $8, %%rsp")
 		}
+
+		// It looks like the most significant 48 or 56 bits in RAX may
+		// contain garbage if a function return type is short or bool/char,
+		// respectively. We clear the upper bits here.
+		switch node.ty.kind {
+		case TY_BOOL:
+			sout("  movzx %%al, %%rax")
+			return
+		case TY_CHAR:
+			sout("  movsbl %%al, %%eax")
+			return
+		case TY_SHORT:
+			sout("  movswl %%ax, %%eax")
+			return
+		}
 		return
 	}
 

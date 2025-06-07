@@ -1118,3 +1118,17 @@ Date:   Sun Sep 13 16:25:34 2020 +0900
     Align stack frame to 16 byte boundaries
 
 = easy
+
+commit dcd45792264795a32f19581a904dda8bf6d3ad06
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 13 16:25:46 2020 +0900
+
+    Handle a function returning bool, char or short
+
+    x86-64 psABI says that only the least significant 8 bits are
+    significant if RAX has a return value of a function returning bool.
+    Likewise, it looks like only the least significant 1 or 2 bytes
+    are guaranteed to have a correct value for char and short return
+    values, respectively
+
+= easy

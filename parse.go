@@ -934,7 +934,7 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas", "signed"}
+	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas", "signed", "unsigned"}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
 	}
@@ -956,7 +956,7 @@ func pushTagScope(tok *Token, ty *Type) {
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
 // .           | "typedef" | "static" | "extern"
-// .           | "signed"
+// .           | "signed" | "unsigned"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier)+
 //
@@ -984,6 +984,7 @@ func declspec(attr *VarAttr) *Type {
 	LONG := 1 << 10
 	OTHER := 1 << 12
 	SIGNED := 1 << 13
+	UNSIGNED := 1 << 14
 
 	ty := intType()
 	counter := 0
@@ -1065,6 +1066,8 @@ func declspec(attr *VarAttr) *Type {
 			counter += LONG
 		} else if gtok.equal("signed") {
 			counter |= SIGNED
+		} else if gtok.equal("unsigned") {
+			counter |= UNSIGNED
 		} else {
 			unreachable()
 		}
@@ -1078,6 +1081,8 @@ func declspec(attr *VarAttr) *Type {
 			fallthrough
 		case SIGNED + CHAR:
 			ty = charType()
+		case UNSIGNED + CHAR:
+			ty = ucharType()
 		case SHORT:
 			fallthrough
 		case SHORT + INT:
@@ -1086,12 +1091,20 @@ func declspec(attr *VarAttr) *Type {
 			fallthrough
 		case SIGNED + SHORT + INT:
 			ty = shortType()
+		case UNSIGNED + SHORT:
+			fallthrough
+		case UNSIGNED + SHORT + INT:
+			ty = ushortType()
 		case INT:
 			fallthrough
 		case SIGNED:
 			fallthrough
 		case SIGNED + INT:
 			ty = intType()
+		case UNSIGNED:
+			fallthrough
+		case UNSIGNED + INT:
+			ty = uintType()
 		case LONG:
 			fallthrough
 		case LONG + INT:
@@ -1108,6 +1121,14 @@ func declspec(attr *VarAttr) *Type {
 			fallthrough
 		case SIGNED + LONG + LONG + INT:
 			ty = longType()
+		case UNSIGNED + LONG:
+			fallthrough
+		case UNSIGNED + LONG + INT:
+			fallthrough
+		case UNSIGNED + LONG + LONG:
+			fallthrough
+		case UNSIGNED + LONG + LONG + INT:
+			ty = ulongType()
 		default:
 			errorTok(gtok, "invalid type specifier")
 		}

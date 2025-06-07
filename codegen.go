@@ -98,6 +98,13 @@ func load(ty *Type) {
 		return
 	}
 
+	var insn string
+	if ty.isUnsigned {
+		insn = "movz"
+	} else {
+		insn = "movs"
+	}
+
 	// When we load a char or a short value to a register, we always
 	// extend them to the size of int, so we can assume the lower half of
 	// a register always contains a valid value. The upper half of a
@@ -105,9 +112,9 @@ func load(ty *Type) {
 	// a long value to a register, it simply occupies the entire register.
 	// 首先把 RAX 中的值作为内存地址，读取该地址存储的内容，然后再将读取到的内容放到 RAX 中
 	if ty.size == 1 {
-		sout("  movsbl (%%rax), %%eax")
+		sout("  %sbl (%%rax), %%eax", insn)
 	} else if ty.size == 2 {
-		sout("  movswl (%%rax), %%eax")
+		sout("  %swl (%%rax), %%eax", insn)
 	} else if ty.size == 4 {
 		sout("  movsxd (%%rax), %%rax")
 	} else {
@@ -155,25 +162,50 @@ const (
 	I16
 	I32
 	I64
+	U8
+	U16
+	U32
+	U64
 )
 
 func getTypeId(ty *Type) int {
 	switch ty.kind {
 	case TY_CHAR:
-		return I8
+		if ty.isUnsigned {
+			return U8
+		} else {
+			return I8
+		}
 	case TY_SHORT:
-		return I16
+		if ty.isUnsigned {
+			return U16
+		} else {
+			return I16
+		}
 	case TY_INT:
-		return I32
-	default:
-		return I64
+		if ty.isUnsigned {
+			return U32
+		} else {
+			return I32
+		}
+	case TY_LONG:
+		if ty.isUnsigned {
+			return U64
+		} else {
+			return I64
+		}
 	}
+
+	return U64
 }
 
 const (
 	i32i8  string = "movsbl %al, %eax"
+	i32u8  string = "movzbl %al, %eax"
 	i32i16 string = "movswl %ax, %eax"
+	i32u16 string = "movzwl %ax, %eax"
 	i32i64 string = "movsxd %eax, %rax"
+	u32i64 string = "mov %eax, %eax"
 )
 
 var castTable = map[int]map[int]string{
@@ -182,24 +214,80 @@ var castTable = map[int]map[int]string{
 		I16: "",
 		I32: "",
 		I64: i32i64,
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: i32i64,
 	},
 	I16: {
 		I8:  i32i8,
 		I16: "",
 		I32: "",
 		I64: i32i64,
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: i32i64,
 	},
 	I32: {
 		I8:  i32i8,
 		I16: i32i16,
 		I32: "",
 		I64: i32i64,
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: i32i64,
 	},
 	I64: {
 		I8:  i32i8,
 		I16: i32i16,
 		I32: "",
 		I64: "",
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: "",
+	},
+	U8: {
+		I8:  i32i8,
+		I16: "",
+		I32: "",
+		I64: i32i64,
+		U8:  "",
+		U16: "",
+		U32: "",
+		U64: i32i64,
+	},
+	U16: {
+		I8:  i32i8,
+		I16: i32i16,
+		I32: "",
+		I64: i32i64,
+		U8:  i32u8,
+		U16: "",
+		U32: "",
+		U64: i32i64,
+	},
+	U32: {
+		I8:  i32i8,
+		I16: i32i16,
+		I32: "",
+		I64: u32i64,
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: u32i64,
+	},
+	U64: {
+		I8:  i32i8,
+		I16: i32i16,
+		I32: "",
+		I64: "",
+		U8:  i32u8,
+		U16: i32u16,
+		U32: "",
+		U64: "",
 	},
 }
 
@@ -361,10 +449,18 @@ func genExpr(node *Node) {
 			sout("  movzx %%al, %%rax")
 			return
 		case TY_CHAR:
-			sout("  movsbl %%al, %%eax")
+			if node.ty.isUnsigned {
+				sout("  movzbl %%al, %%eax")
+			} else {
+				sout("  movsbl %%al, %%eax")
+			}
 			return
 		case TY_SHORT:
-			sout("  movswl %%ax, %%eax")
+			if node.ty.isUnsigned {
+				sout("  movzwl %%ax, %%eax")
+			} else {
+				sout("  movswl %%ax, %%eax")
+			}
 			return
 		}
 		return
@@ -375,13 +471,15 @@ func genExpr(node *Node) {
 	genExpr(node.lhs)
 	pop("%rdi")
 
-	var ax, di string
+	var ax, di, dx string
 	if node.lhs.ty.kind == TY_LONG || node.lhs.ty.base != nil {
 		ax = "%rax"
 		di = "%rdi"
+		dx = "%rdx"
 	} else {
 		ax = "%eax"
 		di = "%edi"
+		dx = "%edx"
 	}
 
 	switch node.kind {
@@ -397,12 +495,17 @@ func genExpr(node *Node) {
 	case ND_DIV:
 		fallthrough
 	case ND_MOD:
-		if node.lhs.ty.size == 8 {
-			sout("  cqo")
+		if node.ty.isUnsigned {
+			sout("  mov $0, %s", dx)
+			sout("  div %s", di)
 		} else {
-			sout("  cdq")
+			if node.lhs.ty.size == 8 {
+				sout("  cqo")
+			} else {
+				sout("  cdq")
+			}
+			sout("  idiv %s", di)
 		}
-		sout("  idiv %s", di)
 
 		if node.kind == ND_MOD {
 			sout("  mov %%rdx, %%rax")
@@ -431,10 +534,19 @@ func genExpr(node *Node) {
 		} else if node.kind == ND_NE {
 			sout("  setne %%al")
 		} else if node.kind == ND_LT {
-			sout("  setl %%al")
+			if node.lhs.ty.isUnsigned {
+				sout("  setb %%al")
+			} else {
+				sout("  setl %%al")
+			}
 		} else if node.kind == ND_LE {
-			sout("  setle %%al")
+			if node.lhs.ty.isUnsigned {
+				sout("  setbe %%al")
+			} else {
+				sout("  setle %%al")
+			}
 		}
+
 		sout("  movzb %%al, %%rax")
 		return
 	case ND_SHL:
@@ -443,8 +555,8 @@ func genExpr(node *Node) {
 		return
 	case ND_SHR:
 		sout("  mov %%rdi, %%rcx")
-		if node.ty.size == 8 {
-			sout("  sar %%cl, %s", ax)
+		if node.lhs.ty.isUnsigned {
+			sout("  shr %%cl, %s", ax)
 		} else {
 			sout("  sar %%cl, %s", ax)
 		}
@@ -584,7 +696,12 @@ func emitData(prog *Obj) {
 			continue
 		}
 
-		sout("  .globl %s", g.name)
+		if g.isStatic {
+			sout("  .local %s", g.name)
+		} else {
+			sout("  .globl %s", g.name)
+		}
+
 		sout("  .align %d", g.align)
 
 		if len(g.initData) > 0 {

@@ -1165,3 +1165,12 @@ Date:   Tue Oct 6 17:08:59 2020 +0900
 
 = ( ˘･з･)
 = easy
+
+commit 34ab83bdf49a23a47bc90354a5a4d22686d8d92a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 28 23:29:49 2020 +0900
+
+    Add unsigned integral types
+
+= 因为一个返回值的忽略，又 debug 了几个小时
+= easy

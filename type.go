@@ -18,9 +18,10 @@ const (
 )
 
 type Type struct {
-	kind  TypeKind // Type kind
-	size  int      // sizeof() value
-	align int      // alignment
+	kind       TypeKind // Type kind
+	size       int      // sizeof() value
+	align      int      // alignment
+	isUnsigned bool     // unsigned or signed
 
 	// Pointer-to or array-of type. We intentionally use the same member
 	// to represent pointer/array duality(二元性) in C.
@@ -112,6 +113,46 @@ func longType() *Type {
 	return t
 }
 
+func ucharType() *Type {
+	t := &Type{
+		kind:       TY_CHAR,
+		size:       1,
+		align:      1,
+		isUnsigned: true,
+	}
+	return t
+}
+
+func ushortType() *Type {
+	t := &Type{
+		kind:       TY_SHORT,
+		size:       2,
+		align:      2,
+		isUnsigned: true,
+	}
+	return t
+}
+
+func uintType() *Type {
+	t := &Type{
+		kind:       TY_INT,
+		size:       4,
+		align:      4,
+		isUnsigned: true,
+	}
+	return t
+}
+
+func ulongType() *Type {
+	t := &Type{
+		kind:       TY_LONG,
+		size:       8,
+		align:      8,
+		isUnsigned: true,
+	}
+	return t
+}
+
 func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind:  TY_PTR,
@@ -159,6 +200,7 @@ func (t *Type) copy() *Type {
 		kind:       t.kind,
 		size:       t.size,
 		align:      t.align,
+		isUnsigned: t.isUnsigned,
 		base:       t.base,
 		name:       t.name,
 		arrayLen:   t.arrayLen,
@@ -184,10 +226,26 @@ func getCommonType(ty1 *Type, ty2 *Type) *Type {
 	if ty1.base != nil {
 		return pointerTo(ty1.base)
 	}
-	if ty1.size == 8 || ty2.size == 8 {
-		return longType()
+
+	if ty1.size < 4 {
+		ty1 = intType()
 	}
-	return intType()
+	if ty2.size < 4 {
+		ty2 = intType()
+	}
+
+	if ty1.size != ty2.size {
+		if ty1.size < ty2.size {
+			return ty2.copy()
+		} else {
+			return ty1.copy()
+		}
+	}
+
+	if ty2.isUnsigned {
+		return ty2.copy()
+	}
+	return ty1.copy()
 }
 
 // For many binary operators, we implicitly promote operands so that
@@ -269,7 +327,7 @@ func addType(node *Node) {
 	case ND_LT:
 		fallthrough
 	case ND_LE:
-		usualArithmeticConversion(node.lhs, node.rhs)
+		node.lhs, node.rhs = usualArithmeticConversion(node.lhs, node.rhs)
 		node.ty = intType()
 		return
 	case ND_FUNCALL:

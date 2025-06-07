@@ -372,6 +372,7 @@ var keywords = map[string]TokenKind{
 	"_Alignas": TK_KEYWORD,
 	"do":       TK_KEYWORD,
 	"signed":   TK_KEYWORD,
+	"unsigned": TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

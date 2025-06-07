@@ -341,7 +341,17 @@ func genExpr(node *Node) {
 		}
 
 		sout("  mov $0, %%rax")
-		sout("  call %s", node.funcname)
+
+		// push 一次栈大小增加 8 字节
+		// 偶数次刚好是 16 字节对齐
+		// 奇数次需要先 sub rsp 8 字节，调用完函数后再 add rsp 8 字节
+		if depth%2 == 0 {
+			sout("  call %s", node.funcname)
+		} else {
+			sout("  sub $8, %%rsp")
+			sout("  call %s", node.funcname)
+			sout("  add $8, %%rsp")
+		}
 		return
 	}
 

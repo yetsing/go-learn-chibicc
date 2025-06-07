@@ -155,10 +155,11 @@ func ulongType() *Type {
 
 func pointerTo(base *Type) *Type {
 	t := &Type{
-		kind:  TY_PTR,
-		size:  8,
-		align: 8,
-		base:  base,
+		kind:       TY_PTR,
+		size:       8,
+		align:      8,
+		isUnsigned: true,
+		base:       base,
 	}
 	return t
 }

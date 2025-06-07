@@ -1191,3 +1191,11 @@ Date:   Tue Mar 24 22:18:59 2020 +0900
     Use long or ulong instead of int for some expressions
 
 = easy
+
+commit 6880a39d2a5aec8e5ed32c276109936ed503d0bb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 11 21:29:12 2020 +0900
+
+    When comparing two pointers, treat them as unsigned
+
+= easy

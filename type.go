@@ -282,11 +282,7 @@ func addType(node *Node) {
 
 	switch node.kind {
 	case ND_NUM:
-		if node.val == int64(int(node.val)) {
-			node.ty = intType()
-		} else {
-			node.ty = longType()
-		}
+		node.ty = intType()
 		return
 	case ND_ADD:
 		fallthrough

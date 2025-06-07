@@ -82,6 +82,15 @@ func readFile(filename string) string {
 	}
 }
 
+// startswith2 is a case-insensitive version of startswith.
+func startswith2(s, prefix string) bool {
+	if len(s) < len(prefix) {
+		return false
+	}
+	p := s[:len(prefix)]
+	return strings.EqualFold(p, prefix)
+}
+
 // #endregion
 
 // #region Tokenizer
@@ -105,7 +114,7 @@ type Token struct {
 	lineno int
 
 	val int64
-	ty  *Type  // Used if TK_STR
+	ty  *Type  // Used if TK_NUM or TK_STR
 	str string // String literal contents
 }
 
@@ -294,6 +303,7 @@ func readCharLiteral(input string, p int) *Token {
 
 	tok := NewToken(TK_NUM, input[start:p+1], start)
 	tok.val = int64(int8(c))
+	tok.ty = intType()
 	return tok
 }
 
@@ -313,6 +323,7 @@ func isNumChar(b byte) bool {
 func readIntLiteral(input string, start int) *Token {
 	p := start
 
+	// Read a binary, octal, decimal or hexadecimal number.
 	base := 10
 	if hasCasePrefix(input[p:], "0x") && isNumChar(input[p+2]) {
 		base = 16
@@ -321,14 +332,16 @@ func readIntLiteral(input string, start int) *Token {
 		base = 2
 		p += 2
 	} else if input[p] == '0' {
-		if !isNumChar(input[p+1]) {
-			// 0
-			tok := NewToken(TK_NUM, input[start:p+1], start)
-			tok.val = 0
-			return tok
+		// if !isNumChar(input[p+1]) {
+		// 	// 0
+		// 	tok := NewToken(TK_NUM, input[start:p+1], start)
+		// 	tok.val = 0
+		// 	return tok
+		// }
+		if isNumChar(input[p+1]) {
+			base = 8
+			p++
 		}
-		base = 8
-		p++
 	}
 
 	numStart := p
@@ -336,10 +349,85 @@ func readIntLiteral(input string, start int) *Token {
 		p++
 	}
 
-	val, err := strconv.ParseInt(input[numStart:p], base, 64)
+	val, err := strconv.ParseUint(input[numStart:p], base, 64)
 	check(err)
+
+	// Read U, L or LL suffixes.
+	l := false
+	u := false
+
+	if startswith2(input[p:], "LLU") || startswith2(input[p:], "ULL") {
+		p += 3
+		l = true
+		u = true
+	} else if startswith2(input[p:], "UL") || startswith2(input[p:], "LU") {
+		p += 2
+		l = true
+		u = true
+	} else if startswith2(input[p:], "LL") {
+		p += 2
+		l = true
+	} else if input[p] == 'L' || input[p] == 'l' {
+		p++
+		l = true
+	} else if input[p] == 'U' || input[p] == 'u' {
+		p++
+		u = true
+	}
+
+	// Infer a type.
+	var ty *Type
+	if base == 10 {
+		if l && u {
+			ty = ulongType()
+		} else if l {
+			ty = longType()
+		} else if u {
+			val2 := val >> 32
+			if val2 != 0 {
+				ty = ulongType()
+			} else {
+				ty = uintType()
+			}
+		} else {
+			val2 := val >> 31
+			if val2 != 0 {
+				ty = longType()
+			} else {
+				ty = intType()
+			}
+		}
+	} else {
+		if l && u {
+			ty = ulongType()
+		} else if l {
+			val2 := val >> 63
+			if val2 != 0 {
+				ty = ulongType()
+			} else {
+				ty = longType()
+			}
+		} else if u {
+			val2 := val >> 32
+			if val2 != 0 {
+				ty = ulongType()
+			} else {
+				ty = uintType()
+			}
+		} else if (val >> 63) != 0 {
+			ty = ulongType()
+		} else if (val >> 32) != 0 {
+			ty = longType()
+		} else if (val >> 31) != 0 {
+			ty = uintType()
+		} else {
+			ty = intType()
+		}
+	}
+
 	tok := NewToken(TK_NUM, input[start:p], start)
-	tok.val = val
+	tok.val = int64(val)
+	tok.ty = ty
 	return tok
 }
 

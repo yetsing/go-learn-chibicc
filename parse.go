@@ -2627,6 +2627,7 @@ func primary() *Node {
 
 	if gtok.kind == TK_NUM {
 		node := NewNumber(gtok.getNumber(), st)
+		node.ty = gtok.ty
 		gtok = gtok.next
 		return node
 	}

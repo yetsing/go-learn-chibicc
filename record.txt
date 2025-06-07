@@ -1174,3 +1174,12 @@ Date:   Fri Aug 28 23:29:49 2020 +0900
 
 = 因为一个返回值的忽略，又 debug 了几个小时
 = easy
+
+commit aaf10459d93fb6c0f4539cb792c02a8d15cb0299
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 21 16:17:40 2019 +0900
+
+    Add U, L and LL suffixes
+
+= 这个数组解析有点琐碎，容易漏掉一些边界条件
+= easy

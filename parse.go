@@ -396,6 +396,17 @@ func NewLong(val int64, tok *Token) *Node {
 	}
 }
 
+func NewUlong(val int64, tok *Token) *Node {
+	return &Node{
+		kind: ND_NUM,
+		lhs:  nil,
+		rhs:  nil,
+		val:  val,
+		tok:  tok,
+		ty:   ulongType(),
+	}
+}
+
 func NewVarNode(variable *Obj, tok *Token) *Node {
 	return &Node{
 		kind:     ND_VAR,
@@ -521,7 +532,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 	// ptr - ptr, which returns how many elements are between the two.
 	if lhs.ty.base != nil && rhs.ty.base != nil {
 		node := NewBinary(ND_SUB, lhs, rhs, tok)
-		node.ty = intType()
+		node.ty = longType()
 		return NewBinary(ND_DIV, node, NewNumber(int64(lhs.ty.base.size), tok), tok)
 	}
 
@@ -2574,28 +2585,28 @@ func primary() *Node {
 		gtok = gtok.next.next
 		ty := typename()
 		gtok = gtok.consume(")")
-		return NewNumber(int64(ty.size), st)
+		return NewUlong(int64(ty.size), st)
 	}
 
 	if gtok.equal("sizeof") {
 		gtok = gtok.next
 		node := unary()
 		addType(node)
-		return NewNumber(int64(node.ty.size), st)
+		return NewUlong(int64(node.ty.size), st)
 	}
 
 	if gtok.equal("_Alignof") && gtok.next.equal("(") && isTypename(gtok.next.next) {
 		gtok = gtok.next.next
 		ty := typename()
 		gtok = gtok.consume(")")
-		return NewNumber(int64(ty.align), st)
+		return NewUlong(int64(ty.align), st)
 	}
 
 	if gtok.equal("_Alignof") {
 		gtok = gtok.next
 		node := unary()
 		addType(node)
-		return NewNumber(int64(node.ty.align), st)
+		return NewUlong(int64(node.ty.align), st)
 	}
 
 	if gtok.kind == TK_IDENT {

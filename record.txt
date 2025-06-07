@@ -1183,3 +1183,11 @@ Date:   Sat Sep 21 16:17:40 2019 +0900
 
 = 这个数组解析有点琐碎，容易漏掉一些边界条件
 = easy
+
+commit 8b8f3de48bba31ccfa84e3573075b2125bc130c3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Mar 24 22:18:59 2020 +0900
+
+    Use long or ulong instead of int for some expressions
+
+= easy

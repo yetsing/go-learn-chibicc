@@ -183,6 +183,17 @@ func store(ty *Type) {
 }
 
 func cmpZero(ty *Type) {
+	switch ty.kind {
+	case TY_FLOAT:
+		sout("  xorps %%xmm1, %%xmm1")
+		sout("  ucomiss %%xmm1, %%xmm0")
+		return
+	case TY_DOUBLE:
+		sout("  xorpd %%xmm1, %%xmm1")
+		sout("  ucomisd %%xmm1, %%xmm0")
+		return
+	}
+
 	if ty.isInteger() && ty.size <= 4 {
 		sout("  cmp $0, %%eax")
 	} else {
@@ -507,7 +518,7 @@ func genExpr(node *Node) {
 	case ND_COND:
 		c := count()
 		genExpr(node.cond)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.cond.ty)
 		sout("  je .L.else.%d", c)
 		genExpr(node.then)
 		sout("  jmp .L.end.%d", c)
@@ -517,7 +528,7 @@ func genExpr(node *Node) {
 		return
 	case ND_NOT:
 		genExpr(node.lhs)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.lhs.ty)
 		sout("  sete %%al")
 		sout("  movzx %%al, %%rax")
 		return
@@ -528,10 +539,10 @@ func genExpr(node *Node) {
 	case ND_LOGAND:
 		c := count()
 		genExpr(node.lhs)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.lhs.ty)
 		sout("  je .L.false.%d", c)
 		genExpr(node.rhs)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.rhs.ty)
 		sout("  je .L.false.%d", c)
 		sout("  mov $1, %%rax")
 		sout("  jmp .L.end.%d", c)
@@ -542,10 +553,10 @@ func genExpr(node *Node) {
 	case ND_LOGOR:
 		c := count()
 		genExpr(node.lhs)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.lhs.ty)
 		sout("  jne .L.true.%d", c)
 		genExpr(node.rhs)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.rhs.ty)
 		sout("  jne .L.true.%d", c)
 		sout("  mov $0, %%rax")
 		sout("  jmp .L.end.%d", c)
@@ -767,7 +778,7 @@ func genStmt(node *Node) {
 	case ND_IF:
 		c := count()
 		genExpr(node.cond)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.cond.ty)
 		sout("  je .L.else.%d", c)
 		genStmt(node.then)
 		sout("  jmp .L.end.%d", c)
@@ -785,7 +796,7 @@ func genStmt(node *Node) {
 		sout(".L.begin.%d:", c)
 		if node.cond != nil {
 			genExpr(node.cond)
-			sout("  cmp $0, %%rax")
+			cmpZero(node.cond.ty)
 			sout("  je %s", node.breakLabel)
 		}
 		genStmt(node.then)
@@ -802,7 +813,7 @@ func genStmt(node *Node) {
 		genStmt(node.then)
 		sout("%s:", node.continueLabel)
 		genExpr(node.cond)
-		sout("  cmp $0, %%rax")
+		cmpZero(node.cond.ty)
 		sout("  jne .L.begin.%d", c)
 		sout("%s:", node.breakLabel)
 		return

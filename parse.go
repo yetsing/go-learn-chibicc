@@ -494,7 +494,7 @@ func newAdd(lhs, rhs *Node, tok *Token) *Node {
 	addType(rhs)
 
 	// num + num
-	if lhs.ty.isInteger() && rhs.ty.isInteger() {
+	if lhs.ty.isNumeric() && rhs.ty.isNumeric() {
 		return NewBinary(ND_ADD, lhs, rhs, tok)
 	}
 
@@ -518,7 +518,7 @@ func newSub(lhs, rhs *Node, tok *Token) *Node {
 	addType(rhs)
 
 	// num - num
-	if lhs.ty.isInteger() && rhs.ty.isInteger() {
+	if lhs.ty.isNumeric() && rhs.ty.isNumeric() {
 		return NewBinary(ND_SUB, lhs, rhs, tok)
 	}
 

@@ -458,8 +458,11 @@ func readNumber(input string, p int) *Token {
 	}
 
 	numEnd := p + len(tok.literal)
-	for numEnd < len(input) && strings.ContainsRune("0123456789.eEp+-", rune(input[numEnd])) {
+	for numEnd < len(input) && strings.ContainsRune("0123456789.eEp", rune(input[numEnd])) {
 		numEnd++
+		if numEnd < len(input) && (input[numEnd-1] == 'e' || input[numEnd-1] == 'E') && (input[numEnd] == '+' || input[numEnd] == '-') {
+			numEnd++
+		}
 	}
 
 	// If it's not an integer, it must be a floating point constant.

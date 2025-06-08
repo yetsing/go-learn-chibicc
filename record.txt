@@ -1256,3 +1256,11 @@ Date:   Tue Sep 22 18:28:37 2020 +0900
     Add flonum ==, !=, < and <=
 
 = easy
+
+commit 83f76ebb66712a2560b2993e92265b574b1ab7ed
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Sep 22 18:29:17 2020 +0900
+
+    Add flonum +, -, * and /
+
+= easy

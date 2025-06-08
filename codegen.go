@@ -445,6 +445,22 @@ func genExpr(node *Node) {
 		return
 	case ND_NEG:
 		genExpr(node.lhs)
+
+		switch node.ty.kind {
+		case TY_FLOAT:
+			sout("  mov $1, %%rax")
+			sout("  shl $31, %%rax")
+			sout("  movq %%rax, %%xmm1")
+			sout("  xorps %%xmm1, %%xmm0")
+			return
+		case TY_DOUBLE:
+			sout("  mov $1, %%rax")
+			sout("  shl $63, %%rax")
+			sout("  movq %%rax, %%xmm1")
+			sout("  xorpd %%xmm1, %%xmm0")
+			return
+		}
+
 		sout("  neg %%rax")
 		return
 	case ND_VAR:
@@ -601,6 +617,18 @@ func genExpr(node *Node) {
 		}
 
 		switch node.kind {
+		case ND_ADD:
+			sout("  add%s %%xmm1, %%xmm0", sz)
+			return
+		case ND_SUB:
+			sout("  sub%s %%xmm1, %%xmm0", sz)
+			return
+		case ND_MUL:
+			sout("  mul%s %%xmm1, %%xmm0", sz)
+			return
+		case ND_DIV:
+			sout("  div%s %%xmm1, %%xmm0", sz)
+			return
 		case ND_EQ:
 			fallthrough
 		case ND_NE:
@@ -678,13 +706,13 @@ func genExpr(node *Node) {
 		}
 		return
 	case ND_BITAND:
-		sout("  and %%rdi, %%rax")
+		sout("  and %s, %s", di, ax)
 		return
 	case ND_BITOR:
-		sout("  or %%rdi, %%rax")
+		sout("  or %s, %s", di, ax)
 		return
 	case ND_BITXOR:
-		sout("  xor %%rdi, %%rax")
+		sout("  xor %s, %s", di, ax)
 		return
 	case ND_EQ:
 		fallthrough

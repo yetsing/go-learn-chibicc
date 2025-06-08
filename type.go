@@ -221,6 +221,10 @@ func (t *Type) isFlonum() bool {
 	return t.kind == TY_FLOAT || t.kind == TY_DOUBLE
 }
 
+func (t *Type) isNumeric() bool {
+	return t.isInteger() || t.isFlonum()
+}
+
 func (t *Type) copy() *Type {
 	c := &Type{
 		kind:       t.kind,

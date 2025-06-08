@@ -1280,3 +1280,11 @@ Date:   Thu Aug 27 22:46:16 2020 +0900
     Allow to call a function that takes/returns flonums
 
 = easy
+
+commit c6b30568b407e7b60b6fc2929801669434e4f91a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 22:47:31 2020 +0900
+
+    Allow to define a function that takes/returns flonums
+
+= easy

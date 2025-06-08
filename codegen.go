@@ -949,6 +949,18 @@ func emitData(prog *Obj) {
 
 }
 
+func storeFp(r, offset, sz int) {
+	switch sz {
+	case 4:
+		sout("  movss %%xmm%d, %d(%%rbp)", r, offset)
+		return
+	case 8:
+		sout("  movsd %%xmm%d, %d(%%rbp)", r, offset)
+		return
+	}
+	unreachable()
+}
+
 func storeGP(r, offset, sz int) {
 	switch sz {
 	case 1:
@@ -1020,10 +1032,16 @@ func emitText(prog *Obj) {
 		}
 
 		// Save passed-by-register arguments to the stack
-		i := 0
-		for variable := fn.params; variable != nil; variable = variable.next {
-			storeGP(i, variable.offset, variable.ty.size)
-			i++
+		gp := 0
+		fp := 0
+		for var_ := fn.params; var_ != nil; var_ = var_.next {
+			if var_.ty.isFlonum() {
+				storeFp(fp, var_.offset, var_.ty.size)
+				fp++
+			} else {
+				storeGP(gp, var_.offset, var_.ty.size)
+				gp++
+			}
 		}
 
 		// Emit code

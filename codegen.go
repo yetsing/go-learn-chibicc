@@ -1003,14 +1003,20 @@ func emitText(prog *Obj) {
 		// Save arg registers if function is variadic
 		if fn.vaArea != nil {
 			gp := 0
-			for variable := fn.params; variable != nil; variable = variable.next {
-				gp++
+			fp := 0
+			for var_ := fn.params; var_ != nil; var_ = var_.next {
+				if var_.ty.isFlonum() {
+					fp++
+				} else {
+					gp++
+				}
 			}
+
 			off := fn.vaArea.offset
 
 			// va_elem
 			sout("  movl $%d, %d(%%rbp)", gp*8, off)
-			sout("  movl $0, %d(%%rbp)", off+4)
+			sout("  movl $%d, %d(%%rbp)", fp*8+48, off+4)
 			sout("  movq %%rbp, %d(%%rbp)", off+16)
 			sout("  addq $%d, %d(%%rbp)", off+24, off+16)
 

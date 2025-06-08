@@ -1296,3 +1296,11 @@ Date:   Thu Apr 30 23:33:27 2020 +0900
     Implement default argument promotion for float
 
 = easy
+
+commit e452cf721511dbf0d7f8c8f469f2dd67d8a5ee93
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri May 1 17:36:12 2020 +0900
+
+    Support variadic function with floating-point parameters
+
+= easy

@@ -1199,3 +1199,11 @@ Date:   Fri Sep 11 21:29:12 2020 +0900
     When comparing two pointers, treat them as unsigned
 
 = easy
+
+commit 7ba6fe8d94af2a232a9da82b815502513f52e465
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Mar 26 21:20:24 2020 +0900
+
+    Handle unsigned types in the constant expression
+
+= easy

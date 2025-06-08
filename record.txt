@@ -1304,3 +1304,11 @@ Date:   Fri May 1 17:36:12 2020 +0900
     Support variadic function with floating-point parameters
 
 = easy
+
+commit ffea4219b1f4ebe7c06cecc6c221cb0aab3a03ea
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri May 1 19:30:17 2020 +0900
+
+    Add flonum constant expression
+
+= easy

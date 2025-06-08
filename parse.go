@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
+	"math"
 	"slices"
 )
 
@@ -912,6 +914,20 @@ func writeGvarData(cur *Relocation, init *Initializer, ty *Type, buf []byte, off
 		return cur
 	}
 
+	if ty.kind == TY_FLOAT {
+		val := evalDouble(init.expr)
+		bits := math.Float32bits(float32(val))
+		binary.LittleEndian.PutUint32(buf[offset:], bits)
+		return cur
+	}
+
+	if ty.kind == TY_DOUBLE {
+		val := evalDouble(init.expr)
+		bits := math.Float64bits(val)
+		binary.LittleEndian.PutUint64(buf[offset:], bits)
+		return cur
+	}
+
 	label := ""
 	val := eval2(init.expr, &label)
 
@@ -1658,6 +1674,10 @@ func eval(node *Node) int64 {
 func eval2(node *Node, label *string) int64 {
 	addType(node)
 
+	if node.ty.isFlonum() {
+		return int64(evalDouble(node))
+	}
+
 	switch node.kind {
 	case ND_ADD:
 		return eval2(node.lhs, label) + eval(node.rhs)
@@ -1827,6 +1847,47 @@ func evalRval(node *Node, label *string) int64 {
 func constExpr() int64 {
 	node := conditional()
 	return eval(node)
+}
+
+func evalDouble(node *Node) float64 {
+	addType(node)
+
+	if node.ty.isInteger() {
+		if node.ty.isUnsigned {
+			return float64(uint64(eval(node)))
+		}
+		return float64(eval(node))
+	}
+
+	switch node.kind {
+	case ND_ADD:
+		return evalDouble(node.lhs) + evalDouble(node.rhs)
+	case ND_SUB:
+		return evalDouble(node.lhs) - evalDouble(node.rhs)
+	case ND_MUL:
+		return evalDouble(node.lhs) * evalDouble(node.rhs)
+	case ND_DIV:
+		return evalDouble(node.lhs) / evalDouble(node.rhs)
+	case ND_NEG:
+		return -evalDouble(node.lhs)
+	case ND_COND:
+		if evalDouble(node.cond) != 0 {
+			return evalDouble(node.then)
+		}
+		return evalDouble(node.els)
+	case ND_COMMA:
+		return evalDouble(node.rhs)
+	case ND_CAST:
+		if node.lhs.ty.isFlonum() {
+			return evalDouble(node.lhs)
+		}
+		return float64(eval(node.lhs))
+	case ND_NUM:
+		return node.fval
+	}
+
+	errorTok(node.tok, "not a compile-time constant")
+	return 0.0
 }
 
 // while-stmt = "while" "(" expr ")" stmt

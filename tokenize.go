@@ -113,9 +113,10 @@ type Token struct {
 	pos    int
 	lineno int
 
-	val int64
-	ty  *Type  // Used if TK_NUM or TK_STR
-	str string // String literal contents
+	val  int64
+	fval float64
+	ty   *Type  // Used if TK_NUM or TK_STR
+	str  string // String literal contents
 }
 
 func (t *Token) equal(op string) bool {
@@ -320,6 +321,21 @@ func isNumChar(b byte) bool {
 	return (b >= '0' && b <= '9') || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F')
 }
 
+func isNumChar2(base int, b byte) bool {
+	switch base {
+	case 2:
+		return b == '0' || b == '1'
+	case 8:
+		return b >= '0' && b <= '7'
+	case 10:
+		return b >= '0' && b <= '9'
+	case 16:
+		return (b >= '0' && b <= '9') || (b >= 'a' && b <= 'f') || (b >= 'A' && b <= 'F')
+	default:
+		return false
+	}
+}
+
 func readIntLiteral(input string, start int) *Token {
 	p := start
 
@@ -345,7 +361,7 @@ func readIntLiteral(input string, start int) *Token {
 	}
 
 	numStart := p
-	for p < len(input) && isNumChar(input[p]) {
+	for p < len(input) && isNumChar2(base, input[p]) {
 		p++
 	}
 
@@ -427,6 +443,42 @@ func readIntLiteral(input string, start int) *Token {
 
 	tok := NewToken(TK_NUM, input[start:p], start)
 	tok.val = int64(val)
+	tok.ty = ty
+	return tok
+}
+
+func readNumber(input string, p int) *Token {
+	tok := &Token{}
+	if input[p] != '.' {
+		// Try to parse as an integer constant.
+		tok = readIntLiteral(input, p)
+		if !strings.ContainsRune(".eEfF", rune(input[p+len(tok.literal)])) {
+			return tok
+		}
+	}
+
+	numEnd := p + len(tok.literal)
+	for numEnd < len(input) && strings.ContainsRune("0123456789.eEp+-", rune(input[numEnd])) {
+		numEnd++
+	}
+
+	// If it's not an integer, it must be a floating point constant.
+	val, err := strconv.ParseFloat(input[p:numEnd], 64)
+	check(err)
+
+	var ty *Type
+	if input[numEnd] == 'f' || input[numEnd] == 'F' {
+		numEnd++
+		ty = floatType()
+	} else if input[numEnd] == 'l' || input[numEnd] == 'L' {
+		numEnd++
+		ty = doubleType()
+	} else {
+		ty = doubleType()
+	}
+
+	tok = NewToken(TK_NUM, input[p:numEnd], p)
+	tok.fval = val
 	tok.ty = ty
 	return tok
 }
@@ -532,8 +584,8 @@ func tokenize(filename, input string) *Token {
 
 		// Handle numbers
 		start := p
-		if ch >= '0' && ch <= '9' {
-			cur.next = readIntLiteral(input, p)
+		if (ch >= '0' && ch <= '9') || (ch == '.' && p+1 < len(input) && (input[p+1] >= '0' && input[p+1] <= '9')) {
+			cur.next = readNumber(input, p)
 			cur = cur.next
 			p += len(cur.literal)
 			continue

@@ -320,6 +320,16 @@ func genExpr(node *Node) {
 	case ND_NULL_EXPR:
 		return
 	case ND_NUM:
+		switch node.ty.kind {
+		case TY_FLOAT:
+			sout("  mov $%d, %%eax  # float %f", uint32(node.fval), node.fval)
+			sout("  movq %%rax, %%xmm0")
+			return
+		case TY_DOUBLE:
+			sout("  mov $%d, %%eax  # double %f", uint64(node.fval), node.fval)
+			sout("  movq %%rax, %%xmm0")
+		}
+
 		sout("  mov $%d, %%rax", node.val)
 		return
 	case ND_NEG:

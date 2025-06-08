@@ -1231,3 +1231,11 @@ Date:   Fri Sep 4 17:28:20 2020 +0900
     Allow to omit parameter name in function declaration
 
 = easy
+
+commit 1e57f72d8adf15937856a3ca3ca0e16ccb37421e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 27 19:43:03 2020 +0900
+
+    Add floating-point constant
+
+=

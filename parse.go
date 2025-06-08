@@ -343,7 +343,8 @@ type Node struct {
 	variable *Obj // Used if kind is ND_VAR
 
 	// Numeric literal
-	val int64 // Used if kind is ND_NUM
+	val  int64 // Used if kind is ND_NUM
+	fval float64
 }
 
 func NewNode(kind NodeKind, tok *Token) *Node {
@@ -2712,7 +2713,14 @@ func primary() *Node {
 	}
 
 	if gtok.kind == TK_NUM {
-		node := NewNumber(gtok.getNumber(), st)
+		var node *Node
+		if gtok.ty.isFlonum() {
+			node = NewNode(ND_NUM, st)
+			node.fval = gtok.fval
+		} else {
+			node = NewNumber(gtok.val, st)
+		}
+
 		node.ty = gtok.ty
 		gtok = gtok.next
 		return node

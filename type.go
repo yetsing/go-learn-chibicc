@@ -9,6 +9,8 @@ const (
 	TY_SHORT                  // short
 	TY_INT                    // int
 	TY_LONG                   // long
+	TY_FLOAT                  // float
+	TY_DOUBLE                 // double
 	TY_ENUM                   // enum
 	TY_PTR                    // pointer
 	TY_FUNC                   // function
@@ -154,6 +156,24 @@ func ulongType() *Type {
 	return t
 }
 
+func floatType() *Type {
+	t := &Type{
+		kind:  TY_FLOAT,
+		size:  4,
+		align: 4,
+	}
+	return t
+}
+
+func doubleType() *Type {
+	t := &Type{
+		kind:  TY_DOUBLE,
+		size:  8,
+		align: 8,
+	}
+	return t
+}
+
 func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind:       TY_PTR,
@@ -195,6 +215,10 @@ func enumType() *Type {
 
 func (t *Type) isInteger() bool {
 	return t.kind == TY_BOOL || t.kind == TY_CHAR || t.kind == TY_SHORT || t.kind == TY_INT || t.kind == TY_LONG || t.kind == TY_ENUM
+}
+
+func (t *Type) isFlonum() bool {
+	return t.kind == TY_FLOAT || t.kind == TY_DOUBLE
 }
 
 func (t *Type) copy() *Type {

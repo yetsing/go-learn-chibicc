@@ -1288,3 +1288,11 @@ Date:   Thu Aug 27 22:47:31 2020 +0900
     Allow to define a function that takes/returns flonums
 
 = easy
+
+commit 8b14859f63a8389882bdb9330de592a112affa18
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 30 23:33:27 2020 +0900
+
+    Implement default argument promotion for float
+
+= easy

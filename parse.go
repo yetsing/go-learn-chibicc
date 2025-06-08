@@ -2619,6 +2619,10 @@ func funcall() *Node {
 			}
 			arg = NewCast(arg, paramTy)
 			paramTy = paramTy.next
+		} else if arg.ty.kind == TY_FLOAT {
+			// If parameter type is omitted (e.g. in "..."), float
+			// arguments are promoted to double.
+			arg = NewCast(arg, doubleType())
 		}
 
 		cur.next = arg

@@ -945,7 +945,13 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{"void", "_Bool", "char", "short", "int", "long", "struct", "union", "typedef", "enum", "static", "extern", "_Alignas", "signed", "unsigned"}
+	kw := []string{
+		"void", "_Bool", "char", "short", "int", "long",
+		"struct", "union", "typedef", "enum", "static", "extern", "_Alignas",
+		"signed", "unsigned",
+		"const", "volatile", "auto", "register", "restrict",
+		"__restrict", "__restrict__", "_Noreturn",
+	}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
 	}
@@ -969,7 +975,9 @@ func pushTagScope(tok *Token, ty *Type) {
 // .           | "typedef" | "static" | "extern"
 // .           | "signed" | "unsigned"
 // .           | struct-decl | union-decl | typedef-name
-// .           | enum-specifier)+
+// .           | enum-specifier
+// .           | "const" | "volatile" | "auto" | "register" | "restrict"
+// .           | "__restrict" | "__restrict__" | "_Noreturn")+
 //
 // The order of typenames in a type-specifier doesn't matter. For
 // example, `int long static` means the same as `static long int`.
@@ -1019,6 +1027,18 @@ func declspec(attr *VarAttr) *Type {
 				errorTok(gtok, "typedef may not be used together with static or extern")
 			}
 			gtok = gtok.next
+			continue
+		}
+
+		// These keywords are recognized but ignored.
+		if tryConsume("const") ||
+			tryConsume("volatile") ||
+			tryConsume("auto") ||
+			tryConsume("register") ||
+			tryConsume("restrict") ||
+			tryConsume("__restrict") ||
+			tryConsume("__restrict__") ||
+			tryConsume("_Noreturn") {
 			continue
 		}
 
@@ -1229,12 +1249,26 @@ func typeSuffix(ty *Type) *Type {
 	return ty
 }
 
-// ref: https://www.sigbus.info/compilerbook#type
-// declarator = "*"* ( "(" ident ")" | "(" declarator ")" | ident ) type-suffix
-func declarator(ty *Type) *Type {
+// pointers = ("*" ("const" | "volatile" | "restrict")*)*
+func pointers(ty *Type) *Type {
 	for tryConsume("*") {
 		ty = pointerTo(ty)
+		for gtok.equal("const") ||
+			gtok.equal("volatile") ||
+			gtok.equal("restrict") ||
+			gtok.equal("__restrict") ||
+			gtok.equal("__restrict__") {
+			gtok = gtok.next
+		}
 	}
+
+	return ty
+}
+
+// ref: https://www.sigbus.info/compilerbook#type
+// declarator = pointers ("(" ident ")" | "(" declarator ")" | ident) type-suffix
+func declarator(ty *Type) *Type {
+	ty = pointers(ty)
 
 	if gtok.equal("(") {
 		st := gtok
@@ -1262,12 +1296,9 @@ func declarator(ty *Type) *Type {
 	return ty
 }
 
-// abstract-declarator = "*"* ("(" abstract-declarator ")")? type-suffix
+// abstract-declarator = pointers ("(" abstract-declarator ")")? type-suffix
 func abstractDeclarator(ty *Type) *Type {
-	for gtok.equal("*") {
-		ty = pointerTo(ty)
-		gtok = gtok.next
-	}
+	ty = pointers(ty)
 
 	if gtok.equal("(") {
 		st := gtok

@@ -1207,3 +1207,11 @@ Date:   Thu Mar 26 21:20:24 2020 +0900
     Handle unsigned types in the constant expression
 
 = easy
+
+commit b77355427575385b6f0b6c0a914600b79b4e4412
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 01:22:17 2020 +0900
+
+    Ignore const, volatile, auto, register, restrict or _Noreturn.
+
+= easy

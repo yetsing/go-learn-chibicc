@@ -51,6 +51,18 @@ func pop(arg string) {
 	depth--
 }
 
+func pushf() {
+	sout("  sub $8, %%rsp")
+	sout("  movsd %%xmm0, (%%rsp)")
+	depth++
+}
+
+func popf(arg string) {
+	sout("  movsd (%%rsp), %s", arg)
+	sout("  add $8, %%rsp")
+	depth--
+}
+
 // Round up `n` to the nearest multiple of `align`. For instance,
 // align_to(5, 8) returns 8 and align_to(11, 8) returns 16.
 func alignTo(n, align int) int {
@@ -573,6 +585,51 @@ func genExpr(node *Node) {
 			return
 		}
 		return
+	}
+
+	if node.lhs.ty.isFlonum() {
+		genExpr(node.rhs)
+		pushf()
+		genExpr(node.lhs)
+		popf("%xmm1")
+
+		var sz string
+		if node.lhs.ty.kind == TY_FLOAT {
+			sz = "ss"
+		} else {
+			sz = "sd"
+		}
+
+		switch node.kind {
+		case ND_EQ:
+			fallthrough
+		case ND_NE:
+			fallthrough
+		case ND_LT:
+			fallthrough
+		case ND_LE:
+			sout("  ucomi%s %%xmm0, %%xmm1", sz)
+
+			if node.kind == ND_EQ {
+				sout("  sete %%al")
+				sout("  setnp %%dl")
+				sout("  and %%dl, %%al")
+			} else if node.kind == ND_NE {
+				sout("  setne %%al")
+				sout("  setp %%dl")
+				sout("  or %%dl, %%al")
+			} else if node.kind == ND_LT {
+				sout("  seta %%al")
+			} else {
+				sout("  setae %%al")
+			}
+
+			sout("  and $1, %%al")
+			sout("  movzb %%al, %%rax")
+			return
+		}
+
+		errorTok(node.tok, "invalid expression %s", node.kind)
 	}
 
 	genExpr(node.rhs)

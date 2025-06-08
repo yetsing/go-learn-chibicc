@@ -1248,3 +1248,11 @@ Date:   Sat Sep 12 14:47:47 2020 +0900
 
 = union 不是类型转换，而是字节数据的重新解释
 = easy
+
+commit cf9ceecb2f8cad2fb694b15c14ca1cf98e9524e7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Sep 22 18:28:37 2020 +0900
+
+    Add flonum ==, !=, < and <=
+
+= easy

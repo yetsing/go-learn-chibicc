@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 )
 
@@ -88,13 +89,24 @@ func genAddr(node *Node) {
 
 // Load a value from where %rax is pointing to.
 func load(ty *Type) {
-	if ty.kind == TY_ARRAY || ty.kind == TY_STRUCT || ty.kind == TY_UNION {
+	switch ty.kind {
+	case TY_ARRAY:
+		fallthrough
+	case TY_STRUCT:
+		fallthrough
+	case TY_UNION:
 		// If it is an array, do not attempt to load a value to the
 		// register because in general we can't load an entire array to a
 		// register. As a result, the result of an evaluation of an array
 		// becomes not the array itself but the address of the array.
 		// This is where "array is automatically converted to a pointer to
 		// the first element of the array in C" occurs.
+		return
+	case TY_FLOAT:
+		sout("  movss (%%rax), %%xmm0")
+		return
+	case TY_DOUBLE:
+		sout("  movsd (%%rax), %%xmm0")
 		return
 	}
 
@@ -126,13 +138,22 @@ func load(ty *Type) {
 func store(ty *Type) {
 	pop("%rdi")
 
-	if ty.kind == TY_STRUCT || ty.kind == TY_UNION {
+	switch ty.kind {
+	case TY_STRUCT:
+		fallthrough
+	case TY_UNION:
 		// 将结构体赋值给另外一个结构体， rdi rax 保存的都是地址
 		// 需要将 rax 中的值逐个字节保存到 rdi 保存的地址中
 		for i := range ty.size {
 			sout("  mov %d(%%rax), %%r8b", i)
 			sout("  mov %%r8b, %d(%%rdi)", i)
 		}
+		return
+	case TY_FLOAT:
+		sout("  movss %%xmm0, (%%rdi)")
+		return
+	case TY_DOUBLE:
+		sout("  movsd %%xmm0, (%%rdi)")
 		return
 	}
 
@@ -166,6 +187,8 @@ const (
 	U16
 	U32
 	U64
+	F32
+	F64
 )
 
 func getTypeId(ty *Type) int {
@@ -194,6 +217,10 @@ func getTypeId(ty *Type) int {
 		} else {
 			return I64
 		}
+	case TY_FLOAT:
+		return F32
+	case TY_DOUBLE:
+		return F64
 	}
 
 	return U64
@@ -204,8 +231,39 @@ const (
 	i32u8  string = "movzbl %al, %eax"
 	i32i16 string = "movswl %ax, %eax"
 	i32u16 string = "movzwl %ax, %eax"
+	i32f32 string = "cvtsi2ssl %eax, %xmm0"
 	i32i64 string = "movsxd %eax, %rax"
+	i32f64 string = "cvtsi2sdl %eax, %xmm0"
+
+	u32f32 string = "mov %eax, %eax; cvtsi2ssq %rax, %xmm0"
 	u32i64 string = "mov %eax, %eax"
+	u32f64 string = "mov %eax, %eax; cvtsi2sdq %rax, %xmm0"
+
+	i64f32 string = "cvtsi2ssq %rax, %xmm0"
+	i64f64 string = "cvtsi2sdq %rax, %xmm0"
+
+	u64f32 string = "cvtsi2ssq %rax, %xmm0"
+	u64f64 string = `test %rax,%rax; js 1f; pxor %xmm0,%xmm0; cvtsi2sd %rax,%xmm0; jmp 2f; 1: mov %rax,%rdi; and $1,%eax; pxor %xmm0,%xmm0; shr %rdi; or %rax,%rdi; cvtsi2sd %rdi,%xmm0; addsd %xmm0,%xmm0; 2:`
+
+	f32i8  string = "cvttss2sil %xmm0, %eax; movsbl %al, %eax"
+	f32u8  string = "cvttss2sil %xmm0, %eax; movzbl %al, %eax"
+	f32i16 string = "cvttss2sil %xmm0, %eax; movswl %ax, %eax"
+	f32u16 string = "cvttss2sil %xmm0, %eax; movzwl %ax, %eax"
+	f32i32 string = "cvttss2sil %xmm0, %eax"
+	f32u32 string = "cvttss2siq %xmm0, %rax"
+	f32i64 string = "cvttss2siq %xmm0, %rax"
+	f32u64 string = "cvttss2siq %xmm0, %rax"
+	f32f64 string = "cvtss2sd %xmm0, %xmm0"
+
+	f64i8  string = "cvttsd2sil %xmm0, %eax; movsbl %al, %eax"
+	f64u8  string = "cvttsd2sil %xmm0, %eax; movzbl %al, %eax"
+	f64i16 string = "cvttsd2sil %xmm0, %eax; movswl %ax, %eax"
+	f64u16 string = "cvttsd2sil %xmm0, %eax; movzwl %ax, %eax"
+	f64i32 string = "cvttsd2sil %xmm0, %eax"
+	f64u32 string = "cvttsd2siq %xmm0, %rax"
+	f64f32 string = "cvtsd2ss %xmm0, %xmm0"
+	f64i64 string = "cvttsd2siq %xmm0, %rax"
+	f64u64 string = "cvttsd2siq %xmm0, %rax"
 )
 
 var castTable = map[int]map[int]string{
@@ -218,6 +276,8 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: i32i64,
+		F32: i32f32,
+		F64: i32f64,
 	},
 	I16: {
 		I8:  i32i8,
@@ -228,6 +288,8 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: i32i64,
+		F32: i32f32,
+		F64: i32f64,
 	},
 	I32: {
 		I8:  i32i8,
@@ -238,6 +300,8 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: i32i64,
+		F32: i32f32,
+		F64: i32f64,
 	},
 	I64: {
 		I8:  i32i8,
@@ -248,6 +312,8 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: "",
+		F32: i64f32,
+		F64: i64f64,
 	},
 	U8: {
 		I8:  i32i8,
@@ -258,6 +324,8 @@ var castTable = map[int]map[int]string{
 		U16: "",
 		U32: "",
 		U64: i32i64,
+		F32: i32f32,
+		F64: i32f64,
 	},
 	U16: {
 		I8:  i32i8,
@@ -268,6 +336,8 @@ var castTable = map[int]map[int]string{
 		U16: "",
 		U32: "",
 		U64: i32i64,
+		F32: i32f32,
+		F64: i32f64,
 	},
 	U32: {
 		I8:  i32i8,
@@ -278,6 +348,8 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: u32i64,
+		F32: u32f32,
+		F64: u32f64,
 	},
 	U64: {
 		I8:  i32i8,
@@ -288,6 +360,32 @@ var castTable = map[int]map[int]string{
 		U16: i32u16,
 		U32: "",
 		U64: "",
+		F32: u64f32,
+		F64: u64f64,
+	},
+	F32: {
+		I8:  f32i8,
+		I16: f32i16,
+		I32: f32i32,
+		I64: f32i64,
+		U8:  f32u8,
+		U16: f32u16,
+		U32: f32u32,
+		U64: f32u64,
+		F32: "",
+		F64: f32f64,
+	},
+	F64: {
+		I8:  f64i8,
+		I16: f64i16,
+		I32: f64i32,
+		I64: f64i64,
+		U8:  f64u8,
+		U16: f64u16,
+		U32: f64u32,
+		U64: f64u64,
+		F32: f64f32,
+		F64: "",
 	},
 }
 
@@ -299,7 +397,7 @@ func genCast(from, to *Type) {
 	if to.kind == TY_BOOL {
 		cmpZero(from)
 		sout("  setne %%al")
-		sout("  movzb %%al, %%rax")
+		sout("  movzx %%al, %%eax")
 		return
 	}
 
@@ -322,12 +420,13 @@ func genExpr(node *Node) {
 	case ND_NUM:
 		switch node.ty.kind {
 		case TY_FLOAT:
-			sout("  mov $%d, %%eax  # float %f", uint32(node.fval), node.fval)
+			sout("  mov $%d, %%eax  # float %f", math.Float32bits(float32(node.fval)), node.fval)
 			sout("  movq %%rax, %%xmm0")
 			return
 		case TY_DOUBLE:
-			sout("  mov $%d, %%eax  # double %f", uint64(node.fval), node.fval)
+			sout("  mov $%d, %%rax  # double %f", math.Float64bits(node.fval), node.fval)
 			sout("  movq %%rax, %%xmm0")
+			return
 		}
 
 		sout("  mov $%d, %%rax", node.val)

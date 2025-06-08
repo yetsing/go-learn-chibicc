@@ -521,6 +521,8 @@ var keywords = map[string]TokenKind{
 	"__restrict":   TK_KEYWORD,
 	"__restrict__": TK_KEYWORD,
 	"_Noreturn":    TK_KEYWORD,
+	"float":        TK_KEYWORD,
+	"double":       TK_KEYWORD,
 }
 
 func convertKeywords(tok *Token) {

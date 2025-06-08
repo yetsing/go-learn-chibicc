@@ -953,6 +953,7 @@ func isTypename(tok *Token) bool {
 		"signed", "unsigned",
 		"const", "volatile", "auto", "register", "restrict",
 		"__restrict", "__restrict__", "_Noreturn",
+		"float", "double",
 	}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
@@ -1003,9 +1004,11 @@ func declspec(attr *VarAttr) *Type {
 	SHORT := 1 << 6
 	INT := 1 << 8
 	LONG := 1 << 10
-	OTHER := 1 << 12
-	SIGNED := 1 << 13
-	UNSIGNED := 1 << 14
+	FLOAT := 1 << 12
+	DOUBLE := 1 << 14
+	OTHER := 1 << 16
+	SIGNED := 1 << 17
+	UNSIGNED := 1 << 18
 
 	ty := intType()
 	counter := 0
@@ -1097,6 +1100,10 @@ func declspec(attr *VarAttr) *Type {
 			counter += INT
 		} else if gtok.equal("long") {
 			counter += LONG
+		} else if gtok.equal("float") {
+			counter += FLOAT
+		} else if gtok.equal("double") {
+			counter += DOUBLE
 		} else if gtok.equal("signed") {
 			counter |= SIGNED
 		} else if gtok.equal("unsigned") {
@@ -1162,6 +1169,10 @@ func declspec(attr *VarAttr) *Type {
 			fallthrough
 		case UNSIGNED + LONG + LONG + INT:
 			ty = ulongType()
+		case FLOAT:
+			ty = floatType()
+		case DOUBLE:
+			ty = doubleType()
 		default:
 			errorTok(gtok, "invalid type specifier")
 		}

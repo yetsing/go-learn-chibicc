@@ -90,6 +90,7 @@ type Obj struct {
 	next    *Obj   // Next local variable
 	name    string // Variable name
 	ty      *Type  // Variable type
+	tok     *Token // Representative token
 	isLocal bool   // local or global/function
 	align   int    // Alignment in bytes
 
@@ -1289,14 +1290,17 @@ func declarator(ty *Type) *Type {
 		return ty
 	}
 
-	if gtok.kind != TK_IDENT {
-		errorTok(gtok, "expected a variable name")
+	var name *Token
+	namePos := gtok
+
+	if gtok.kind == TK_IDENT {
+		name = gtok
+		gtok = gtok.next
 	}
 
-	name := gtok
-	gtok = gtok.next
 	ty = typeSuffix(ty)
 	ty.name = name
+	ty.namePos = namePos
 	return ty
 }
 
@@ -1419,6 +1423,9 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 		ty := declarator(basety)
 		if ty.kind == TY_VOID {
 			errorTok(ty.name, "variable declared void")
+		}
+		if ty.name == nil {
+			errorTok(ty.namePos, "variable name omitted")
 		}
 
 		if attr != nil && attr.isStatic {
@@ -2726,6 +2733,9 @@ func parseTypedef(basety *Type) {
 		first = false
 
 		ty := declarator(basety)
+		if ty.name == nil {
+			errorTok(ty.namePos, "typedef name omitted")
+		}
 		pushScope(ty.name.literal).typedef = ty
 	}
 }
@@ -2734,6 +2744,9 @@ func parseTypedef(basety *Type) {
 func createParamLvars(param *Type) {
 	if param != nil {
 		createParamLvars(param.next)
+		if param.name == nil {
+			errorTok(param.namePos, "parameter name omitted")
+		}
 		newLVar(param.name.literal, param)
 	}
 }
@@ -2763,6 +2776,9 @@ func resolveGotoLabels() {
 
 func function(basety *Type, attr *VarAttr) *Obj {
 	ty := declarator(basety)
+	if ty.name == nil {
+		errorTok(ty.namePos, "function name omitted")
+	}
 
 	fn := newGVar(ty.name.literal, ty)
 	fn.isFunction = true
@@ -2799,6 +2815,10 @@ func globalVariable(basety *Type, attr *VarAttr) {
 		first = false
 
 		ty := declarator(basety)
+		if ty.name == nil {
+			errorTok(ty.namePos, "variable name omitted")
+		}
+
 		var_ := newGVar(ty.name.literal, ty)
 		var_.isDefinition = !attr.isExtern
 		var_.isStatic = attr.isStatic

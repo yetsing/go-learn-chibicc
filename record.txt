@@ -1223,3 +1223,11 @@ Date:   Mon Aug 31 09:58:42 2020 +0900
     Ignore "static" and "const" in array-dimensions
 
 = easy
+
+commit 1fad2595d6fa67e57cd795d4faac4306e42e72c5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:28:20 2020 +0900
+
+    Allow to omit parameter name in function declaration
+
+= easy

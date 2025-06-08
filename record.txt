@@ -1272,3 +1272,11 @@ Date:   Sun Sep 13 15:58:36 2020 +0900
     Handle flonum for if, while, do, !, ?:, || and &&
 
 = easy
+
+commit 8ec1ebf176b88522fc4ec3980d20c78e13fdd526
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 22:46:16 2020 +0900
+
+    Allow to call a function that takes/returns flonums
+
+= easy

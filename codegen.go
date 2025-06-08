@@ -57,8 +57,8 @@ func pushf() {
 	depth++
 }
 
-func popf(arg string) {
-	sout("  movsd (%%rsp), %s", arg)
+func popf(reg int) {
+	sout("  movsd (%%rsp), %%xmm%d", reg)
 	sout("  add $8, %%rsp")
 	depth--
 }
@@ -433,6 +433,19 @@ func genCast(from, to *Type) {
 	}
 }
 
+func pushArgs(args *Node) {
+	if args != nil {
+		pushArgs(args.next)
+
+		genExpr(args)
+		if args.ty.isFlonum() {
+			pushf()
+		} else {
+			push()
+		}
+	}
+}
+
 // Generate code for a given node.
 func genExpr(node *Node) {
 	sout("  .loc 1 %d", node.tok.lineno)
@@ -565,18 +578,19 @@ func genExpr(node *Node) {
 		sout(".L.end.%d:", c)
 		return
 	case ND_FUNCALL:
-		nargs := 0
+		pushArgs(node.args)
+
+		gp := 0
+		fp := 0
 		for arg := node.args; arg != nil; arg = arg.next {
-			genExpr(arg)
-			push()
-			nargs++
+			if arg.ty.isFlonum() {
+				popf(fp)
+				fp++
+			} else {
+				pop(argreg64[gp])
+				gp++
+			}
 		}
-
-		for i := nargs - 1; i >= 0; i-- {
-			pop(argreg64[i])
-		}
-
-		sout("  mov $0, %%rax")
 
 		// push 一次栈大小增加 8 字节
 		// 偶数次刚好是 16 字节对齐
@@ -618,7 +632,7 @@ func genExpr(node *Node) {
 		genExpr(node.rhs)
 		pushf()
 		genExpr(node.lhs)
-		popf("%xmm1")
+		popf(1)
 
 		var sz string
 		if node.lhs.ty.kind == TY_FLOAT {

@@ -1319,4 +1319,12 @@ Date:   Wed Aug 26 14:51:06 2020 +0900
 
     Add "long double" as an alias for "double"
 
-=
+= easy
+
+commit 5d15431df1abab3a5cf596fabe0a77c030a10791
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 24 12:08:12 2019 +0900
+
+    Add stage2 build
+
+= easy

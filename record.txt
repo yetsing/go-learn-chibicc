@@ -1215,3 +1215,11 @@ Date:   Thu Sep 3 01:22:17 2020 +0900
     Ignore const, volatile, auto, register, restrict or _Noreturn.
 
 = easy
+
+commit 93d12771d009924fb598b088dc4bd9b67fd9a09a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 31 09:58:42 2020 +0900
+
+    Ignore "static" and "const" in array-dimensions
+
+= easy

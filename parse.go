@@ -1219,8 +1219,12 @@ func funcParams(ty *Type) *Type {
 	return ty
 }
 
-// array-dimensions = const-expr? "]" type-suffix
+// array-dimensions = ("static" | "restrict")* const-expr? "]" type-suffix
 func arrayDimensions(ty *Type) *Type {
+	for gtok.equal("static") || gtok.equal("restrict") {
+		gtok = gtok.next
+	}
+
 	if gtok.equal("]") {
 		gtok = gtok.next
 		ty = typeSuffix(ty)

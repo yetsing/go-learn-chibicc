@@ -1312,3 +1312,11 @@ Date:   Fri May 1 19:30:17 2020 +0900
     Add flonum constant expression
 
 = easy
+
+commit 9bf96124ba1e0cb95f491bd0c91d4e9c7a9850da
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 26 14:51:06 2020 +0900
+
+    Add "long double" as an alias for "double"
+
+=

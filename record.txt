@@ -1328,3 +1328,11 @@ Date:   Sat Aug 24 12:08:12 2019 +0900
     Add stage2 build
 
 = easy
+
+commit d06a8ac6e6120861c9c79acb15b9a18693e4ee47
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 18:50:56 2020 +0900
+
+    Add function pointer
+
+= easy

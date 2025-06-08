@@ -77,10 +77,44 @@ func genAddr(node *Node) {
 		if node.variable.isLocal {
 			// Local variable
 			sout("  lea %d(%%rbp), %%rax", node.variable.offset)
-		} else {
-			// Global variable
-			sout("  lea %s(%%rip), %%rax", node.variable.name)
+			return
 		}
+
+		// Here, we generate an absolute address of a function or a global
+		// variable. Even though they exist at a certain address at runtime,
+		// their addresses are not known at link-time for the following
+		// two reasons.
+		//
+		//  - Address randomization: Executables are loaded to memory as a
+		//    whole but it is not known what address they are loaded to.
+		//    Therefore, at link-time, relative address in the same
+		//    exectuable (i.e. the distance between two functions in the
+		//    same executable) is known, but the absolute address is not
+		//    known.
+		//
+		//  - Dynamic linking: Dynamic shared objects (DSOs) or .so files
+		//    are loaded to memory alongside an executable at runtime and
+		//    linked by the runtime loader in memory. We know nothing
+		//    about addresses of global stuff that may be defined by DSOs
+		//    until the runtime relocation is complete.
+		//
+		// In order to deal with the former case, we use RIP-relative
+		// addressing, denoted by `(%rip)`. For the latter, we obtain an
+		// address of a stuff that may be in a shared object file from the
+		// Global Offset Table using `@GOTPCREL(%rip)` notation.
+
+		// Function
+		if node.ty.kind == TY_FUNC {
+			if node.variable.isDefinition {
+				sout("  lea %s(%%rip), %%rax", node.variable.name)
+			} else {
+				sout("  mov %s@GOTPCREL(%%rip), %%rax", node.variable.name)
+			}
+			return
+		}
+
+		// Global variable
+		sout("  lea %s(%%rip), %%rax", node.variable.name)
 		return
 	case ND_DEREF:
 		// *p: p 本身就是地址，直接加载 p 的值
@@ -107,6 +141,8 @@ func load(ty *Type) {
 	case TY_STRUCT:
 		fallthrough
 	case TY_UNION:
+		fallthrough
+	case TY_FUNC:
 		// If it is an array, do not attempt to load a value to the
 		// register because in general we can't load an entire array to a
 		// register. As a result, the result of an evaluation of an array
@@ -579,6 +615,7 @@ func genExpr(node *Node) {
 		return
 	case ND_FUNCALL:
 		pushArgs(node.args)
+		genExpr(node.lhs)
 
 		gp := 0
 		fp := 0
@@ -596,10 +633,10 @@ func genExpr(node *Node) {
 		// 偶数次刚好是 16 字节对齐
 		// 奇数次需要先 sub rsp 8 字节，调用完函数后再 add rsp 8 字节
 		if depth%2 == 0 {
-			sout("  call %s", node.funcname)
+			sout("  call *%%rax")
 		} else {
 			sout("  sub $8, %%rsp")
-			sout("  call %s", node.funcname)
+			sout("  call *%%rax")
 			sout("  add $8, %%rsp")
 		}
 

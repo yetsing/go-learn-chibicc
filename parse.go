@@ -328,9 +328,8 @@ type Node struct {
 	member *Member
 
 	// Function call
-	funcname string
-	funcTy   *Type
-	args     *Node
+	funcTy *Type
+	args   *Node
 
 	// Goto or labeled statement
 	label       string
@@ -2579,7 +2578,15 @@ func newIncDec(node *Node, tok *Token, addend int) *Node {
 }
 
 // postfix = "(" type-name ")" "{" initializer-list "}"
-// .       | primary ("[" expr "]" | "." ident | "->" ident | "++" | "--")*
+// .       = ident "(" func-args ")" postfix-tail*
+// .       | primary postfix-tail*
+//
+// postfix-tail = "[" expr "]"
+// .            | "(" func-args ")"
+// .            | "." ident
+// .            | "->" ident
+// .            | "++"
+// .            | "--"
 func postfix() *Node {
 	if gtok.equal("(") && isTypename(gtok.next) {
 		// compound literal
@@ -2604,6 +2611,12 @@ func postfix() *Node {
 	node := primary()
 
 	for {
+		if gtok.equal("(") {
+			gtok = gtok.next
+			node = funcall(node)
+			continue
+		}
+
 		for gtok.equal("[") {
 			// x[y] is short for *(x+y)
 			st := gtok
@@ -2647,21 +2660,22 @@ func postfix() *Node {
 	}
 }
 
-// funcall = ident "(" (assign ("," assign)*)? ")"
-func funcall() *Node {
-	st := gtok
-	gtok = gtok.next.next // skip ident "("
+// funcall = (assign ("," assign)*)? ")"
+func funcall(fn *Node) *Node {
+	addType(fn)
 
-	sc := findVar(st.literal)
-	if sc == nil {
-		errorTok(st, "implicit declaration of a function")
-	}
-	if sc.variable == nil || sc.variable.ty.kind != TY_FUNC {
-		errorTok(st, "not a function: %s", st.literal)
+	if fn.ty.kind != TY_FUNC && (fn.ty.kind != TY_PTR || fn.ty.base.kind != TY_FUNC) {
+		errorTok(fn.tok, "not a function")
 	}
 
-	ty := sc.variable.ty
+	var ty *Type
+	if fn.ty.kind == TY_FUNC {
+		ty = fn.ty
+	} else {
+		ty = fn.ty.base
+	}
 	paramTy := ty.params
+
 	var head Node
 	cur := &head
 
@@ -2698,8 +2712,7 @@ func funcall() *Node {
 
 	gtok = gtok.consume(")")
 
-	node := NewNode(ND_FUNCALL, st)
-	node.funcname = st.literal
+	node := NewUnary(ND_FUNCALL, fn, gtok)
 	node.funcTy = ty
 	node.ty = ty.returnTy
 	node.args = head.next
@@ -2764,24 +2777,22 @@ func primary() *Node {
 	}
 
 	if gtok.kind == TK_IDENT {
-		// Function call
-		if gtok.next.equal("(") {
-			return funcall()
-		}
-
 		// Variable or enum constant
+		tok := gtok
 		sc := findVar(gtok.literal)
-		if sc == nil || (sc.variable == nil && sc.enumTy == nil) {
-			errorTok(gtok, "undefined variable: %s", gtok.literal)
-		}
-		var node *Node
-		if sc.variable != nil {
-			node = NewVarNode(sc.variable, st)
-		} else {
-			node = NewNumber(int64(sc.enumVal), st)
-		}
 		gtok = gtok.next
-		return node
+		if sc != nil {
+			if sc.variable != nil {
+				return NewVarNode(sc.variable, tok)
+			}
+			if sc.enumTy != nil {
+				return NewNumber(int64(sc.enumVal), tok)
+			}
+		}
+		if gtok.next.equal("(") {
+			errorTok(gtok, "implicit declaration of a function")
+		}
+		errorTok(gtok, "undefined variable")
 	}
 
 	if gtok.kind == TK_STR {

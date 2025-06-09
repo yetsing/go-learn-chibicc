@@ -1336,3 +1336,12 @@ Date:   Thu Sep 3 18:50:56 2020 +0900
     Add function pointer
 
 = easy
+
+commit c5953ba1328fa86f906406843eb9f23cd596ef04
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 31 21:28:53 2020 +0900
+
+    Decay a function to a pointer in the func param context
+
+= 这么简单就支持函数作为参数
+= easy

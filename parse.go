@@ -1226,11 +1226,18 @@ func funcParams(ty *Type) *Type {
 		ty2 := declspec(nil)
 		ty2 = declarator(ty2)
 
-		// "array of T" is converted to "pointer to T" only in the parameter
-		// context. For example, *argv[] is converted to **argv by this.
+		name := ty2.name
+
 		if ty2.kind == TY_ARRAY {
+			// "array of T" is converted to "pointer to T" only in the parameter
+			// context. For example, *argv[] is converted to **argv by this.
 			name := ty2.name
 			ty2 = pointerTo(ty2.base)
+			ty2.name = name
+		} else if ty2.kind == TY_FUNC {
+			// Likewise, a function is converted to a pointer to a function
+			// only in the parameter context.
+			ty2 = pointerTo(ty2)
 			ty2.name = name
 		}
 

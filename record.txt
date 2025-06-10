@@ -1353,3 +1353,11 @@ Date:   Wed Sep 2 20:11:28 2020 +0900
     Add usual arithmetic conversion for function pointer
 
 = easy
+
+commit f3d96136f292dea83fd760098d189a6884f59eb0
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 15 22:30:28 2020 +0900
+
+    Split cc1 from compiler driver
+
+= easy

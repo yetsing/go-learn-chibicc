@@ -1345,3 +1345,11 @@ Date:   Mon Aug 31 21:28:53 2020 +0900
 
 = 这么简单就支持函数作为参数
 = easy
+
+commit 53e81033ce18fd94fcdcde9010b7c9d41f30aa2c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Sep 2 20:11:28 2020 +0900
+
+    Add usual arithmetic conversion for function pointer
+
+= easy

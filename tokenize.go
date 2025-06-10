@@ -58,7 +58,7 @@ func errorAt(pos int, format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
-	os.Exit(1)
+	panic("error occurred, exiting")
 }
 
 func errorTok(tok *Token, format string, args ...interface{}) {

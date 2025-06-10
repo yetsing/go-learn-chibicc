@@ -1361,3 +1361,11 @@ Date:   Sat Aug 15 22:30:28 2020 +0900
     Split cc1 from compiler driver
 
 = easy
+
+commit 140b43358c33fb5e9f86789541dbca306bb64fcc
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Oct 8 14:34:23 2020 +0900
+
+    Run "as" command unless -S is given
+
+= easy

@@ -1369,3 +1369,13 @@ Date:   Thu Oct 8 14:34:23 2020 +0900
     Run "as" command unless -S is given
 
 = easy
+
+commit b833cd0f297ba7979c23cff1b88c27beb4f2f737
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 09:16:57 2020 +0900
+
+    Accept multiple input files
+
+= debug 了几个小时，无法理解这么简单的更改都会问题
+= 最后发现是打开的文件无法写入，又没有检查 fmt.Fprintf 错误，导致错误没有及时暴露
+= middle

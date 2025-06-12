@@ -10,9 +10,12 @@ import (
 var optS bool
 var optCC1 bool
 var optHashHashHash bool
-var optOutput string
+var optO string
 
-var inputPath string
+var baseFile string
+var outputFile string
+
+var inputPaths []string
 var tmpfiles []string
 
 func usage(status int) {
@@ -20,7 +23,22 @@ func usage(status int) {
 	os.Exit(status)
 }
 
+func taskArg(arg string) bool {
+	return arg == "-o"
+}
+
 func parseArgs() {
+	for i := 1; i < len(os.Args); i++ {
+		// Make sure that all command line options that take an argument
+		// have an argument.
+		if taskArg(os.Args[i]) {
+			if i+1 >= len(os.Args) {
+				usage(1)
+			}
+			i++
+		}
+	}
+
 	for i := 1; i < len(os.Args); i++ {
 		if os.Args[i] == "-###" {
 			optHashHashHash = true
@@ -37,16 +55,13 @@ func parseArgs() {
 		}
 
 		if os.Args[i] == "-o" {
-			if i+1 >= len(os.Args) {
-				usage(1)
-			}
-			optOutput = os.Args[i+1]
+			optO = os.Args[i+1]
 			i++
 			continue
 		}
 
 		if strings.HasPrefix(os.Args[i], "-o") {
-			optOutput = strings.TrimPrefix(os.Args[i], "-o")
+			optO = strings.TrimPrefix(os.Args[i], "-o")
 			continue
 		}
 
@@ -55,18 +70,42 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-cc1-input" {
+			baseFile = os.Args[i+1]
+			i++
+			continue
+		}
+
+		if os.Args[i] == "-cc1-output" {
+			outputFile = os.Args[i+1]
+			i++
+			continue
+		}
+
 		if strings.HasPrefix(os.Args[i], "-") && os.Args[i] != "-" {
 			fmt.Fprintf(os.Stderr, "Unknown option: %s\n", os.Args[i])
 			panic("Unknown option")
 		}
 
-		inputPath = os.Args[i]
+		inputPaths = append(inputPaths, os.Args[i])
 	}
 
-	if inputPath == "" {
-		fmt.Fprintln(os.Stderr, "No input file specified.")
+	if len(inputPaths) == 0 {
+		fmt.Fprintln(os.Stderr, "no input files")
 		usage(1)
 	}
+}
+
+func openFile(path string) *os.File {
+	if path == "" || path == "-" {
+		return os.Stdout
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot open output file: %s: %s\n", path, err)
+		panic("Failed to open file")
+	}
+	return f
 }
 
 // Replace file extension
@@ -120,34 +159,32 @@ func runSubprocess(args []string) {
 }
 
 func runCC1(args []string, input string, output string) {
-	args = append(args, "-cc1")
+	var args1 []string
+	args1 = append(args1, args...)
+
+	args1 = append(args1, "-cc1")
 
 	if input != "" {
-		args = append(args, input)
+		args1 = append(args1, "-cc1-input", input)
 	}
 
 	if output != "" {
-		args = append(args, "-o", output)
+		args1 = append(args1, "-cc1-output", output)
 	}
 
-	runSubprocess(args)
+	runSubprocess(args1)
 }
 
 func cc1() {
 	// Tokenize and parse.
-	tok := tokenizeFile(inputPath)
+	tok := tokenizeFile(baseFile)
 	prog := parse(tok)
 
 	// Traverse the AST to emit assembly code.
-	var out *os.File
-	if optOutput == "" || optOutput == "-" {
-		out = os.Stdout
-	} else {
-		var err error
-		out, err = os.Create(optOutput)
-		check(err)
-	}
-	fmt.Fprintf(out, ".file 1 \"%s\"\n", inputPath)
+	out := openFile(outputFile)
+	defer out.Close()
+	_, err := fmt.Fprintf(out, ".file 1 \"%s\"\n", baseFile)
+	check(err)
 	codegen(prog, out)
 }
 
@@ -165,23 +202,31 @@ func main() {
 		return
 	}
 
-	var output string
-	if optOutput != "" {
-		output = optOutput
-	} else if optS {
-		output = replaceExtn(inputPath, ".s")
-	} else {
-		output = replaceExtn(inputPath, ".o")
+	if len(inputPaths) > 1 && optO != "" {
+		fmt.Fprintf(os.Stderr, "cannot specify '-o' with multiple files\n")
+		panic("Invalid argument combination")
 	}
 
-	// If -S is given, assembly text is the final output.
-	if optS {
-		runCC1(os.Args, inputPath, output)
-		return
-	}
+	for _, input := range inputPaths {
 
-	// Otherwise, run the assembler to assemble our output.
-	tmpfile := createTmpfile()
-	runCC1(os.Args, inputPath, tmpfile)
-	assemble(tmpfile, output)
+		var output string
+		if optO != "" {
+			output = optO
+		} else if optS {
+			output = replaceExtn(input, ".s")
+		} else {
+			output = replaceExtn(input, ".o")
+		}
+
+		// If -S is given, assembly text is the final output.
+		if optS {
+			runCC1(os.Args, input, output)
+			continue
+		}
+
+		// Otherwise, run the assembler to assemble our output.
+		tmpfile := createTmpfile()
+		runCC1(os.Args, input, tmpfile)
+		assemble(tmpfile, output)
+	}
 }

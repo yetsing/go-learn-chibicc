@@ -11,8 +11,10 @@ import (
 var outFile *os.File
 
 func sout(format string, args ...interface{}) {
-	fmt.Fprintf(outFile, format, args...)
-	fmt.Fprintln(outFile)
+	_, err := fmt.Fprintf(outFile, format, args...)
+	check(err)
+	_, err = fmt.Fprintln(outFile)
+	check(err)
 }
 
 func unreachable() {

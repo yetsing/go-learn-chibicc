@@ -185,6 +185,7 @@ func runCC1(args []string, input string, output string) {
 func cc1() {
 	// Tokenize and parse.
 	tok := tokenizeFile(baseFile)
+	tok = preprocess(tok)
 	prog := parse(tok)
 
 	// Traverse the AST to emit assembly code.

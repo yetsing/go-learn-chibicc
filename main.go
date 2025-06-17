@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 var optS bool
+var optC bool
 var optCC1 bool
 var optHashHashHash bool
 var optO string
@@ -67,6 +69,11 @@ func parseArgs() {
 
 		if os.Args[i] == "-S" {
 			optS = true
+			continue
+		}
+
+		if os.Args[i] == "-c" {
+			optC = true
 			continue
 		}
 
@@ -193,6 +200,90 @@ func assemble(input string, output string) {
 	runSubprocess(cmd)
 }
 
+func findFile(pattern string) (string, error) {
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", err
+	}
+	if len(matches) > 0 {
+		return matches[len(matches)-1], nil
+	}
+	return "", nil
+}
+
+// Returns true if a given file exists.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+func findLibpath() string {
+	if fileExists("/usr/lib/x86_64-linux-gnu/crti.o") {
+		return "/usr/lib/x86_64-linux-gnu"
+	}
+	if fileExists("/usr/lib64/crti.o") {
+		return "/usr/lib64"
+	}
+	panic("library path not found")
+}
+
+func findGCCLibpath() string {
+	paths := []string{
+		"/usr/lib/gcc/x86_64-linux-gnu/*/crtbegin.o",
+		"/usr/lib/gcc/x86_64-pc-linux-gnu/*/crtbegin.o", // For Gentoo
+		"/usr/lib/gcc/x86_64-redhat-linux/*/crtbegin.o", // For Fedora
+	}
+
+	for _, pattern := range paths {
+		path, err := findFile(pattern)
+		if err == nil && path != "" {
+			return filepath.Dir(path)
+		}
+	}
+
+	panic("gcc library path is not found")
+}
+
+func runLinker(inputs []string, output string) {
+	var arr []string
+
+	arr = append(arr, "ld", "-o", output, "-m", "elf_x86_64", "-dynamic-linker", "/lib64/ld-linux-x86-64.so.2")
+	libpath := findLibpath()
+	gccLibpath := findGCCLibpath()
+
+	arr = append(
+		arr,
+		fmt.Sprintf("%s/crt1.o", libpath),
+		fmt.Sprintf("%s/crti.o", libpath),
+		fmt.Sprintf("%s/crtbegin.o", gccLibpath),
+		fmt.Sprintf("-L%s", gccLibpath),
+		fmt.Sprintf("-L%s", libpath),
+		fmt.Sprintf("-L%s/..", libpath),
+		"-L/usr/lib64",
+		"-L/lib64",
+		"-L/usr/lib/x86_64-linux-gnu",
+		"-L/usr/lib/x86_64-pc-linux-gnu",
+		"-L/usr/lib/x86_64-redhat-linux",
+		"-L/usr/lib",
+		"-L/lib",
+	)
+
+	arr = append(arr, inputs...)
+
+	arr = append(
+		arr,
+		"-lc",
+		"-lgcc",
+		"--as-needed",
+		"-lgcc_s",
+		"--no-as-needed",
+		fmt.Sprintf("%s/crtend.o", gccLibpath),
+		fmt.Sprintf("%s/crtn.o", libpath),
+	)
+
+	runSubprocess(arr)
+}
+
 func main() {
 	defer cleanup()
 	parseArgs()
@@ -202,13 +293,14 @@ func main() {
 		return
 	}
 
-	if len(inputPaths) > 1 && optO != "" {
-		fmt.Fprintf(os.Stderr, "cannot specify '-o' with multiple files\n")
+	if len(inputPaths) > 1 && optO != "" && (optC || optS) {
+		fmt.Fprintf(os.Stderr, "cannot specify '-o' with '-c' or '-S' with multiple files\n")
 		panic("Invalid argument combination")
 	}
 
-	for _, input := range inputPaths {
+	ldArgs := []string{}
 
+	for _, input := range inputPaths {
 		var output string
 		if optO != "" {
 			output = optO
@@ -218,15 +310,48 @@ func main() {
 			output = replaceExtn(input, ".o")
 		}
 
-		// If -S is given, assembly text is the final output.
+		// Handle .o
+		if strings.HasSuffix(input, ".o") {
+			ldArgs = append(ldArgs, input)
+			continue
+		}
+
+		// Handle .s
+		if strings.HasSuffix(input, ".s") {
+			if !optS {
+				assemble(input, output)
+			}
+			continue
+		}
+
+		// Just compile
 		if optS {
 			runCC1(os.Args, input, output)
 			continue
 		}
 
-		// Otherwise, run the assembler to assemble our output.
-		tmpfile := createTmpfile()
-		runCC1(os.Args, input, tmpfile)
-		assemble(tmpfile, output)
+		// Compile and assemble
+		if optC {
+			tmp := createTmpfile()
+			runCC1(os.Args, input, tmp)
+			assemble(tmp, output)
+			continue
+		}
+
+		// Compile, assemble, and link
+		tmp1 := createTmpfile()
+		tmp2 := createTmpfile()
+		runCC1(os.Args, input, tmp1)
+		assemble(tmp1, tmp2)
+		ldArgs = append(ldArgs, tmp2)
+		continue
+	}
+
+	if len(ldArgs) > 0 {
+		output := "a.out"
+		if optO != "" {
+			output = optO
+		}
+		runLinker(ldArgs, output)
 	}
 }

@@ -13,6 +13,9 @@ import (
 var currentFilename string
 var currentInput string
 
+// True if the current position is at the beginning of a line.
+var tAtBol bool
+
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -117,6 +120,8 @@ type Token struct {
 	fval float64
 	ty   *Type  // Used if TK_NUM or TK_STR
 	str  string // String literal contents
+
+	atBol bool // True if this token is at the beginning of a line
 }
 
 func (t *Token) equal(op string) bool {
@@ -272,12 +277,15 @@ func readStringLiteral(input string, p int) *Token {
 }
 
 func NewToken(kind TokenKind, literal string, pos int) *Token {
+	v := tAtBol
+	tAtBol = false
 	return &Token{
 		kind:    kind,
 		next:    nil,
 		val:     0,
 		literal: literal,
 		pos:     pos,
+		atBol:   v,
 	}
 }
 
@@ -558,6 +566,8 @@ func tokenize(filename, input string) *Token {
 	var head Token
 	cur := &head
 
+	tAtBol = true
+
 	p := 0
 	for p < len(input) {
 		ch := input[p]
@@ -581,7 +591,14 @@ func tokenize(filename, input string) *Token {
 			continue
 		}
 
-		// Skip whitespace
+		// Skip newline.
+		if ch == '\n' {
+			p++
+			tAtBol = true
+			continue
+		}
+
+		// Skip whitespace characters.
 		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
 			p++
 			continue

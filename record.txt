@@ -1397,3 +1397,14 @@ Date:   Tue Aug 18 09:41:59 2020 +0900
 
 = 开始预处理
 = easy
+
+commit 146c7b3dd47bb65da2da86cce7f4d75d8efa157d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Mar 30 09:30:06 2020 +0900
+
+    Add the null directive
+
+= Makefile 里面的 stage2 是自举
+= 用 chibicc 编译自己代码，生成另外一个 chibicc
+= 再用这个 chibicc 编译验证测试代码
+= easy

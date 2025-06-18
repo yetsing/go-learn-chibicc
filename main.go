@@ -185,14 +185,17 @@ func runCC1(args []string, input string, output string) {
 func cc1() {
 	// Tokenize and parse.
 	tok := tokenizeFile(baseFile)
+	if tok == nil {
+		fmt.Fprintf(os.Stderr, "Failed to tokenize file: %s\n", baseFile)
+		panic("Tokenization failed")
+	}
+
 	tok = preprocess(tok)
 	prog := parse(tok)
 
 	// Traverse the AST to emit assembly code.
 	out := openFile(outputFile)
 	defer out.Close()
-	_, err := fmt.Fprintf(out, ".file 1 \"%s\"\n", baseFile)
-	check(err)
 	codegen(prog, out)
 }
 

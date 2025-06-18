@@ -1408,3 +1408,12 @@ Date:   Mon Mar 30 09:30:06 2020 +0900
 = 用 chibicc 编译自己代码，生成另外一个 chibicc
 = 再用这个 chibicc 编译验证测试代码
 = easy
+
+commit d367510fcc1396fa252c4b87439c2f9fcd0abbe7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 19:24:23 2020 +0900
+
+    Add #include "..."
+
+= #include 合并词法分析结果
+= easy

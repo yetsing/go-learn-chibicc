@@ -1,7 +1,36 @@
 package main
 
+import (
+	"fmt"
+	"path"
+)
+
 func isHash(tok *Token) bool {
 	return tok.atBol && tok.equal("#")
+}
+
+func copyToken(tok *Token) *Token {
+	t := &Token{}
+	*t = *tok
+	t.next = nil
+	return t
+}
+
+// Append tok2 to the end of tok1
+func appendToken(tok1, tok2 *Token) *Token {
+	if tok1 == nil || tok1.kind == TK_EOF {
+		return tok2
+	}
+
+	head := Token{}
+	cur := &head
+
+	for ; tok1 != nil && tok1.kind != TK_EOF; tok1 = tok1.next {
+		cur.next = copyToken(tok1)
+		cur = cur.next
+	}
+	cur.next = tok2
+	return head.next
 }
 
 // Visit all tokens in `tok` while evaluating preprocessing
@@ -20,6 +49,22 @@ func preprocess2(tok *Token) *Token {
 		}
 
 		tok = tok.next
+
+		if tok.equal("include") {
+			tok = tok.next
+
+			if tok.kind != TK_STR {
+				errorTok(tok, "expected a filename")
+			}
+
+			ipath := fmt.Sprintf("%s/%s", path.Dir(tok.file.name), tok.str)
+			tok2 := tokenizeFile(ipath)
+			if tok2 == nil {
+				errorTok(tok, "could not tokenize file '%s'", ipath)
+			}
+			tok = appendToken(tok2, tok.next)
+			continue
+		}
 
 		// `#`-only line is legal. It's called a null directive.
 		if tok.atBol {

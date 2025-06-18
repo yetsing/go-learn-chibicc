@@ -486,7 +486,7 @@ func pushArgs(args *Node) {
 
 // Generate code for a given node.
 func genExpr(node *Node) {
-	sout("  .loc 1 %d", node.tok.lineno)
+	sout("  .loc %d %d", node.tok.file.fileNo, node.tok.lineno)
 
 	switch node.kind {
 	case ND_NULL_EXPR:
@@ -825,7 +825,7 @@ func genExpr(node *Node) {
 }
 
 func genStmt(node *Node) {
-	sout("  .loc 1 %d", node.tok.lineno)
+	sout("  .loc %d %d", node.tok.file.fileNo, node.tok.lineno)
 
 	switch node.kind {
 	case ND_IF:
@@ -1107,6 +1107,12 @@ func emitText(prog *Obj) {
 
 func codegen(prog *Obj, out *os.File) {
 	outFile = out
+
+	files := getInputFiles()
+	for _, file := range files {
+		sout("  .file %d \"%s\"", file.fileNo, file.name)
+	}
+
 	assignLVarOffsets(prog)
 	emitData(prog)
 	emitText(prog)

@@ -10,8 +10,12 @@ import (
 )
 
 // #region util functions
-var currentFilename string
-var currentInput string
+
+// Input file
+var currentFile *File
+
+// A list of all input files
+var inputFiles []*File
 
 // True if the current position is at the beginning of a line.
 var tAtBol bool
@@ -26,15 +30,15 @@ func check(err error) {
 //
 // foo.c:10: x = y + 1;
 // .             ^ <error message here>
-func errorAt(pos int, format string, args ...interface{}) {
+func verrorAt(filename string, input string, pos int, format string, args ...interface{}) {
 	// Find the line number and column for the error position
 	line := 1
 	lineStart := 0
 	for i := range pos {
-		if i >= len(currentInput) {
+		if i >= len(input) {
 			break
 		}
-		if currentInput[i] == '\n' {
+		if input[i] == '\n' {
 			line++
 			lineStart = i + 1
 		}
@@ -43,15 +47,15 @@ func errorAt(pos int, format string, args ...interface{}) {
 
 	// Find the end of the current line
 	lineEnd := lineStart
-	for lineEnd < len(currentInput) && currentInput[lineEnd] != '\n' {
+	for lineEnd < len(input) && input[lineEnd] != '\n' {
 		lineEnd++
 	}
 
 	// Extract the line content
-	lineContent := currentInput[lineStart:lineEnd]
+	lineContent := input[lineStart:lineEnd]
 
 	// Print the formatted error location and line content
-	n, _ := fmt.Fprintf(os.Stderr, "%s:%d: ", currentFilename, line)
+	n, _ := fmt.Fprintf(os.Stderr, "%s:%d: ", filename, line)
 	fmt.Fprintf(os.Stderr, "%s\n", lineContent)
 
 	// Print spaces up to the error position
@@ -61,11 +65,16 @@ func errorAt(pos int, format string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, "^ ")
 	fmt.Fprintf(os.Stderr, format, args...)
 	fmt.Fprintln(os.Stderr)
+}
+
+func errorAt(pos int, format string, args ...interface{}) {
+	verrorAt(currentFile.name, currentFile.contents, pos, format, args...)
 	panic("error occurred, exiting")
 }
 
 func errorTok(tok *Token, format string, args ...interface{}) {
-	errorAt(tok.pos, format, args...)
+	verrorAt(tok.file.name, tok.file.contents, tok.pos, format, args...)
+	panic("error occurred, exiting")
 }
 
 func ispunct(ch rune) bool {
@@ -108,6 +117,12 @@ const (
 	TK_EOF                      // end of file
 )
 
+type File struct {
+	name     string // File name
+	fileNo   int    // File number
+	contents string // File contents
+}
+
 type Token struct {
 	kind    TokenKind
 	next    *Token
@@ -121,7 +136,8 @@ type Token struct {
 	ty   *Type  // Used if TK_NUM or TK_STR
 	str  string // String literal contents
 
-	atBol bool // True if this token is at the beginning of a line
+	file  *File // Source location
+	atBol bool  // True if this token is at the beginning of a line
 }
 
 func (t *Token) equal(op string) bool {
@@ -285,6 +301,7 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 		val:     0,
 		literal: literal,
 		pos:     pos,
+		file:    currentFile,
 		atBol:   v,
 	}
 }
@@ -550,7 +567,7 @@ func addLineNumbers(tok *Token) {
 	lineStart := 0
 	for t := tok; t != nil; t = t.next {
 		for i := lineStart; i < t.pos; i++ {
-			if currentInput[i] == '\n' {
+			if currentFile.contents[i] == '\n' {
 				line++
 				lineStart = i + 1
 			}
@@ -560,9 +577,10 @@ func addLineNumbers(tok *Token) {
 }
 
 // Tokenize the input string and return a linked list of tokens.
-func tokenize(filename, input string) *Token {
-	currentFilename = filename
-	currentInput = input
+func tokenize(file *File) *Token {
+	currentFile = file
+
+	input := file.contents
 	var head Token
 	cur := &head
 
@@ -657,6 +675,29 @@ func tokenize(filename, input string) *Token {
 
 // #endregion
 
+func getInputFiles() []*File {
+	return inputFiles
+}
+
+func newFile(name string, fileNo int, contents string) *File {
+	return &File{
+		name:     name,
+		fileNo:   fileNo,
+		contents: contents,
+	}
+}
+
+var fileNo int = 0
+
 func tokenizeFile(filename string) *Token {
-	return tokenize(filename, readFile(filename))
+	p := readFile(filename)
+
+	file := newFile(filename, fileNo+1, p)
+
+	// Save the filename for assembler .file directive
+	inputFiles = append(inputFiles, file)
+
+	fileNo++
+
+	return tokenize(file)
 }

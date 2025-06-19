@@ -33,6 +33,19 @@ func appendToken(tok1, tok2 *Token) *Token {
 	return head.next
 }
 
+// Some preprocessor directives such as #include allow extraneous
+// tokens before newline. This function skips such tokens.
+func skipLine(tok *Token) *Token {
+	if tok.atBol {
+		return tok
+	}
+	warnTok(tok, "extra token")
+	for tok.atBol {
+		tok = tok.next
+	}
+	return tok
+}
+
 // Visit all tokens in `tok` while evaluating preprocessing
 // macros and directives.
 func preprocess2(tok *Token) *Token {
@@ -62,6 +75,7 @@ func preprocess2(tok *Token) *Token {
 			if tok2 == nil {
 				errorTok(tok, "could not tokenize file '%s'", ipath)
 			}
+			tok = skipLine(tok.next)
 			tok = appendToken(tok2, tok.next)
 			continue
 		}

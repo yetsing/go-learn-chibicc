@@ -1417,3 +1417,12 @@ Date:   Thu Sep 3 19:24:23 2020 +0900
 
 = #include 合并词法分析结果
 = easy
+
+commit ec149f64d2f5c41a2080c0b4e42e4ef64444b382
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Apr 21 10:46:26 2020 +0900
+
+    Skip extra tokens after `#include "..."`
+
+= 看不懂 skip_line 是不是弄反了
+= easy

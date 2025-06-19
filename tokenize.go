@@ -77,6 +77,10 @@ func errorTok(tok *Token, format string, args ...interface{}) {
 	panic("error occurred, exiting")
 }
 
+func warnTok(tok *Token, format string, args ...interface{}) {
+	verrorAt(tok.file.name, tok.file.contents, tok.pos, format, args...)
+}
+
 func ispunct(ch rune) bool {
 	return unicode.IsPrint(ch) && !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && !unicode.IsSpace(ch)
 }

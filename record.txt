@@ -1435,3 +1435,11 @@ Date:   Thu Aug 20 21:37:02 2020 +0900
 
 = AI 误我 (#`皿´)
 = easy
+
+commit bf6ff928ad17d98d07f68f619e6cbe29829d0a20
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 20 19:36:36 2020 +0900
+
+    Add #if and #endif
+
+= easy

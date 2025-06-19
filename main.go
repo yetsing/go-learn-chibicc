@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
+var optE bool
 var optS bool
 var optC bool
 var optCC1 bool
@@ -74,6 +76,11 @@ func parseArgs() {
 
 		if os.Args[i] == "-c" {
 			optC = true
+			continue
+		}
+
+		if os.Args[i] == "-E" {
+			optE = true
 			continue
 		}
 
@@ -182,6 +189,26 @@ func runCC1(args []string, input string, output string) {
 	runSubprocess(args1)
 }
 
+func efprintf(w io.Writer, format string, a ...any) {
+	_, err := fmt.Fprintf(w, format, a...)
+	check(err)
+}
+
+// Print tokens to stdout. Used for -E.
+func printTokens(tok *Token) {
+	out := openFile(optO)
+
+	line := 1
+	for ; tok.kind != TK_EOF; tok = tok.next {
+		if line > 1 && tok.atBol {
+			efprintf(out, "\n")
+		}
+		efprintf(out, " %s", tok.literal)
+		line++
+	}
+	efprintf(out, "\n")
+}
+
 func cc1() {
 	// Tokenize and parse.
 	tok := tokenizeFile(baseFile)
@@ -191,6 +218,13 @@ func cc1() {
 	}
 
 	tok = preprocess(tok)
+
+	// If -E is given, print out preprocessed C code as a result.
+	if optE {
+		printTokens(tok)
+		return
+	}
+
 	prog := parse(tok)
 
 	// Traverse the AST to emit assembly code.
@@ -297,8 +331,8 @@ func main() {
 		return
 	}
 
-	if len(inputPaths) > 1 && optO != "" && (optC || optS) {
-		fmt.Fprintf(os.Stderr, "cannot specify '-o' with '-c' or '-S' with multiple files\n")
+	if len(inputPaths) > 1 && optO != "" && (optC || optS || optE) {
+		fmt.Fprintf(os.Stderr, "cannot specify '-o' with '-c,' '-S' or '-E' with multiple files\n")
 		panic("Invalid argument combination")
 	}
 
@@ -325,6 +359,12 @@ func main() {
 			if !optS {
 				assemble(input, output)
 			}
+			continue
+		}
+
+		// Just preprocess
+		if optE {
+			runCC1(os.Args, input, "")
 			continue
 		}
 

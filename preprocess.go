@@ -70,13 +70,18 @@ func preprocess2(tok *Token) *Token {
 				errorTok(tok, "expected a filename")
 			}
 
-			ipath := fmt.Sprintf("%s/%s", path.Dir(tok.file.name), tok.str)
+			var ipath string
+			if tok.str[0] == '/' {
+				ipath = tok.str
+			} else {
+				ipath = fmt.Sprintf("%s/%s", path.Dir(tok.file.name), tok.str)
+			}
 			tok2 := tokenizeFile(ipath)
 			if tok2 == nil {
 				errorTok(tok, "could not tokenize file '%s'", ipath)
 			}
 			tok = skipLine(tok.next)
-			tok = appendToken(tok2, tok.next)
+			tok = appendToken(tok2, tok)
 			continue
 		}
 

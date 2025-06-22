@@ -5,10 +5,19 @@ import (
 	"path"
 )
 
+type CondInclKind int
+
+const (
+	IN_THEN CondInclKind = iota // In the `#if` branch
+	IN_ELSE                     // In the `#else` branch
+)
+
 // `#if` can be nested, so we use a stack to manage nested `#if`s.
 type CondIncl struct {
-	next *CondIncl // Next condition
-	tok  *Token    // Token that starts this condition
+	next     *CondIncl    // Next condition
+	ctx      CondInclKind // Context of this condition
+	tok      *Token       // Token that starts this condition
+	included bool         // Whether this condition is included
 }
 
 var sCondIncl *CondIncl // Stack of conditional inclusions
@@ -48,16 +57,29 @@ func appendToken(tok1, tok2 *Token) *Token {
 	return head.next
 }
 
-// Skip until next `#endif`.
+func skipCondIncl2(tok *Token) *Token {
+	for tok.kind != TK_EOF {
+		if isHash(tok) && tok.next.equal("if") {
+			tok = skipCondIncl2(tok.next.next)
+			continue
+		}
+		if isHash(tok) && tok.next.equal("endif") {
+			return tok.next.next
+		}
+		tok = tok.next
+	}
+	return tok
+}
+
+// Skip until next `#else` or `#endif`.
 // Nested `#if` and `#endif` are skipped.
 func skipCondIncl(tok *Token) *Token {
 	for tok.kind != TK_EOF {
 		if isHash(tok) && tok.next.equal("if") {
-			tok = skipCondIncl(tok.next.next)
-			tok = tok.next
+			tok = skipCondIncl2(tok.next.next)
 			continue
 		}
-		if isHash(tok) && tok.next.equal("endif") {
+		if isHash(tok) && (tok.next.equal("else") || tok.next.equal("endif")) {
 			break
 		}
 		tok = tok.next
@@ -98,10 +120,12 @@ func evalConstExpr(rest **Token, tok *Token) int64 {
 	return val
 }
 
-func pushCondIncl(tok *Token) *CondIncl {
+func pushCondIncl(tok *Token, included bool) *CondIncl {
 	ci := &CondIncl{
-		next: sCondIncl,
-		tok:  tok,
+		next:     sCondIncl,
+		ctx:      IN_THEN,
+		tok:      tok,
+		included: included,
 	}
 	sCondIncl = ci
 	return ci
@@ -162,8 +186,22 @@ func preprocess2(tok *Token) *Token {
 
 		if tok.equal("if") {
 			val := evalConstExpr(&tok, tok)
-			pushCondIncl(start)
+			pushCondIncl(start, val != 0)
 			if val == 0 {
+				tok = skipCondIncl(tok)
+			}
+			continue
+		}
+
+		if tok.equal("else") {
+			if sCondIncl == nil || sCondIncl.ctx == IN_ELSE {
+				errorTok(tok, "stray `#else`")
+			}
+			sCondIncl.ctx = IN_ELSE
+			tok = skipLine(tok.next)
+
+			if sCondIncl.included {
+				// 条件满足，跳过 `#else` 部分
 				tok = skipCondIncl(tok)
 			}
 			continue

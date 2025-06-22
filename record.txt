@@ -1443,3 +1443,11 @@ Date:   Thu Aug 20 19:36:36 2020 +0900
     Add #if and #endif
 
 = easy
+
+commit aa570f3086ce3e2c5ac8bf6107c051fed5aabf89
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Mar 30 09:54:47 2020 +0900
+
+    Skip nested #if in a skipped #if-clause
+
+= easy

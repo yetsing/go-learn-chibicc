@@ -1475,3 +1475,11 @@ Date:   Sun Mar 29 13:29:48 2020 +0900
     Add objlike #define
 
 = easy
+
+commit 9ad60e41d512158d942d1bf3808682ede6ef5118
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 29 18:23:33 2020 +0900
+
+    Add #undef
+
+= easy

@@ -14,9 +14,10 @@ const (
 )
 
 type Macro struct {
-	next *Macro // Next macro
-	name string // Name of the macro
-	body *Token // Body of the macro
+	next    *Macro // Next macro
+	name    string // Name of the macro
+	body    *Token // Body of the macro
+	deleted bool
 }
 
 // `#if` can be nested, so we use a stack to manage nested `#if`s.
@@ -146,7 +147,11 @@ func findMacro(tok *Token) *Macro {
 	}
 	for m := sMacros; m != nil; m = m.next {
 		if m.name == tok.literal {
-			return m
+			if m.deleted {
+				return nil
+			} else {
+				return m
+			}
 		}
 	}
 	return nil
@@ -239,6 +244,18 @@ func preprocess2(tok *Token) *Token {
 			}
 			name := tok.literal
 			addMacro(name, copyLine(&tok, tok.next))
+			continue
+		}
+
+		if tok.equal("undef") {
+			tok = tok.next
+			if tok.kind != TK_IDENT {
+				errorTok(tok, "macro name must be an identifier")
+			}
+			name := tok.literal
+			tok = skipLine(tok.next)
+			m := addMacro(name, nil)
+			m.deleted = true
 			continue
 		}
 

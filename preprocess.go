@@ -1,3 +1,26 @@
+// This file implements the C preprocessor.
+//
+// The preprocessor takes a list of tokens as an input and returns a
+// new list of tokens as an output.
+//
+// The preprocessing language is designed in such a way that that's
+// guaranteed to stop even if there is a recursive macro.
+// Informally speaking, a macro is applied only once for each token.
+// That is, if a macro token T appears in a result of direct or
+// indirect macro expansion of T, T won't be expanded any further.
+// For example, if T is defined as U, and U is defined as T, then
+// token T is expanded to U and then to T and the macro expansion
+// stops at that point.
+//
+// To achieve the above behavior, we attach for each token a set of
+// macro names from which the token is expanded. The set is called
+// "hideset". Hideset is initially empty, and every time we expand a
+// macro, the macro name is added to the resulting tokens' hidesets.
+//
+// The above macro expansion algorithm is explained in this document,
+// which is used as a basis for the standard's wording:
+// https://github.com/rui314/chibicc/wiki/cpp.algo.pdf
+
 package main
 
 import (
@@ -31,6 +54,11 @@ type CondIncl struct {
 var sMacros *Macro      // List of defined macros
 var sCondIncl *CondIncl // Stack of conditional inclusions
 
+type Hideset struct {
+	next *Hideset // Next hideset
+	name string
+}
+
 func isHash(tok *Token) bool {
 	return tok.atBol && tok.equal("#")
 }
@@ -47,6 +75,48 @@ func newEof(tok *Token) *Token {
 	t.kind = TK_EOF
 	t.literal = ""
 	return t
+}
+
+func newHideset(name string) *Hideset {
+	h := &Hideset{
+		next: nil,
+		name: name,
+	}
+	return h
+}
+
+func hidesetUnion(hs1, hs2 *Hideset) *Hideset {
+	head := Hideset{}
+	cur := &head
+
+	for ; hs1 != nil; hs1 = hs1.next {
+		cur.next = newHideset(hs1.name)
+		cur = cur.next
+	}
+	cur.next = hs2
+	return head.next
+}
+
+func hidesetContains(hs *Hideset, s string) bool {
+	for ; hs != nil; hs = hs.next {
+		if hs.name == s {
+			return true
+		}
+	}
+	return false
+}
+
+func addHideset(tok *Token, hs *Hideset) *Token {
+	head := Token{}
+	cur := &head
+
+	for ; tok != nil; tok = tok.next {
+		t := copyToken(tok)
+		t.hideset = hidesetUnion(t.hideset, hs)
+		cur.next = t
+		cur = cur.next
+	}
+	return head.next
 }
 
 // Append tok2 to the end of tok1
@@ -171,12 +241,18 @@ func addMacro(name string, body *Token) *Macro {
 // If tok is a macro, expand it and return true.
 // Otherwise, do nothing and return false.
 func expandMacro(rest **Token, tok *Token) bool {
+	if hidesetContains(tok.hideset, tok.literal) {
+		return false
+	}
+
 	m := findMacro(tok)
 	if m == nil {
 		return false
 	}
 
-	*rest = appendToken(m.body, tok.next)
+	hs := hidesetUnion(tok.hideset, newHideset(m.name))
+	body := addHideset(m.body, hs)
+	*rest = appendToken(body, tok.next)
 	return true
 }
 

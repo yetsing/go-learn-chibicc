@@ -142,6 +142,8 @@ type Token struct {
 
 	file  *File // Source location
 	atBol bool  // True if this token is at the beginning of a line
+
+	hideset *Hideset // For macro expansion
 }
 
 func (t *Token) equal(op string) bool {

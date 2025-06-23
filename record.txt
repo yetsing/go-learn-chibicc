@@ -1491,3 +1491,12 @@ Date:   Thu Aug 20 19:36:49 2020 +0900
     Expand macros in the #if and #elif argument context
 
 = easy
+
+commit acce00228b842af35df5af8c97398765a386ab1e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 29 15:47:50 2020 +0900
+
+    Do not expand a token more than once for the same objlike macro
+
+= hideset 记录展开过的宏，防止宏展开无限递归
+= easy

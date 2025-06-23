@@ -1535,3 +1535,11 @@ Date:   Mon Mar 30 10:39:35 2020 +0900
 
 = 只是增加了测试用例
 = easy
+
+commit c7d7ce0f0cbd5869259a3365211ab92126a27ff6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 29 22:18:02 2020 +0900
+
+    Allow parenthesized expressions as macro arguments
+
+= easy

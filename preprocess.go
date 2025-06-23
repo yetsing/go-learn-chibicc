@@ -297,11 +297,19 @@ func readMacroDefinition(rest **Token, tok *Token) {
 func readMacroArgOne(rest **Token, tok *Token) *MacroArg {
 	head := Token{}
 	cur := &head
+	level := 0
 
-	for !tok.equal(",") && !tok.equal(")") {
+	for level > 0 || (!tok.equal(",") && !tok.equal(")")) {
 		if tok.kind == TK_EOF {
 			errorTok(tok, "premature end of input")
 		}
+
+		if tok.equal("(") {
+			level++
+		} else if tok.equal(")") {
+			level--
+		}
+
 		cur.next = copyToken(tok)
 		cur = cur.next
 		tok = tok.next

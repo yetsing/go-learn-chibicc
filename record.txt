@@ -1525,4 +1525,13 @@ Date:   Mon Mar 30 10:37:44 2020 +0900
 
     Add multi-arity funclike #define
 
-=
+= easy
+
+commit dd4306cdd8158f76f094fc699530311228536adb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Mar 30 10:39:35 2020 +0900
+
+    Allow empty macro arguments
+
+= 只是增加了测试用例
+= easy

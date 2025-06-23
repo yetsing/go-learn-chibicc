@@ -1508,3 +1508,13 @@ Date:   Sun Mar 29 17:18:31 2020 +0900
     Add #ifdef and #ifndef
 
 = easy
+
+commit dec3b3fa02ffb343c37f82d36ae02be6bb30eb03
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 10:45:03 2020 +0900
+
+    Add zero-arity funclike #define
+
+= 又是一个 sb 问题， debug 了几个小时
+= 代码写得太粗心大意
+= easy

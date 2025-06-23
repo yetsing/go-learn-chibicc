@@ -203,7 +203,10 @@ func printTokens(tok *Token) {
 		if line > 1 && tok.atBol {
 			efprintf(out, "\n")
 		}
-		efprintf(out, " %s", tok.literal)
+		if tok.hasSpace && !tok.atBol {
+			efprintf(out, " ")
+		}
+		efprintf(out, "%s", tok.literal)
 		line++
 	}
 	efprintf(out, "\n")

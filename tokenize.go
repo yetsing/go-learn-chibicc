@@ -20,6 +20,9 @@ var inputFiles []*File
 // True if the current position is at the beginning of a line.
 var tAtBol bool
 
+// True if the current position follows a space character
+var tHasSpace bool
+
 func check(err error) {
 	if err != nil {
 		panic(err)
@@ -140,8 +143,9 @@ type Token struct {
 	ty   *Type  // Used if TK_NUM or TK_STR
 	str  string // String literal contents
 
-	file  *File // Source location
-	atBol bool  // True if this token is at the beginning of a line
+	file     *File // Source location
+	atBol    bool  // True if this token is at the beginning of a line
+	hasSpace bool  // True if this token follows a space character
 
 	hideset *Hideset // For macro expansion
 }
@@ -300,15 +304,18 @@ func readStringLiteral(input string, p int) *Token {
 
 func NewToken(kind TokenKind, literal string, pos int) *Token {
 	v := tAtBol
+	v2 := tHasSpace
 	tAtBol = false
+	tHasSpace = false
 	return &Token{
-		kind:    kind,
-		next:    nil,
-		val:     0,
-		literal: literal,
-		pos:     pos,
-		file:    currentFile,
-		atBol:   v,
+		kind:     kind,
+		next:     nil,
+		val:      0,
+		literal:  literal,
+		pos:      pos,
+		file:     currentFile,
+		atBol:    v,
+		hasSpace: v2,
 	}
 }
 
@@ -591,6 +598,7 @@ func tokenize(file *File) *Token {
 	cur := &head
 
 	tAtBol = true
+	tHasSpace = false
 
 	p := 0
 	for p < len(input) {
@@ -602,6 +610,7 @@ func tokenize(file *File) *Token {
 			for p < len(input) && input[p] != '\n' {
 				p++
 			}
+			tHasSpace = true
 			continue
 		}
 
@@ -612,6 +621,7 @@ func tokenize(file *File) *Token {
 				errorAt(p, "unclosed block comment")
 			}
 			p += 2 + q + 2
+			tHasSpace = true
 			continue
 		}
 
@@ -619,12 +629,14 @@ func tokenize(file *File) *Token {
 		if ch == '\n' {
 			p++
 			tAtBol = true
+			tHasSpace = false
 			continue
 		}
 
 		// Skip whitespace characters.
 		if ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' {
 			p++
+			tHasSpace = true
 			continue
 		}
 

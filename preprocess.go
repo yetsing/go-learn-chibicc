@@ -37,10 +37,11 @@ const (
 )
 
 type Macro struct {
-	next    *Macro // Next macro
-	name    string // Name of the macro
-	body    *Token // Body of the macro
-	deleted bool
+	next      *Macro // Next macro
+	name      string // Name of the macro
+	isObjlike bool   // Object-lik or function-like macro
+	body      *Token // Body of the macro
+	deleted   bool
 }
 
 // `#if` can be nested, so we use a stack to manage nested `#if`s.
@@ -228,14 +229,32 @@ func findMacro(tok *Token) *Macro {
 	return nil
 }
 
-func addMacro(name string, body *Token) *Macro {
+func addMacro(name string, isObjlike bool, body *Token) *Macro {
 	m := &Macro{
-		next: sMacros,
-		name: name,
-		body: body,
+		next:      sMacros,
+		name:      name,
+		isObjlike: isObjlike,
+		body:      body,
 	}
 	sMacros = m
 	return m
+}
+
+func readMacroDefinition(rest **Token, tok *Token) {
+	if tok.kind != TK_IDENT {
+		errorTok(tok, "macro name must be an identifier")
+	}
+	name := tok.literal
+	tok = tok.next
+
+	if !tok.hasSpace && tok.equal("(") {
+		// Function-like macro
+		tok = tok.next.consume(")")
+		addMacro(name, false, copyLine(rest, tok))
+	} else {
+		// Object-like macro
+		addMacro(name, true, copyLine(rest, tok))
+	}
 }
 
 // If tok is a macro, expand it and return true.
@@ -250,9 +269,23 @@ func expandMacro(rest **Token, tok *Token) bool {
 		return false
 	}
 
-	hs := hidesetUnion(tok.hideset, newHideset(m.name))
-	body := addHideset(m.body, hs)
-	*rest = appendToken(body, tok.next)
+	// Object-like macro application
+	if m.isObjlike {
+		hs := hidesetUnion(tok.hideset, newHideset(m.name))
+		body := addHideset(m.body, hs)
+		*rest = appendToken(body, tok.next)
+		return true
+	}
+
+	// If a funclike macro token is not followed by an argument list,
+	// treat it as a normal identifier.
+	if !tok.next.equal("(") {
+		return false
+	}
+
+	// Function-like macro application
+	tok = tok.next.next.consume(")")
+	*rest = appendToken(m.body, tok)
 	return true
 }
 
@@ -315,12 +348,7 @@ func preprocess2(tok *Token) *Token {
 		}
 
 		if tok.equal("define") {
-			tok = tok.next
-			if tok.kind != TK_IDENT {
-				errorTok(tok, "macro name must be an identifier")
-			}
-			name := tok.literal
-			addMacro(name, copyLine(&tok, tok.next))
+			readMacroDefinition(&tok, tok.next)
 			continue
 		}
 
@@ -331,7 +359,7 @@ func preprocess2(tok *Token) *Token {
 			}
 			name := tok.literal
 			tok = skipLine(tok.next)
-			m := addMacro(name, nil)
+			m := addMacro(name, true, nil)
 			m.deleted = true
 			continue
 		}

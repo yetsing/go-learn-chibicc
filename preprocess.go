@@ -36,10 +36,22 @@ const (
 	IN_ELSE                     // In the `#else` branch
 )
 
+type MacroParam struct {
+	next *MacroParam // Next parameter
+	name string      // Name of the parameter
+}
+
+type MacroArg struct {
+	next *MacroArg // Next argument
+	name string
+	tok  *Token
+}
+
 type Macro struct {
 	next      *Macro // Next macro
 	name      string // Name of the macro
 	isObjlike bool   // Object-lik or function-like macro
+	params    *MacroParam
 	body      *Token // Body of the macro
 	deleted   bool
 }
@@ -240,6 +252,30 @@ func addMacro(name string, isObjlike bool, body *Token) *Macro {
 	return m
 }
 
+func readMacroParams(rest **Token, tok *Token) *MacroParam {
+	head := MacroParam{}
+	cur := &head
+
+	for !tok.equal(")") {
+		if cur != &head {
+			tok = tok.consume(",")
+		}
+
+		if tok.kind != TK_IDENT {
+			errorTok(tok, "expected an identifier")
+		}
+		m := &MacroParam{
+			name: tok.literal,
+		}
+		cur.next = m
+		cur = cur.next
+		tok = tok.next
+	}
+
+	*rest = tok.next
+	return head.next
+}
+
 func readMacroDefinition(rest **Token, tok *Token) {
 	if tok.kind != TK_IDENT {
 		errorTok(tok, "macro name must be an identifier")
@@ -249,12 +285,102 @@ func readMacroDefinition(rest **Token, tok *Token) {
 
 	if !tok.hasSpace && tok.equal("(") {
 		// Function-like macro
-		tok = tok.next.consume(")")
-		addMacro(name, false, copyLine(rest, tok))
+		params := readMacroParams(&tok, tok.next)
+		m := addMacro(name, false, copyLine(rest, tok))
+		m.params = params
 	} else {
 		// Object-like macro
 		addMacro(name, true, copyLine(rest, tok))
 	}
+}
+
+func readMacroArgOne(rest **Token, tok *Token) *MacroArg {
+	head := Token{}
+	cur := &head
+
+	for !tok.equal(",") && !tok.equal(")") {
+		if tok.kind == TK_EOF {
+			errorTok(tok, "premature end of input")
+		}
+		cur.next = copyToken(tok)
+		cur = cur.next
+		tok = tok.next
+	}
+
+	cur.next = newEof(tok)
+
+	arg := &MacroArg{
+		tok: head.next,
+	}
+	*rest = tok
+	return arg
+}
+
+func readMacroArgs(rest **Token, tok *Token, params *MacroParam) *MacroArg {
+	start := tok
+	tok = tok.next.next
+
+	head := MacroArg{}
+	cur := &head
+
+	pp := params
+	for ; pp != nil; pp = pp.next {
+		if cur != &head {
+			tok = tok.consume(",")
+		}
+		cur.next = readMacroArgOne(&tok, tok)
+		cur = cur.next
+		cur.name = pp.name
+	}
+
+	if pp != nil {
+		errorTok(start, "too many arguments")
+	}
+	*rest = tok.consume(")")
+	return head.next
+}
+
+func findArg(args *MacroArg, tok *Token) *MacroArg {
+	for ap := args; ap != nil; ap = ap.next {
+		if ap.name == tok.literal {
+			return ap
+		}
+	}
+	return nil
+}
+
+// Replace func-like macro parameters with given arguments.
+// tok 是宏定义的 body
+func subst(tok *Token, args *MacroArg) *Token {
+	head := Token{}
+	cur := &head
+
+	for tok.kind != TK_EOF {
+		arg := findArg(args, tok)
+
+		// Handle a macro token. Macro arguments are completely macro-expanded
+		// before they are substituted into a macro body.
+		if arg != nil {
+			// 将宏形参替换为实参
+			// 跳过形参 token ，拼接上实参 token
+			t := preprocess2(arg.tok)
+			for ; t.kind != TK_EOF; t = t.next {
+				cur.next = copyToken(t)
+				cur = cur.next
+			}
+			tok = tok.next
+			continue
+		}
+
+		// Handle a non-macro token.
+		cur.next = copyToken(tok)
+		cur = cur.next
+		tok = tok.next
+		continue
+	}
+
+	cur.next = tok
+	return head.next
 }
 
 // If tok is a macro, expand it and return true.
@@ -284,8 +410,8 @@ func expandMacro(rest **Token, tok *Token) bool {
 	}
 
 	// Function-like macro application
-	tok = tok.next.next.consume(")")
-	*rest = appendToken(m.body, tok)
+	args := readMacroArgs(&tok, tok, m.params)
+	*rest = appendToken(subst(m.body, args), tok)
 	return true
 }
 

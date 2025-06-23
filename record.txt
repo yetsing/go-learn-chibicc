@@ -1518,3 +1518,11 @@ Date:   Tue Aug 18 10:45:03 2020 +0900
 = 又是一个 sb 问题， debug 了几个小时
 = 代码写得太粗心大意
 = easy
+
+commit b9ad3e43cf7479712972514aa3f2c55a0f650f76
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Mar 30 10:37:44 2020 +0900
+
+    Add multi-arity funclike #define
+
+=

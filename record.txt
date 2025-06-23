@@ -1543,3 +1543,12 @@ Date:   Sun Mar 29 22:18:02 2020 +0900
     Allow parenthesized expressions as macro arguments
 
 = easy
+
+commit 1313fc6d3a77cedbca18fa0ffee1a86d0903ad7f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 31 16:48:29 2020 +0900
+
+    Do not expand a token more than once for the same funclike macro
+
+= 算法完全不懂 ( ´･ω)
+= easy

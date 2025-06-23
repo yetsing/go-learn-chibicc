@@ -9,6 +9,7 @@ type CondInclKind int
 
 const (
 	IN_THEN CondInclKind = iota // In the `#if` branch
+	IN_ELIF                     // In the `#elif` branch
 	IN_ELSE                     // In the `#else` branch
 )
 
@@ -71,15 +72,16 @@ func skipCondIncl2(tok *Token) *Token {
 	return tok
 }
 
-// Skip until next `#else` or `#endif`.
+// Skip until next `#else`, `#elif` or `#endif`.
 // Nested `#if` and `#endif` are skipped.
 func skipCondIncl(tok *Token) *Token {
 	for tok.kind != TK_EOF {
 		if isHash(tok) && tok.next.equal("if") {
+			// skip nested `#if`
 			tok = skipCondIncl2(tok.next.next)
 			continue
 		}
-		if isHash(tok) && (tok.next.equal("else") || tok.next.equal("endif")) {
+		if isHash(tok) && (tok.next.equal("elif") || tok.next.equal("else") || tok.next.equal("endif")) {
 			break
 		}
 		tok = tok.next
@@ -188,6 +190,21 @@ func preprocess2(tok *Token) *Token {
 			val := evalConstExpr(&tok, tok)
 			pushCondIncl(start, val != 0)
 			if val == 0 {
+				tok = skipCondIncl(tok)
+			}
+			continue
+		}
+
+		if tok.equal("elif") {
+			if sCondIncl == nil || sCondIncl.ctx == IN_ELSE {
+				errorTok(tok, "stray `#elif`")
+			}
+			sCondIncl.ctx = IN_ELIF
+
+			if !sCondIncl.included && evalConstExpr(&tok, tok) != 0 {
+				sCondIncl.included = true
+			} else {
+				// 条件不满足，跳过 `#elif` 部分
 				tok = skipCondIncl(tok)
 			}
 			continue

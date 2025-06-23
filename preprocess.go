@@ -13,6 +13,12 @@ const (
 	IN_ELSE                     // In the `#else` branch
 )
 
+type Macro struct {
+	next *Macro // Next macro
+	name string // Name of the macro
+	body *Token // Body of the macro
+}
+
 // `#if` can be nested, so we use a stack to manage nested `#if`s.
 type CondIncl struct {
 	next     *CondIncl    // Next condition
@@ -21,6 +27,7 @@ type CondIncl struct {
 	included bool         // Whether this condition is included
 }
 
+var sMacros *Macro      // List of defined macros
 var sCondIncl *CondIncl // Stack of conditional inclusions
 
 func isHash(tok *Token) bool {
@@ -43,14 +50,14 @@ func newEof(tok *Token) *Token {
 
 // Append tok2 to the end of tok1
 func appendToken(tok1, tok2 *Token) *Token {
-	if tok1 == nil || tok1.kind == TK_EOF {
+	if tok1.kind == TK_EOF {
 		return tok2
 	}
 
 	head := Token{}
 	cur := &head
 
-	for ; tok1 != nil && tok1.kind != TK_EOF; tok1 = tok1.next {
+	for ; tok1.kind != TK_EOF; tok1 = tok1.next {
 		cur.next = copyToken(tok1)
 		cur = cur.next
 	}
@@ -133,6 +140,40 @@ func pushCondIncl(tok *Token, included bool) *CondIncl {
 	return ci
 }
 
+func findMacro(tok *Token) *Macro {
+	if tok.kind != TK_IDENT {
+		return nil
+	}
+	for m := sMacros; m != nil; m = m.next {
+		if m.name == tok.literal {
+			return m
+		}
+	}
+	return nil
+}
+
+func addMacro(name string, body *Token) *Macro {
+	m := &Macro{
+		next: sMacros,
+		name: name,
+		body: body,
+	}
+	sMacros = m
+	return m
+}
+
+// If tok is a macro, expand it and return true.
+// Otherwise, do nothing and return false.
+func expandMacro(rest **Token, tok *Token) bool {
+	m := findMacro(tok)
+	if m == nil {
+		return false
+	}
+
+	*rest = appendToken(m.body, tok.next)
+	return true
+}
+
 // Some preprocessor directives such as #include allow extraneous
 // tokens before newline. This function skips such tokens.
 func skipLine(tok *Token) *Token {
@@ -153,6 +194,11 @@ func preprocess2(tok *Token) *Token {
 	cur := &head
 
 	for tok.kind != TK_EOF {
+		// If it is a macro, expand it.
+		if expandMacro(&tok, tok) {
+			continue
+		}
+
 		// Pass through if it is not a "#"
 		if !isHash(tok) {
 			cur.next = tok
@@ -183,6 +229,16 @@ func preprocess2(tok *Token) *Token {
 			}
 			tok = skipLine(tok.next)
 			tok = appendToken(tok2, tok)
+			continue
+		}
+
+		if tok.equal("define") {
+			tok = tok.next
+			if tok.kind != TK_IDENT {
+				errorTok(tok, "macro name must be an identifier")
+			}
+			name := tok.literal
+			addMacro(name, copyLine(&tok, tok.next))
 			continue
 		}
 

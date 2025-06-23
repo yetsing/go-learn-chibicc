@@ -1467,3 +1467,11 @@ Date:   Sun Mar 29 08:51:06 2020 +0900
     Add #elif
 
 = easy
+
+commit 97d33ad3bdc21c26356253046902d4b166bd115b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 29 13:29:48 2020 +0900
+
+    Add objlike #define
+
+= easy

@@ -1500,3 +1500,11 @@ Date:   Sun Mar 29 15:47:50 2020 +0900
 
 = hideset 记录展开过的宏，防止宏展开无限递归
 = easy
+
+commit 1f80f581e517ae4a5df6ab38af48a0d2a1089c73
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Mar 29 17:18:31 2020 +0900
+
+    Add #ifdef and #ifndef
+
+= easy

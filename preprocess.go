@@ -117,6 +117,7 @@ func copyLine(rest **Token, tok *Token) *Token {
 func evalConstExpr(rest **Token, tok *Token) int64 {
 	start := tok
 	expr := copyLine(rest, tok.next)
+	expr = preprocess2(expr)
 
 	if expr.kind == TK_EOF {
 		errorTok(start, "no expression")

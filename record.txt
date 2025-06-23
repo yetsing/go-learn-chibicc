@@ -1483,3 +1483,11 @@ Date:   Sun Mar 29 18:23:33 2020 +0900
     Add #undef
 
 = easy
+
+commit 2651448084a56dd0b960989798772e71e12e6c30
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 20 19:36:49 2020 +0900
+
+    Expand macros in the #if and #elif argument context
+
+= easy

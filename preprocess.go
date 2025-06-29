@@ -574,6 +574,8 @@ func subst(tok *Token, args *MacroArg) *Token {
 			// 将宏形参替换为实参
 			// 跳过形参 token ，拼接上实参 token
 			t := preprocess2(arg.tok)
+			t.atBol = tok.atBol
+			t.hasSpace = tok.hasSpace
 			for ; t.kind != TK_EOF; t = t.next {
 				cur.next = copyToken(t)
 				cur = cur.next
@@ -610,6 +612,8 @@ func expandMacro(rest **Token, tok *Token) bool {
 		hs := hidesetUnion(tok.hideset, newHideset(m.name))
 		body := addHideset(m.body, hs)
 		*rest = appendToken(body, tok.next)
+		(*rest).atBol = tok.atBol
+		(*rest).hasSpace = tok.hasSpace
 		return true
 	}
 
@@ -635,6 +639,8 @@ func expandMacro(rest **Token, tok *Token) bool {
 	body := subst(m.body, args)
 	body = addHideset(body, hs)
 	*rest = appendToken(body, tok.next)
+	(*rest).atBol = macroToken.atBol
+	(*rest).hasSpace = macroToken.hasSpace
 	return true
 }
 

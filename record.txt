@@ -1592,4 +1592,12 @@ Date:   Tue Mar 31 22:16:56 2020 +0900
 
     Replace remaining identifiers with 0 in macro constexpr
 
+= easy
+
+commit 8075582c21496530e3b1847f5bad11c42941066e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 02:33:01 2020 +0900
+
+    Preserve newline and space during macro expansion
+
 =

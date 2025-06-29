@@ -1577,3 +1577,11 @@ Date:   Sun Aug 30 18:54:12 2020 +0900
     Use chibicc's preprocessor for all tests
 
 = easy
+
+commit 5cb2f89e6a49cac8ddb16f46df92c31fa2507b9a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Aug 31 16:50:58 2020 +0900
+
+    Add defined() macro operator
+
+= easy

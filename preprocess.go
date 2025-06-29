@@ -30,6 +30,15 @@ import (
 	"strings"
 )
 
+func consume(rest **Token, tok *Token, s string) bool {
+	if tok.equal(s) {
+		*rest = tok.next
+		return true
+	}
+	*rest = tok
+	return false
+}
+
 type CondInclKind int
 
 const (
@@ -227,10 +236,58 @@ func copyLine(rest **Token, tok *Token) *Token {
 	return head.next
 }
 
+func newNumToken(val int64, tmpl *Token) *Token {
+	buf := fmt.Sprintf("%d\n", val)
+	return tokenize(NewFile(tmpl.file.name, tmpl.file.fileNo, buf))
+}
+
+func readConstExpr(rest **Token, tok *Token) *Token {
+	tok = copyLine(rest, tok)
+
+	head := Token{}
+	cur := &head
+
+	for tok.kind != TK_EOF {
+		// "defined(foo)" or "defined foo" becomes "1" if macro "foo"
+		// is defined. Otherwise "0".
+		if tok.equal("defined") {
+			start := tok
+			hasParen := consume(&tok, tok.next, "(")
+
+			if tok.kind != TK_IDENT {
+				errorTok(start, "macro name must be an identifier")
+			}
+			m := findMacro(tok)
+			tok = tok.next
+
+			if hasParen {
+				tok = tok.consume(")")
+			}
+
+			var ntok *Token
+			if m != nil {
+				ntok = newNumToken(1, start)
+			} else {
+				ntok = newNumToken(0, start)
+			}
+			cur.next = ntok
+			cur = cur.next
+			continue
+		}
+
+		cur.next = tok
+		cur = cur.next
+		tok = tok.next
+	}
+
+	cur.next = tok
+	return head.next
+}
+
 // Read and evaluate a constant expression.
 func evalConstExpr(rest **Token, tok *Token) int64 {
 	start := tok
-	expr := copyLine(rest, tok.next)
+	expr := readConstExpr(rest, tok.next)
 	expr = preprocess2(expr)
 
 	if expr.kind == TK_EOF {

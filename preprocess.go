@@ -294,6 +294,18 @@ func evalConstExpr(rest **Token, tok *Token) int64 {
 		errorTok(start, "no expression")
 	}
 
+	// [https://www.sigbus.info/n1570#6.10.1p4] The standard requires
+	// we replace remaining non-macro identifiers with "0" before
+	// evaluating a constant expression. For example, `#if foo` is
+	// equivalent to `#if 0` if foo is not defined.
+	for t := expr; t.kind != TK_EOF; t = t.next {
+		if t.kind == TK_IDENT {
+			next := t.next
+			*t = *newNumToken(0, t)
+			t.next = next
+		}
+	}
+
 	gtok = expr
 	val := constExpr()
 	if gtok.kind != TK_EOF {

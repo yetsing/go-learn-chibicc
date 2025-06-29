@@ -1585,3 +1585,11 @@ Date:   Mon Aug 31 16:50:58 2020 +0900
     Add defined() macro operator
 
 = easy
+
+commit a8d76ad435891deee9deebbc3a825062fd6cd45a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Mar 31 22:16:56 2020 +0900
+
+    Replace remaining identifiers with 0 in macro constexpr
+
+=

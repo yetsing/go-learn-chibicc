@@ -1560,3 +1560,12 @@ Date:   Sun Aug 30 01:04:23 2020 +0900
     Add macro stringizing operator (#)
 
 = easy
+
+commit 8f561aed9b7a47c38afd8c1cc75bc9a700ae97b5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 01:05:28 2020 +0900
+
+    Add macro token-pasting operator (##)
+
+= emm 没看懂
+= easy

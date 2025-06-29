@@ -182,7 +182,7 @@ func readPunct(input string, p int) int {
 	kw := []string{
 		"<<=", ">>=", "...",
 		"==", "!=", "<=", ">=", "->", "+=", "-=", "*=", "/=", "++", "--", "%=", "&=", "|=", "^=", "&&", "||",
-		"<<", ">>",
+		"<<", ">>", "##",
 	}
 	s := input[p:]
 	for _, k := range kw {
@@ -421,10 +421,10 @@ func readIntLiteral(input string, start int) *Token {
 	} else if startswith2(input[p:], "LL") {
 		p += 2
 		l = true
-	} else if input[p] == 'L' || input[p] == 'l' {
+	} else if startswith2(input[p:], "L") {
 		p++
 		l = true
-	} else if input[p] == 'U' || input[p] == 'u' {
+	} else if startswith2(input[p:], "U") {
 		p++
 		u = true
 	}
@@ -490,7 +490,7 @@ func readNumber(input string, p int) *Token {
 	if input[p] != '.' {
 		// Try to parse as an integer constant.
 		tok = readIntLiteral(input, p)
-		if !strings.ContainsRune(".eEfF", rune(input[p+len(tok.literal)])) {
+		if len(input) <= p+len(tok.literal) || !strings.ContainsRune(".eEfF", rune(input[p+len(tok.literal)])) {
 			return tok
 		}
 	}

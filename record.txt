@@ -1552,3 +1552,11 @@ Date:   Mon Aug 31 16:48:29 2020 +0900
 
 = 算法完全不懂 ( ´･ω)
 = easy
+
+commit 8f6f7925a04ca070167a38b8952a1a0bb7b63d23
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 01:04:23 2020 +0900
+
+    Add macro stringizing operator (#)
+
+= easy

@@ -697,7 +697,7 @@ func getInputFiles() []*File {
 	return inputFiles
 }
 
-func newFile(name string, fileNo int, contents string) *File {
+func NewFile(name string, fileNo int, contents string) *File {
 	return &File{
 		name:     name,
 		fileNo:   fileNo,
@@ -710,7 +710,7 @@ var fileNo int = 0
 func tokenizeFile(filename string) *Token {
 	p := readFile(filename)
 
-	file := newFile(filename, fileNo+1, p)
+	file := NewFile(filename, fileNo+1, p)
 
 	// Save the filename for assembler .file directive
 	inputFiles = append(inputFiles, file)

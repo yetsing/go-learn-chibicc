@@ -27,6 +27,7 @@ package main
 import (
 	"fmt"
 	"path"
+	"strings"
 )
 
 type CondInclKind int
@@ -192,6 +193,22 @@ func skipCondIncl(tok *Token) *Token {
 		tok = tok.next
 	}
 	return tok
+}
+
+// Double-quote a given string and returns it.
+func quoteString(s string) string {
+	// Escape double quotes and backslashes.
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `"`, `\"`)
+
+	// Add double quotes at the beginning and end.
+	return fmt.Sprintf(`"%s"`, s)
+}
+
+func newStrToken(str string, tmpl *Token) *Token {
+	buf := quoteString(str)
+	f := NewFile(tmpl.file.name, tmpl.file.fileNo, buf)
+	return tokenize(f)
 }
 
 // Copy all tokens until the next newline, terminate them with
@@ -372,6 +389,29 @@ func findArg(args *MacroArg, tok *Token) *MacroArg {
 	return nil
 }
 
+// Concatenates all tokens in `tok` and returns a new string.
+func joinTokens(tok *Token) string {
+	// Copy token texts
+	var buf strings.Builder
+	for t := tok; t != nil && t.kind != TK_EOF; t = t.next {
+		if t != tok && t.hasSpace {
+			buf.WriteString(" ")
+		}
+		buf.WriteString(t.literal)
+	}
+	return buf.String()
+}
+
+// Concatenates all tokens in `arg` and returns a new string token.
+// This function is used for the stringizing operator (#).
+func stringize(hash *Token, arg *Token) *Token {
+	// Create a new string token. We need to set some value to its
+	// source location for error reporting function, so we use a macro
+	// name token as a template.
+	s := joinTokens(arg)
+	return newStrToken(s, hash)
+}
+
 // Replace func-like macro parameters with given arguments.
 // tok 是宏定义的 body
 func subst(tok *Token, args *MacroArg) *Token {
@@ -379,10 +419,21 @@ func subst(tok *Token, args *MacroArg) *Token {
 	cur := &head
 
 	for tok.kind != TK_EOF {
-		arg := findArg(args, tok)
+		// "#" followed by a parameter is replaced with stringized actuals.
+		if tok.equal("#") {
+			arg := findArg(args, tok.next)
+			if arg == nil {
+				errorTok(tok.next, "'#' is not followed by a macro parameter")
+			}
+			cur.next = stringize(tok, arg.tok)
+			cur = cur.next
+			tok = tok.next.next // Skip the parameter token
+			continue
+		}
 
 		// Handle a macro token. Macro arguments are completely macro-expanded
 		// before they are substituted into a macro body.
+		arg := findArg(args, tok)
 		if arg != nil {
 			// 将宏形参替换为实参
 			// 跳过形参 token ，拼接上实参 token

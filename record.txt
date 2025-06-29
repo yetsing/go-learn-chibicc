@@ -1569,3 +1569,11 @@ Date:   Sun Aug 30 01:05:28 2020 +0900
 
 = emm 没看懂
 = easy
+
+commit 769b5a0941694ccdcfe61528053c3d93cb53de80
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 18:54:12 2020 +0900
+
+    Use chibicc's preprocessor for all tests
+
+= easy

@@ -705,10 +705,28 @@ func NewFile(name string, fileNo int, contents string) *File {
 	}
 }
 
+// Removes backslashes followed by a newline.
+func removeBackslashNewline(p string) string {
+	var sb strings.Builder
+	i := 0
+	for i < len(p) {
+		// Check for backslash followed by newline
+		if i+1 < len(p) && p[i] == '\\' && p[i+1] == '\n' {
+			i += 2 // Skip both characters
+		} else {
+			sb.WriteByte(p[i])
+			i++
+		}
+	}
+	return sb.String()
+}
+
 var fileNo int = 0
 
 func tokenizeFile(filename string) *Token {
 	p := readFile(filename)
+
+	p = removeBackslashNewline(p)
 
 	file := NewFile(filename, fileNo+1, p)
 

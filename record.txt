@@ -1600,4 +1600,12 @@ Date:   Sun Aug 30 02:33:01 2020 +0900
 
     Preserve newline and space during macro expansion
 
-=
+= easy
+
+commit b33fe0ea828e6a8ff3ec2d8bd5845da2b337afa5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Mar 31 22:27:38 2020 +0900
+
+    Support line continuation
+
+= easy

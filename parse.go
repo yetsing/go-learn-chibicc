@@ -2907,6 +2907,9 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	// current function name.
 	pushScope("__func__").variable = newStringLiteral(fn.name, arrayOf(charType(), len(fn.name)+1))
 
+	// [GNU] __FUNCTION__ is yet another name of __func__.
+	pushScope("__FUNCTION__").variable = newStringLiteral(fn.name, arrayOf(charType(), len(fn.name)+1))
+
 	fn.body = compoundStmt()
 	fn.locals = locals
 	leaveScope()

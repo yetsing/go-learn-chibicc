@@ -1673,3 +1673,11 @@ Date:   Fri Sep 4 11:55:28 2020 +0900
     Add __func__
 
 = easy
+
+commit 82ba010c764d3dc4d0f72a9ee5a6d6f72780e75f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:56:28 2020 +0900
+
+    [GNU] Add __FUNCTION__
+
+= easy

@@ -40,6 +40,17 @@ func takeArg(arg string) bool {
 	return false
 }
 
+func addDefaultIncludePaths(argv0 string) {
+	// We expect that chibicc-specific include files are installed
+	// to ./include relative to argv[0].
+	includePaths = append(includePaths, fmt.Sprintf("%s/include", filepath.Dir(argv0)))
+
+	// Add standard include paths.
+	includePaths = append(includePaths, "/usr/local/include")
+	includePaths = append(includePaths, "/usr/include/x86_64-linux-gnu")
+	includePaths = append(includePaths, "/usr/include")
+}
+
 func parseArgs() {
 	for i := 1; i < len(os.Args); i++ {
 		// Make sure that all command line options that take an argument
@@ -344,6 +355,7 @@ func main() {
 	parseArgs()
 
 	if optCC1 {
+		addDefaultIncludePaths(os.Args[0])
 		cc1()
 		return
 	}

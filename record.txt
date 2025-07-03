@@ -1641,3 +1641,11 @@ Date:   Wed Apr 1 20:46:47 2020 +0900
     Add #error
 
 = easy
+
+commit 5f5a8507ff2f2509c27ac1a196fd1874345e5e95
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Apr 1 23:54:33 2020 +0900
+
+    Add predefine macros such as __STDC__
+
+= easy

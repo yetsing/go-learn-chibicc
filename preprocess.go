@@ -58,6 +58,8 @@ type MacroArg struct {
 	tok  *Token
 }
 
+type macroHandlerFn func(tok *Token) *Token
+
 type Macro struct {
 	next      *Macro // Next macro
 	name      string // Name of the macro
@@ -65,6 +67,7 @@ type Macro struct {
 	params    *MacroParam
 	body      *Token // Body of the macro
 	deleted   bool
+	handler   macroHandlerFn // Handler for this macro
 }
 
 // `#if` can be nested, so we use a stack to manage nested `#if`s.
@@ -607,10 +610,20 @@ func expandMacro(rest **Token, tok *Token) bool {
 		return false
 	}
 
+	// Built-in dynamic macro application such as __LINE__
+	if m.handler != nil {
+		*rest = m.handler(tok)
+		(*rest).next = tok.next
+		return true
+	}
+
 	// Object-like macro application
 	if m.isObjlike {
 		hs := hidesetUnion(tok.hideset, newHideset(m.name))
 		body := addHideset(m.body, hs)
+		for t := body; t.kind != TK_EOF; t = t.next {
+			t.origin = tok
+		}
 		*rest = appendToken(body, tok.next)
 		(*rest).atBol = tok.atBol
 		(*rest).hasSpace = tok.hasSpace
@@ -638,6 +651,9 @@ func expandMacro(rest **Token, tok *Token) bool {
 
 	body := subst(m.body, args)
 	body = addHideset(body, hs)
+	for t := body; t.kind != TK_EOF; t = t.next {
+		t.origin = macroToken
+	}
 	*rest = appendToken(body, tok.next)
 	(*rest).atBol = macroToken.atBol
 	(*rest).hasSpace = macroToken.hasSpace
@@ -875,6 +891,26 @@ func defineMacro(name string, buf string) {
 	addMacro(name, true, tok)
 }
 
+func addBuiltin(name string, fn macroHandlerFn) *Macro {
+	m := addMacro(name, true, nil)
+	m.handler = fn
+	return m
+}
+
+func fileMacro(tmpl *Token) *Token {
+	for tmpl.origin != nil {
+		tmpl = tmpl.origin
+	}
+	return newStrToken(tmpl.file.name, tmpl)
+}
+
+func lineMacro(tmpl *Token) *Token {
+	for tmpl.origin != nil {
+		tmpl = tmpl.origin
+	}
+	return newNumToken(int64(tmpl.lineno), tmpl)
+}
+
 func initMacros() {
 	// Define predefined macros
 	defineMacro("_LP64", "1")
@@ -918,6 +954,9 @@ func initMacros() {
 	defineMacro("__x86_64__", "1")
 	defineMacro("linux", "1")
 	defineMacro("unix", "1")
+
+	addBuiltin("__FILE__", fileMacro)
+	addBuiltin("__LINE__", lineMacro)
 }
 
 func preprocess(tok *Token) *Token {

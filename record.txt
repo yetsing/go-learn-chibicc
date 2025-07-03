@@ -1649,3 +1649,11 @@ Date:   Wed Apr 1 23:54:33 2020 +0900
     Add predefine macros such as __STDC__
 
 = easy
+
+commit 6f17071885b98ac5dcdcc0b233ff204150a6826c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 18:57:54 2020 +0900
+
+    Add __FILE__ and __LINE__
+
+= easy

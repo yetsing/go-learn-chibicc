@@ -148,6 +148,7 @@ type Token struct {
 	hasSpace bool  // True if this token follows a space character
 
 	hideset *Hideset // For macro expansion
+	origin  *Token   // If this is expanded from a macro, the original token
 }
 
 func (t *Token) equal(op string) bool {

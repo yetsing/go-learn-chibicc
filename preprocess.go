@@ -644,6 +644,21 @@ func expandMacro(rest **Token, tok *Token) bool {
 	return true
 }
 
+func searchIncludePaths(filename string) string {
+	if filename[0] == '/' {
+		return filename // Absolute path
+	}
+
+	// Search a file from the include paths.
+	for i := 0; i < len(includePaths); i++ {
+		path := fmt.Sprintf("%s/%s", includePaths[i], filename)
+		if fileExists(path) {
+			return path
+		}
+	}
+	return ""
+}
+
 // Read an #include argument.
 func readIncludeFilename(rest **Token, tok *Token, isDquote *bool) string {
 	// Pattern 1: #include "foo.h"
@@ -736,7 +751,7 @@ func preprocess2(tok *Token) *Token {
 			var isDquote bool
 			filename := readIncludeFilename(&tok, tok.next, &isDquote)
 
-			if filename[0] != '/' {
+			if filename[0] != '/' && isDquote {
 				path := fmt.Sprintf("%s/%s", filepath.Dir(start.file.name), filename)
 				if fileExists(path) {
 					tok = includeFile(tok, path, start.next.next)
@@ -744,8 +759,12 @@ func preprocess2(tok *Token) *Token {
 				}
 			}
 
-			// TODO: Search a file from the include paths.
-			tok = includeFile(tok, filename, start.next.next)
+			path := searchIncludePaths(filename)
+			if path == "" {
+				tok = includeFile(tok, filename, start.next.next)
+			} else {
+				tok = includeFile(tok, path, start.next.next)
+			}
 			continue
 		}
 

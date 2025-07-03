@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+var includePaths []string
+
 var optE bool
 var optS bool
 var optC bool
@@ -27,15 +29,22 @@ func usage(status int) {
 	os.Exit(status)
 }
 
-func taskArg(arg string) bool {
-	return arg == "-o"
+func takeArg(arg string) bool {
+	options := []string{"-o", "-I"}
+
+	for _, opt := range options {
+		if arg == opt {
+			return true
+		}
+	}
+	return false
 }
 
 func parseArgs() {
 	for i := 1; i < len(os.Args); i++ {
 		// Make sure that all command line options that take an argument
 		// have an argument.
-		if taskArg(os.Args[i]) {
+		if takeArg(os.Args[i]) {
 			if i+1 >= len(os.Args) {
 				usage(1)
 			}
@@ -81,6 +90,11 @@ func parseArgs() {
 
 		if os.Args[i] == "-E" {
 			optE = true
+			continue
+		}
+
+		if strings.HasPrefix(os.Args[i], "-I") {
+			includePaths = append(includePaths, strings.TrimPrefix(os.Args[i], "-I"))
 			continue
 		}
 

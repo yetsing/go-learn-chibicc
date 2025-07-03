@@ -1665,3 +1665,11 @@ Date:   Thu Apr 2 06:55:07 2020 +0900
     Add __VA_ARGS__
 
 = easy
+
+commit ba6b4b63751ed65f2fcd74965d2b337a1a65752b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:55:28 2020 +0900
+
+    Add __func__
+
+= easy

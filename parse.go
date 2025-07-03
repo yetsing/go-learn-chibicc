@@ -2902,6 +2902,11 @@ func function(basety *Type, attr *VarAttr) *Obj {
 		fn.vaArea = newLVar("__va_area__", arrayOf(charType(), 136))
 	}
 
+	// [https://www.sigbus.info/n1570#6.4.2.2p1] "__func__" is
+	// automatically defined as a local variable containing the
+	// current function name.
+	pushScope("__func__").variable = newStringLiteral(fn.name, arrayOf(charType(), len(fn.name)+1))
+
 	fn.body = compoundStmt()
 	fn.locals = locals
 	leaveScope()

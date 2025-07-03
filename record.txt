@@ -1657,3 +1657,11 @@ Date:   Sun Aug 30 18:57:54 2020 +0900
     Add __FILE__ and __LINE__
 
 = easy
+
+commit dc01f94900a9cabf40bb6ec2c5be8b4665c30eda
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 2 06:55:07 2020 +0900
+
+    Add __VA_ARGS__
+
+= easy

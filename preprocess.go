@@ -26,7 +26,7 @@ package main
 
 import (
 	"fmt"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -459,10 +459,10 @@ func findArg(args *MacroArg, tok *Token) *MacroArg {
 }
 
 // Concatenates all tokens in `tok` and returns a new string.
-func joinTokens(tok *Token) string {
+func joinTokens(tok *Token, end *Token) string {
 	// Copy token texts
 	var buf strings.Builder
-	for t := tok; t != nil && t.kind != TK_EOF; t = t.next {
+	for t := tok; t != nil && t != end && t.kind != TK_EOF; t = t.next {
 		if t != tok && t.hasSpace {
 			buf.WriteString(" ")
 		}
@@ -477,7 +477,7 @@ func stringize(hash *Token, arg *Token) *Token {
 	// Create a new string token. We need to set some value to its
 	// source location for error reporting function, so we use a macro
 	// name token as a template.
-	s := joinTokens(arg)
+	s := joinTokens(arg, nil)
 	return newStrToken(s, hash)
 }
 
@@ -644,6 +644,58 @@ func expandMacro(rest **Token, tok *Token) bool {
 	return true
 }
 
+// Read an #include argument.
+func readIncludeFilename(rest **Token, tok *Token, isDquote *bool) string {
+	// Pattern 1: #include "foo.h"
+	if tok.kind == TK_STR {
+		// A double-quoted filename for #include is a special kind of
+		// token, and we don't want to interpret any escape sequences in it.
+		// For example, "\f" in "C:\foo" is not a formfeed character but
+		// just two non-control characters, backslash and f.
+		// So we don't want to use token->str.
+		*isDquote = true
+		*rest = skipLine(tok.next)
+		return tok.literal[1 : len(tok.literal)-1] // Strip the surrounding double quotes
+	}
+
+	// Pattern 2: #include <foo.h>
+	if tok.equal("<") {
+		// Reconstruct a filename from a sequence of tokens between
+		// "<" and ">".
+		start := tok
+
+		// Find closing ">".
+		for ; !tok.equal(">"); tok = tok.next {
+			if tok.atBol || tok.kind == TK_EOF {
+				errorTok(tok, "expected '>'")
+			}
+		}
+
+		*isDquote = false
+		*rest = skipLine(tok.next)
+		return joinTokens(start.next, tok) // Join tokens between "<" and ">"
+	}
+
+	// Pattern 3: #include FOO
+	// In this case FOO must be macro-expanded to either
+	// a single string token or a sequence of "<" ... ">".
+	if tok.kind == TK_IDENT {
+		tok2 := preprocess2(copyLine(rest, tok))
+		return readIncludeFilename(&tok2, tok2, isDquote)
+	}
+
+	errorTok(tok, "expected a filename")
+	return "" // Unreachable, but keeps the compiler happy
+}
+
+func includeFile(tok *Token, path string, filenameTok *Token) *Token {
+	tok2 := tokenizeFile(path)
+	if tok2 == nil {
+		errorTok(filenameTok, "%s: cannot open file", path)
+	}
+	return appendToken(tok2, tok)
+}
+
 // Some preprocessor directives such as #include allow extraneous
 // tokens before newline. This function skips such tokens.
 func skipLine(tok *Token) *Token {
@@ -681,24 +733,19 @@ func preprocess2(tok *Token) *Token {
 		tok = tok.next
 
 		if tok.equal("include") {
-			tok = tok.next
+			var isDquote bool
+			filename := readIncludeFilename(&tok, tok.next, &isDquote)
 
-			if tok.kind != TK_STR {
-				errorTok(tok, "expected a filename")
+			if filename[0] != '/' {
+				path := fmt.Sprintf("%s/%s", filepath.Dir(start.file.name), filename)
+				if fileExists(path) {
+					tok = includeFile(tok, path, start.next.next)
+					continue
+				}
 			}
 
-			var ipath string
-			if tok.str[0] == '/' {
-				ipath = tok.str
-			} else {
-				ipath = fmt.Sprintf("%s/%s", path.Dir(tok.file.name), tok.str)
-			}
-			tok2 := tokenizeFile(ipath)
-			if tok2 == nil {
-				errorTok(tok, "could not tokenize file '%s'", ipath)
-			}
-			tok = skipLine(tok.next)
-			tok = appendToken(tok2, tok)
+			// TODO: Search a file from the include paths.
+			tok = includeFile(tok, filename, start.next.next)
 			continue
 		}
 

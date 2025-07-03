@@ -1633,3 +1633,11 @@ Date:   Sat Sep 19 20:42:21 2020 +0900
     Add default include paths
 
 = easy
+
+commit e7fdc2e3f1d20d38ad61f6cb87e72c613b7696c7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Apr 1 20:46:47 2020 +0900
+
+    Add #error
+
+= easy

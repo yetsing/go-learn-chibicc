@@ -991,9 +991,39 @@ func initMacros() {
 	addBuiltin("__LINE__", lineMacro)
 }
 
+// Concatenate adjacent string literals into a single string literal
+// as per the C spec.
+func joinAdjacentStringLiterals(tok1 *Token) {
+	for tok1.kind != TK_EOF {
+		if tok1.kind != TK_STR || tok1.next.kind != TK_STR {
+			tok1 = tok1.next
+			continue
+		}
+
+		tok2 := tok1.next
+		for tok2.kind == TK_STR {
+			tok2 = tok2.next
+		}
+
+		var sb strings.Builder
+		for t := tok1; t != tok2; t = t.next {
+			// Strip the surrounding double quotes.
+			sb.WriteString(t.str)
+		}
+
+		newStr := sb.String()
+		*tok1 = *copyToken(tok1)
+		tok1.ty = arrayOf(tok1.ty.base, len(newStr)+1)
+		tok1.str = newStr
+		tok1.next = tok2
+		tok1 = tok2
+	}
+}
+
 func preprocess(tok *Token) *Token {
 	initMacros()
 	tok = preprocess2(tok)
 	convertKeywords(tok)
+	joinAdjacentStringLiterals(tok)
 	return tok
 }

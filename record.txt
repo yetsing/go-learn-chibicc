@@ -1681,3 +1681,11 @@ Date:   Fri Sep 4 11:56:28 2020 +0900
     [GNU] Add __FUNCTION__
 
 = easy
+
+commit ab4f1e1e197ecae40299b99dc00b1c92a4a3cb28
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Apr 26 10:11:02 2020 +0900
+
+    Concatenate adjacent string literals
+
+= easy

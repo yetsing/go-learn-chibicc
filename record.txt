@@ -1716,3 +1716,11 @@ Date:   Sun Aug 16 14:27:35 2020 +0900
     Add va_arg()
 
 = easy
+
+commit 12a9e7506c092fcbab8852db85c3aebefc8a8c81
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 18:49:29 2020 +0900
+
+    Self-host: including preprocessor, chibicc can compile itself
+
+= easy

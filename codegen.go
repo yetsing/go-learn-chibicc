@@ -996,15 +996,48 @@ func assignLVarOffsets(prog *Obj) {
 			continue
 		}
 
-		offset := 0
-		for lvar := fn.locals; lvar != nil; lvar = lvar.next {
-			offset += lvar.ty.size
-			// 每个局部变量的地址必须是其类型大小的整数倍（对齐要求）
-			offset = alignTo(offset, lvar.align)
-			lvar.offset = -offset
+		// If a function has many parameters, some parameters are
+		// inevitably passed by stack rather than by register.
+		// The first passed-by-stack parameter resides at RBP+16.
+		top := 16
+		bottom := 0
+
+		gp := 0
+		fp := 0
+
+		// Assign offsets to pass-by-stack parameters.
+		for var_ := fn.params; var_ != nil; var_ = var_.next {
+			if var_.ty.isFlonum() {
+				if fp < FP_MAX {
+					fp++
+					continue
+				}
+				fp++
+			} else {
+				if gp < GP_MAX {
+					gp++
+					continue
+				}
+				gp++
+			}
+
+			top = alignTo(top, 8)
+			var_.offset = top
+			top += var_.ty.size
 		}
 
-		fn.stackSize = alignTo(offset, 16)
+		// Assign offsets to pass-by-register parameters and local variables.
+		for var_ := fn.locals; var_ != nil; var_ = var_.next {
+			if var_.offset != 0 {
+				continue
+			}
+
+			bottom += var_.ty.size
+			bottom = alignTo(bottom, var_.align)
+			var_.offset = -bottom
+		}
+
+		fn.stackSize = alignTo(bottom, 16)
 	}
 }
 
@@ -1144,6 +1177,10 @@ func emitText(prog *Obj) {
 		gp := 0
 		fp := 0
 		for var_ := fn.params; var_ != nil; var_ = var_.next {
+			if var_.offset > 0 {
+				continue
+			}
+
 			if var_.ty.isFlonum() {
 				storeFp(fp, var_.offset, var_.ty.size)
 				fp++

@@ -1732,3 +1732,11 @@ Date:   Thu Aug 27 22:59:31 2020 +0900
     Support passed-on-stack arguments
 
 = easy
+
+commit 9021f7f5decea3e7954f138e9bac4cfea26292be
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Jul 30 12:48:20 2020 +0900
+
+    Support passed-on-stack parameters
+
+= easy

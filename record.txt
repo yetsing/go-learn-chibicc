@@ -1699,3 +1699,12 @@ Date:   Mon Jul 20 19:24:56 2020 +0900
     For now, L'' is equivalent to ''.
 
 = easy
+
+commit 7cbfd111d38b70110c9adcdfdae86d07995ae534
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 18:58:41 2020 +0900
+
+    Add stdarg.h, stdbool.h, stddef.h, stdalign.h and float.h
+
+= easy
+= 数字的解析好多问题，后面各种修修补补，通过测试就行

@@ -320,9 +320,9 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
-func readCharLiteral(input string, p int) *Token {
+func readCharLiteral(input string, p int, quote int) *Token {
 	start := p
-	p++
+	p = quote + 1
 	if p >= len(input) {
 		errorAt(p, "unclosed character literal")
 	}
@@ -660,7 +660,15 @@ func tokenize(file *File) *Token {
 
 		// Handle character literals
 		if ch == '\'' {
-			cur.next = readCharLiteral(input, p)
+			cur.next = readCharLiteral(input, p, p)
+			cur = cur.next
+			p += len(cur.literal)
+			continue
+		}
+
+		// Wide character literal
+		if strings.HasPrefix(input[p:], "L'") {
+			cur.next = readCharLiteral(input, p, p+1)
 			cur = cur.next
 			p += len(cur.literal)
 			continue

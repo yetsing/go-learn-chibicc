@@ -1689,3 +1689,13 @@ Date:   Sun Apr 26 10:11:02 2020 +0900
     Concatenate adjacent string literals
 
 = easy
+
+commit 7746e4ee0b254da6311202c7db3d2fddd4c6a52c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Jul 20 19:24:56 2020 +0900
+
+    Recognize wide character literal
+
+    For now, L'' is equivalent to ''.
+
+= easy

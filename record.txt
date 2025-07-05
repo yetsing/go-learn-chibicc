@@ -1708,3 +1708,11 @@ Date:   Sun Aug 30 18:58:41 2020 +0900
 
 = easy
 = 数字的解析好多问题，后面各种修修补补，通过测试就行
+
+commit 5322ea8495d70be81a6b80f7a88850b85bfba240
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 16 14:27:35 2020 +0900
+
+    Add va_arg()
+
+= easy

@@ -2732,6 +2732,7 @@ func funcall(fn *Node) *Node {
 // .       | "sizeof" unary
 // .       | "_Alignof" "(" type-name ")"
 // .       | "_Alignof" unary
+// .       | "__builtin_reg_class" "(" type-name ")"
 // .       | ident
 // .       | funcall
 // .       | str
@@ -2781,6 +2782,20 @@ func primary() *Node {
 		node := unary()
 		addType(node)
 		return NewUlong(int64(node.ty.align), st)
+	}
+
+	if gtok.equal("__builtin_reg_class") {
+		gtok = gtok.next.consume("(")
+		ty := typename()
+		gtok = gtok.consume(")")
+
+		if ty.isInteger() || ty.kind == TY_PTR {
+			return NewNumber(0, st)
+		}
+		if ty.isFlonum() {
+			return NewNumber(1, st)
+		}
+		return NewNumber(2, st)
 	}
 
 	if gtok.kind == TK_IDENT {

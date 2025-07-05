@@ -523,14 +523,14 @@ func pushArgs(args *Node) int {
 			if fp >= FP_MAX {
 				arg.passByStack = true
 				stack++
-				fp++
 			}
+			fp++
 		} else {
 			if gp >= GP_MAX {
 				arg.passByStack = true
 				stack++
-				gp++
 			}
+			gp++
 		}
 	}
 

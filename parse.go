@@ -328,8 +328,9 @@ type Node struct {
 	member *Member
 
 	// Function call
-	funcTy *Type
-	args   *Node
+	funcTy      *Type
+	args        *Node
+	passByStack bool
 
 	// Goto or labeled statement
 	label       string

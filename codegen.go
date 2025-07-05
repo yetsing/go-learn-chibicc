@@ -8,6 +8,9 @@ import (
 
 // #region output utils
 
+var GP_MAX = 6
+var FP_MAX = 8
+
 var outFile *os.File
 
 func sout(format string, args ...interface{}) {
@@ -471,17 +474,78 @@ func genCast(from, to *Type) {
 	}
 }
 
-func pushArgs(args *Node) {
-	if args != nil {
-		pushArgs(args.next)
+func pushArgs2(args *Node, firstPass bool) {
+	if args == nil {
+		return
+	}
 
-		genExpr(args)
-		if args.ty.isFlonum() {
-			pushf()
+	pushArgs2(args.next, firstPass)
+
+	if (firstPass && !args.passByStack) || (!firstPass && args.passByStack) {
+		return
+	}
+
+	genExpr(args)
+
+	if args.ty.isFlonum() {
+		pushf()
+	} else {
+		push()
+	}
+}
+
+// Load function call arguments. Arguments are already evaluated and
+// stored to the stack as local variables. What we need to do in this
+// function is to load them to registers or push them to the stack as
+// specified by the x86-64 psABI. Here is what the spec says:
+//
+//   - Up to 6 arguments of integral type are passed using RDI, RSI,
+//     RDX, RCX, R8 and R9.
+//
+//   - Up to 8 arguments of floating-point type are passed using XMM0 to
+//     XMM7.
+//
+//   - If all registers of an appropriate type are already used, push an
+//     argument to the stack in the right-to-left order.
+//
+//   - Each argument passed on the stack takes 8 bytes, and the end of
+//     the argument area must be aligned to a 16 byte boundary.
+//
+//   - If a function is variadic, set the number of floating-point type
+//     arguments to RAX.
+func pushArgs(args *Node) int {
+	stack := 0
+	gp := 0
+	fp := 0
+
+	for arg := args; arg != nil; arg = arg.next {
+		if arg.ty.isFlonum() {
+			if fp >= FP_MAX {
+				arg.passByStack = true
+				stack++
+				fp++
+			}
 		} else {
-			push()
+			if gp >= GP_MAX {
+				arg.passByStack = true
+				stack++
+				gp++
+			}
 		}
 	}
+
+	// push 一次栈大小增加 8 字节
+	// 偶数次刚好是 16 字节对齐
+	// 奇数次需要先 sub rsp 8 字节，调用完函数后再 add rsp 8 字节
+	if (depth+stack)%2 == 1 {
+		sout("  sub $8, %%rsp  # align stack")
+		depth++
+		stack++
+	}
+
+	pushArgs2(args, true)
+	pushArgs2(args, false)
+	return stack
 }
 
 // Generate code for a given node.
@@ -616,31 +680,31 @@ func genExpr(node *Node) {
 		sout(".L.end.%d:", c)
 		return
 	case ND_FUNCALL:
-		pushArgs(node.args)
+		stackArgs := pushArgs(node.args)
 		genExpr(node.lhs)
 
 		gp := 0
 		fp := 0
 		for arg := node.args; arg != nil; arg = arg.next {
 			if arg.ty.isFlonum() {
-				popf(fp)
-				fp++
+				if fp < FP_MAX {
+					popf(fp)
+					fp++
+				}
 			} else {
-				pop(argreg64[gp])
-				gp++
+				if gp < GP_MAX {
+					pop(argreg64[gp])
+					gp++
+				}
 			}
 		}
 
-		// push 一次栈大小增加 8 字节
-		// 偶数次刚好是 16 字节对齐
-		// 奇数次需要先 sub rsp 8 字节，调用完函数后再 add rsp 8 字节
-		if depth%2 == 0 {
-			sout("  call *%%rax")
-		} else {
-			sout("  sub $8, %%rsp")
-			sout("  call *%%rax")
-			sout("  add $8, %%rsp")
-		}
+		sout("  mov %%rax, %%r10")
+		sout("  mov $%d, %%rax", fp)
+		sout("  call *%%r10")
+		sout("  add $%d, %%rsp", stackArgs*8)
+
+		depth -= stackArgs
 
 		// It looks like the most significant 48 or 56 bits in RAX may
 		// contain garbage if a function return type is short or bool/char,

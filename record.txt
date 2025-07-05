@@ -1724,3 +1724,11 @@ Date:   Sun Aug 30 18:49:29 2020 +0900
     Self-host: including preprocessor, chibicc can compile itself
 
 = easy
+
+commit b29f0521025c95ff331ddb58258b1083f8efd9ff
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 22:59:31 2020 +0900
+
+    Support passed-on-stack arguments
+
+= easy

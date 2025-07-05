@@ -474,6 +474,59 @@ func genCast(from, to *Type) {
 	}
 }
 
+// Structs or unions equal or smaller than 16 bytes are passed
+// using up to two registers.
+//
+// If the first 8 bytes contains only floating-point type members,
+// they are passed in an XMM register. Otherwise, they are passed
+// in a general-purpose register.
+//
+// If a struct/union is larger than 8 bytes, the same rule is
+// applied to the the next 8 byte chunk.
+//
+// This function returns true if `ty` has only floating-point
+// members in its byte range [lo, hi).
+func hasFlonum(ty *Type, lo int, hi int, offset int) bool {
+	if ty.kind == TY_STRUCT || ty.kind == TY_UNION {
+		for mem := ty.members; mem != nil; mem = mem.next {
+			if !hasFlonum(mem.ty, lo, hi, offset+mem.offset) {
+				return false
+			}
+		}
+		return true
+	}
+
+	if ty.kind == TY_ARRAY {
+		for i := 0; i < ty.arrayLen; i++ {
+			if !hasFlonum(ty.base, lo, hi, offset+ty.base.size*i) {
+				return false
+			}
+		}
+		return true
+	}
+
+	return offset < lo || hi <= offset || ty.isFlonum()
+}
+
+func hasFlonum1(ty *Type) bool {
+	return hasFlonum(ty, 0, 8, 0)
+}
+
+func hasFlonum2(ty *Type) bool {
+	return hasFlonum(ty, 8, 16, 0)
+}
+
+func pushStruct(ty *Type) {
+	sz := alignTo(ty.size, 8)
+	sout("  sub $%d, %%rsp", sz)
+	depth += sz / 8
+
+	for i := 0; i < ty.size; i++ {
+		sout("  mov %d(%%rax), %%r10b", i)
+		sout("  mov %%r10b, %d(%%rsp)", i)
+	}
+}
+
 func pushArgs2(args *Node, firstPass bool) {
 	if args == nil {
 		return
@@ -487,9 +540,16 @@ func pushArgs2(args *Node, firstPass bool) {
 
 	genExpr(args)
 
-	if args.ty.isFlonum() {
+	switch args.ty.kind {
+	case TY_STRUCT:
+		fallthrough
+	case TY_UNION:
+		pushStruct(args.ty)
+	case TY_FLOAT:
+		fallthrough
+	case TY_DOUBLE:
 		pushf()
-	} else {
+	default:
 		push()
 	}
 }
@@ -519,13 +579,36 @@ func pushArgs(args *Node) int {
 	fp := 0
 
 	for arg := args; arg != nil; arg = arg.next {
-		if arg.ty.isFlonum() {
+		ty := arg.ty
+
+		switch ty.kind {
+		case TY_STRUCT:
+			fallthrough
+		case TY_UNION:
+			if ty.size > 16 {
+				arg.passByStack = true
+				stack += alignTo(ty.size, 8) / 8
+			} else {
+				fp1 := hasFlonum1(ty)
+				fp2 := hasFlonum2(ty)
+
+				if fp+b2i(fp1)+b2i(fp2) < FP_MAX && gp+b2i(!fp1)+b2i(!fp2) < GP_MAX {
+					fp = fp + b2i(fp1) + b2i(fp2)
+					gp = gp + b2i(!fp1) + b2i(!fp2)
+				} else {
+					arg.passByStack = true
+					stack += alignTo(ty.size, 8) / 8
+				}
+			}
+		case TY_FLOAT:
+			fallthrough
+		case TY_DOUBLE:
 			if fp >= FP_MAX {
 				arg.passByStack = true
 				stack++
 			}
 			fp++
-		} else {
+		default:
 			if gp >= GP_MAX {
 				arg.passByStack = true
 				stack++
@@ -686,12 +769,46 @@ func genExpr(node *Node) {
 		gp := 0
 		fp := 0
 		for arg := node.args; arg != nil; arg = arg.next {
-			if arg.ty.isFlonum() {
+			ty := arg.ty
+
+			switch ty.kind {
+			case TY_STRUCT:
+				fallthrough
+			case TY_UNION:
+				if ty.size > 16 {
+					continue
+				}
+
+				fp1 := hasFlonum1(ty)
+				fp2 := hasFlonum2(ty)
+				if fp+b2i(fp1)+b2i(fp2) < FP_MAX &&
+					gp+b2i(!fp1)+b2i(!fp2) < GP_MAX {
+					if fp1 {
+						popf(fp)
+						fp++
+					} else {
+						pop(argreg64[gp])
+						gp++
+					}
+
+					if ty.size > 8 {
+						if fp2 {
+							popf(fp)
+							fp++
+						} else {
+							pop(argreg64[gp])
+							gp++
+						}
+					}
+				}
+			case TY_FLOAT:
+				fallthrough
+			case TY_DOUBLE:
 				if fp < FP_MAX {
 					popf(fp)
 					fp++
 				}
-			} else {
+			default:
 				if gp < GP_MAX {
 					pop(argreg64[gp])
 					gp++

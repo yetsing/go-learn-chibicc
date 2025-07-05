@@ -2699,10 +2699,9 @@ func funcall(fn *Node) *Node {
 		}
 
 		if paramTy != nil {
-			if paramTy.kind == TY_STRUCT || paramTy.kind == TY_UNION {
-				errorTok(gtok, "passing struct or union is not supported yet")
+			if paramTy.kind != TY_STRUCT && paramTy.kind != TY_UNION {
+				arg = NewCast(arg, paramTy)
 			}
-			arg = NewCast(arg, paramTy)
 			paramTy = paramTy.next
 		} else if arg.ty.kind == TY_FLOAT {
 			// If parameter type is omitted (e.g. in "..."), float

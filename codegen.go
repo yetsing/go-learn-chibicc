@@ -698,6 +698,70 @@ func copyRetBuffer(var_ *Obj) {
 	}
 }
 
+func copyStructReg() {
+	ty := currentFn.ty.returnTy
+	fp := 0
+	gp := 0
+
+	sout("  mov %%rax, %%rdi")
+
+	if hasFlonum(ty, 0, 8, 0) {
+		if !(ty.size == 4 || 8 <= ty.size) {
+			panic(fmt.Sprintf("unexpected size of struct/union: %d", ty.size))
+		}
+		if ty.size == 4 {
+			sout("  movss (%%rdi), %%xmm0")
+		} else {
+			sout("  movsd (%%rdi), %%xmm0")
+		}
+		fp++
+	} else {
+		sout("  mov $0, %%rax")
+		for i := min(8, ty.size) - 1; i >= 0; i-- {
+			sout("  shl $8, %%rax")
+			sout("  mov %d(%%rdi), %%al", i)
+		}
+		gp++
+	}
+
+	if ty.size > 8 {
+		if hasFlonum(ty, 8, 16, 0) {
+			if !(ty.size == 12 || ty.size == 16) {
+				panic(fmt.Sprintf("unexpected size of struct/union: %d", ty.size))
+			}
+			if ty.size == 4 {
+				sout("  movss 8(%%rdi), %%xmm%d", fp)
+			} else {
+				sout("  movsd 8(%%rdi), %%xmm%d", fp)
+			}
+		} else {
+			reg1 := "%dl"
+			reg2 := "%rdx"
+			if gp == 0 {
+				reg1 = "%al"
+				reg2 = "%rax"
+			}
+			sout("  mov $0, %s", reg2)
+			for i := min(16, ty.size) - 1; i >= 8; i-- {
+				sout("  shl $8, %s", reg2)
+				sout("  mov %d(%%rdi), %s", i, reg1)
+			}
+		}
+	}
+}
+
+func copyStructMem() {
+	ty := currentFn.ty.returnTy
+	var_ := currentFn.params
+
+	sout("  mov %d(%%rbp), %%rdi", var_.offset)
+
+	for i := 0; i < ty.size; i++ {
+		sout("  mov %d(%%rax), %%dl", i)
+		sout("  mov %%dl, %d(%%rdi)", i)
+	}
+}
+
 // Generate code for a given node.
 func genExpr(node *Node) {
 	sout("  .loc %d %d", node.tok.file.fileNo, node.tok.lineno)
@@ -1173,7 +1237,17 @@ func genStmt(node *Node) {
 	case ND_RETURN:
 		if node.lhs != nil {
 			genExpr(node.lhs)
+
+			ty := node.lhs.ty
+			if ty.kind == TY_STRUCT || ty.kind == TY_UNION {
+				if ty.size <= 16 {
+					copyStructReg()
+				} else {
+					copyStructMem()
+				}
+			}
 		}
+
 		sout("  jmp .L.return.%s", currentFn.name)
 		return
 	case ND_EXPR_STMT:

@@ -1533,7 +1533,11 @@ func stmt() *Node {
 		gtok = gtok.consume(";")
 
 		addType(expr)
-		node.lhs = NewCast(expr, pcurrentFn.ty.returnTy)
+		ty := pcurrentFn.ty.returnTy
+		if ty.kind != TY_STRUCT && ty.kind != TY_UNION {
+			expr = NewCast(expr, pcurrentFn.ty.returnTy)
+		}
+		node.lhs = expr
 		return node
 	}
 
@@ -2919,6 +2923,14 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	locals = nil
 	enterScope()
 	createParamLvars(ty.params)
+
+	// A buffer for a struct/union return value is passed
+	// as the hidden first parameter.
+	rty := ty.returnTy
+	if (rty.kind == TY_STRUCT || rty.kind == TY_UNION) && rty.size > 16 {
+		newLVar("", pointerTo(rty))
+	}
+
 	fn.params = locals
 	if ty.isVariadic {
 		fn.vaArea = newLVar("__va_area__", arrayOf(charType(), 136))

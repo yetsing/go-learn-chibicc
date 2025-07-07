@@ -1764,3 +1764,12 @@ Date:   Thu Aug 27 23:16:53 2020 +0900
     Allow to call a fucntion returning a struct
 
 = easy
+
+commit d7bad961146b9f2fd918f05fd59a50f3f65bf325
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:57:15 2020 +0900
+
+    Allow to define a function returning a struct
+
+= 完全搞不懂
+= emm

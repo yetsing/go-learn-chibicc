@@ -1124,13 +1124,30 @@ func assignLVarOffsets(prog *Obj) {
 
 		// Assign offsets to pass-by-stack parameters.
 		for var_ := fn.params; var_ != nil; var_ = var_.next {
-			if var_.ty.isFlonum() {
+			ty := var_.ty
+
+			switch ty.kind {
+			case TY_STRUCT:
+				fallthrough
+			case TY_UNION:
+				if ty.size <= 16 {
+					fp1 := hasFlonum(ty, 0, 8, 0)
+					fp2 := hasFlonum(ty, 8, 16, 8)
+					if fp+b2i(fp1)+b2i(fp2) < FP_MAX && gp+b2i(!fp1)+b2i(!fp2) < GP_MAX {
+						fp = fp + b2i(fp1) + b2i(fp2)
+						gp = gp + b2i(!fp1) + b2i(!fp2)
+						continue
+					}
+				}
+			case TY_FLOAT:
+				fallthrough
+			case TY_DOUBLE:
 				if fp < FP_MAX {
 					fp++
 					continue
 				}
 				fp++
-			} else {
+			default:
 				if gp < GP_MAX {
 					gp++
 					continue
@@ -1228,6 +1245,12 @@ func storeGP(r, offset, sz int) {
 	case 8:
 		sout("    mov %s, %d(%%rbp)", argreg64[r], offset)
 		return
+	default:
+		for i := 0; i < sz; i++ {
+			sout("  mov %s, %d(%%rbp)", argreg8[r], offset+i)
+			sout("  shr $8, %s", argreg8[r])
+		}
+		return
 	}
 	unreachable()
 }
@@ -1298,11 +1321,39 @@ func emitText(prog *Obj) {
 				continue
 			}
 
-			if var_.ty.isFlonum() {
-				storeFp(fp, var_.offset, var_.ty.size)
+			ty := var_.ty
+
+			switch ty.kind {
+			case TY_STRUCT:
+				fallthrough
+			case TY_UNION:
+				if ty.size > 16 {
+					panic("struct/union larger than 16 bytes passed by register")
+				}
+				if hasFlonum(ty, 0, 8, 0) {
+					storeFp(fp, var_.offset, min(8, ty.size))
+					fp++
+				} else {
+					storeGP(gp, var_.offset, min(8, ty.size))
+					gp++
+				}
+
+				if ty.size > 8 {
+					if hasFlonum(ty, 8, 16, 0) {
+						storeFp(fp, var_.offset+8, ty.size-8)
+						fp++
+					} else {
+						storeGP(gp, var_.offset+8, ty.size-8)
+						gp++
+					}
+				}
+			case TY_FLOAT:
+				fallthrough
+			case TY_DOUBLE:
+				storeFp(fp, var_.offset, ty.size)
 				fp++
-			} else {
-				storeGP(gp, var_.offset, var_.ty.size)
+			default:
+				storeGP(gp, var_.offset, ty.size)
 				gp++
 			}
 		}

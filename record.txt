@@ -1748,3 +1748,11 @@ Date:   Thu Aug 27 23:14:58 2020 +0900
     Allow struct parameter
 
 = easy
+
+commit d63b1f410a7aa3d308d0620d640f417a87b0c838
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Jul 31 12:12:43 2020 +0900
+
+    Allow struct argument
+
+= easy

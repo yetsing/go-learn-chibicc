@@ -1773,3 +1773,11 @@ Date:   Fri Sep 4 11:57:15 2020 +0900
 
 = 完全搞不懂
 = emm
+
+commit b6d3cd00df7d0496fca2af2c34e72ab3e6af4028
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 18:27:31 2020 +0900
+
+    Allow variadic function to take more than 6 parameters
+
+= emm

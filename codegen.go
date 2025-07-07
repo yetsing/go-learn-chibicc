@@ -133,6 +133,11 @@ func genAddr(node *Node) {
 		genAddr(node.lhs)
 		sout("  add $%d, %%rax", node.member.offset)
 		return
+	case ND_FUNCALL:
+		if node.retBuffer != nil {
+			genExpr(node)
+			return
+		}
 	}
 
 	errorTok(node.tok, "not a lvalue %s", node.kind)
@@ -573,12 +578,19 @@ func pushArgs2(args *Node, firstPass bool) {
 //
 //   - If a function is variadic, set the number of floating-point type
 //     arguments to RAX.
-func pushArgs(args *Node) int {
+func pushArgs(node *Node) int {
 	stack := 0
 	gp := 0
 	fp := 0
 
-	for arg := args; arg != nil; arg = arg.next {
+	// If the return type is a large struct/union, the caller passes
+	// a pointer to a buffer as if it were the first argument.
+	if node.retBuffer != nil && node.ty.size > 16 {
+		gp++
+	}
+
+	// Load as many arguments to the registers as possible.
+	for arg := node.args; arg != nil; arg = arg.next {
 		ty := arg.ty
 
 		switch ty.kind {
@@ -626,9 +638,64 @@ func pushArgs(args *Node) int {
 		stack++
 	}
 
-	pushArgs2(args, true)
-	pushArgs2(args, false)
+	pushArgs2(node.args, true)
+	pushArgs2(node.args, false)
+
+	// If the return type is a large struct/union, the caller passes
+	// a pointer to a buffer as if it were the first argument.
+	if node.retBuffer != nil && node.ty.size > 16 {
+		sout("  lea %d(%%rbp), %%rax", node.retBuffer.offset)
+		push()
+	}
 	return stack
+}
+
+func copyRetBuffer(var_ *Obj) {
+	ty := var_.ty
+	gp := 0
+	fp := 0
+
+	if hasFlonum1(ty) {
+		if !(ty.size == 4 || 8 <= ty.size) {
+			panic(fmt.Sprintf("unexpected size of struct/union %s: %d", ty, ty.size))
+		}
+		if ty.size == 4 {
+			sout("  movss %%xmm0, %d(%%rbp)", var_.offset)
+		} else {
+			sout("  movsd %%xmm0, %d(%%rbp)", var_.offset)
+		}
+		fp++
+	} else {
+		for i := 0; i < min(ty.size, 8); i++ {
+			sout("  mov %%al, %d(%%rbp)", var_.offset+i)
+			sout("  shr $8, %%rax")
+		}
+		gp++
+	}
+
+	if ty.size > 8 {
+		if hasFlonum2(ty) {
+			if !(ty.size == 12 || ty.size == 16) {
+				panic(fmt.Sprintf("unexpected size of struct/union: %d", ty.size))
+			}
+			if ty.size == 12 {
+				sout("  movss %%xmm%d, %d(%%rbp)", fp, var_.offset+8)
+			} else {
+				sout("  movsd %%xmm%d, %d(%%rbp)", fp, var_.offset+8)
+			}
+		} else {
+			reg1 := "%dl"
+			reg2 := "%rdx"
+			if gp == 0 {
+				reg1 = "%al"
+				reg2 = "%rax"
+			}
+			for i := 8; i < min(16, ty.size); i++ {
+				sout("  mov %s, %d(%%rbp)", reg1, var_.offset+i)
+				sout("  shr $8, %s", reg2)
+			}
+		}
+	}
 }
 
 // Generate code for a given node.
@@ -763,11 +830,19 @@ func genExpr(node *Node) {
 		sout(".L.end.%d:", c)
 		return
 	case ND_FUNCALL:
-		stackArgs := pushArgs(node.args)
+		stackArgs := pushArgs(node)
 		genExpr(node.lhs)
 
 		gp := 0
 		fp := 0
+
+		// If the return type is a large struct/union, the caller passes
+		// a pointer to a buffer as if it were the first argument.
+		if node.retBuffer != nil && node.ty.size > 16 {
+			pop(argreg64[gp])
+			gp++
+		}
+
 		for arg := node.args; arg != nil; arg = arg.next {
 			ty := arg.ty
 
@@ -845,6 +920,14 @@ func genExpr(node *Node) {
 			}
 			return
 		}
+
+		// If the return type is a small struct, a value is returned
+		// using up to two registers.
+		if node.retBuffer != nil && node.retBuffer.ty.size <= 16 {
+			copyRetBuffer(node.retBuffer)
+			sout("  lea %d(%%rbp), %%rax", node.retBuffer.offset)
+		}
+
 		return
 	}
 

@@ -1756,3 +1756,11 @@ Date:   Fri Jul 31 12:12:43 2020 +0900
     Allow struct argument
 
 = easy
+
+commit c72df1c9be535bdfd5b46609996bf1eaf540aced
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 23:16:53 2020 +0900
+
+    Allow to call a fucntion returning a struct
+
+= easy

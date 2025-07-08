@@ -310,6 +310,9 @@ func evalConstExpr(rest **Token, tok *Token) int64 {
 		}
 	}
 
+	// Convert pp-numbers to regular numbers
+	convertPPTokens(expr)
+
 	gtok = expr
 	val := constExpr()
 	if gtok.kind != TK_EOF {
@@ -1023,7 +1026,7 @@ func joinAdjacentStringLiterals(tok1 *Token) {
 func preprocess(tok *Token) *Token {
 	initMacros()
 	tok = preprocess2(tok)
-	convertKeywords(tok)
+	convertPPTokens(tok)
 	joinAdjacentStringLiterals(tok)
 	return tok
 }

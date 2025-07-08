@@ -121,6 +121,7 @@ const (
 	TK_KEYWORD                  // keywords
 	TK_STR                      // string literals
 	TK_NUM                      // numbers literals
+	TK_PP_NUM                   // preprocessor numbers
 	TK_EOF                      // end of file
 )
 
@@ -375,7 +376,9 @@ func isNumChar2(base int, b byte) bool {
 	}
 }
 
-func readIntLiteral(input string, start int) *Token {
+func convertPPInt(tok *Token) bool {
+	input := tok.literal + "  "
+	start := 0
 	p := start
 
 	// Read a binary, octal, decimal or hexadecimal number.
@@ -400,7 +403,7 @@ func readIntLiteral(input string, start int) *Token {
 	}
 
 	numStart := p
-	for p < len(input) && isNumChar2(base, input[p]) {
+	for p < len(input) && (isNumChar2(base, input[p])) {
 		p++
 	}
 
@@ -428,6 +431,10 @@ func readIntLiteral(input string, start int) *Token {
 	} else if startswith2(input[p:], "U") {
 		p++
 		u = true
+	}
+
+	if p < len(tok.literal) {
+		return false
 	}
 
 	// Infer a type.
@@ -480,23 +487,33 @@ func readIntLiteral(input string, start int) *Token {
 		}
 	}
 
-	tok := NewToken(TK_NUM, input[start:p], start)
+	tok.kind = TK_NUM
 	tok.val = int64(val)
 	tok.ty = ty
-	return tok
+	return true
 }
 
-func readNumber(input string, p int) *Token {
-	tok := &Token{}
+// The definition of the numeric literal at the preprocessing stage
+// is more relaxed than the definition of that at the later stages.
+// In order to handle that, a numeric literal is tokenized as a
+// "pp-number" token first and then converted to a regular number
+// token after preprocessing.
+//
+// This function converts a pp-number token to a regular number token.
+func convertPPNumber(tok *Token) {
+	input := tok.literal + "  " // Add trailing space to avoid boundary checks
+	p := 0
 	if input[p] != '.' {
 		// Try to parse as an integer constant.
-		tok = readIntLiteral(input, p)
-		if len(input) <= p+len(tok.literal) || !strings.ContainsRune(".eEfF", rune(input[p+len(tok.literal)])) {
-			return tok
+		if convertPPInt(tok) {
+			return
 		}
 	}
 
-	numEnd := p + len(tok.literal)
+	numEnd := strings.IndexByte(tok.literal, '.')
+	if numEnd == -1 {
+		numEnd = 0
+	}
 	for numEnd < len(input) && strings.ContainsRune("abcdefABCDEF0123456789.eEp", rune(input[numEnd])) {
 		numEnd++
 		if numEnd < len(input) && (input[numEnd-1] == 'e' || input[numEnd-1] == 'E') && (input[numEnd] == '+' || input[numEnd] == '-') {
@@ -524,10 +541,13 @@ func readNumber(input string, p int) *Token {
 		ty = doubleType()
 	}
 
-	tok = NewToken(TK_NUM, input[p:numEnd], p)
+	if numEnd < len(tok.literal) {
+		errorTok(tok, "invalid numeric constant")
+	}
+
+	tok.kind = TK_NUM
 	tok.fval = val
 	tok.ty = ty
-	return tok
 }
 
 var keywords = map[string]TokenKind{
@@ -572,10 +592,12 @@ var keywords = map[string]TokenKind{
 	"double":       TK_KEYWORD,
 }
 
-func convertKeywords(tok *Token) {
+func convertPPTokens(tok *Token) {
 	for t := tok; t != nil; t = t.next {
 		if _, ok := keywords[t.literal]; ok {
 			t.kind = TK_KEYWORD
+		} else if t.kind == TK_PP_NUM {
+			convertPPNumber(t)
 		}
 	}
 }
@@ -593,6 +615,14 @@ func addLineNumbers(tok *Token) {
 		}
 		t.lineno = line
 	}
+}
+
+func isdigit(ch byte) bool {
+	return ch >= '0' && ch <= '9'
+}
+
+func isalnum(ch byte) bool {
+	return isdigit(ch) || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }
 
 // Tokenize the input string and return a linked list of tokens.
@@ -648,10 +678,19 @@ func tokenize(file *File) *Token {
 
 		// Handle numbers
 		start := p
-		if (ch >= '0' && ch <= '9') || (ch == '.' && p+1 < len(input) && (input[p+1] >= '0' && input[p+1] <= '9')) {
-			cur.next = readNumber(input, p)
+		if isdigit(ch) || (ch == '.' && p+1 < len(input) && isdigit(input[p+1])) {
+			p++
+			for {
+				if p+2 < len(input) && strings.ContainsRune("eEpP", rune(input[p])) && strings.Contains("+-", string(input[p+1])) {
+					p += 2 // Skip 'e' or 'E' and the sign
+				} else if p < len(input) && (isalnum(input[p]) || input[p] == '.') {
+					p++
+				} else {
+					break
+				}
+			}
+			cur.next = NewToken(TK_PP_NUM, input[start:p], start)
 			cur = cur.next
-			p += len(cur.literal)
 			continue
 		}
 

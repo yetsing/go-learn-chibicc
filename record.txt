@@ -1781,3 +1781,11 @@ Date:   Fri Sep 4 18:27:31 2020 +0900
     Allow variadic function to take more than 6 parameters
 
 = emm
+
+commit 603de502fd8bad750d48aaf9a66c547e5ca04c2a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 18:37:15 2020 +0900
+
+    Add va_copy()
+
+= emm

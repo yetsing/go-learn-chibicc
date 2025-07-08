@@ -1789,3 +1789,15 @@ Date:   Fri Sep 4 18:37:15 2020 +0900
     Add va_copy()
 
 = emm
+
+commit e0b5da3b395e46bbc2e377a59d5cba33206288a9
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Apr 23 17:18:49 2020 +0900
+
+    Dereferencing a function shouldn't do anything
+
+    This is an oddity in the C spec, but you can apply the unary `*`
+    operator to a function as many times as you want. `*x` and `x`
+    means exactly the same, given that `x` is a function.
+
+= emm

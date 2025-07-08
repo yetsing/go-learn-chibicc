@@ -2389,8 +2389,17 @@ func unary() *Node {
 	}
 
 	if gtok.equal("*") {
+		// [https://www.sigbus.info/n1570#6.5.3.2p4] This is an oddity
+		// in the C spec, but dereferencing a function shouldn't do
+		// anything. If foo is a function, `*foo`, `**foo` or `*****foo`
+		// are all equivalent to just `foo`.
 		gtok = gtok.next
-		return NewUnary(ND_DEREF, cast(), st)
+		node := cast()
+		addType(node)
+		if node.ty.kind == TY_FUNC {
+			return node
+		}
+		return NewUnary(ND_DEREF, node, st)
 	}
 
 	if gtok.equal("!") {

@@ -73,6 +73,10 @@ type InitDesg struct {
 
 var scope = &Scope{}
 
+func alignDown(n, align int) int {
+	return alignTo(n-align+1, align)
+}
+
 func enterScope() {
 	s := &Scope{}
 	s.next = scope
@@ -244,6 +248,11 @@ type Member struct {
 	idx    int
 	align  int
 	offset int
+
+	// Bitfield
+	isBitfield bool
+	bitOffset  int
+	bitWidth   int
 }
 
 // #endregion
@@ -2460,6 +2469,12 @@ func structMembers(ty *Type) {
 				mem.align = mem.ty.align
 			}
 			idx++
+
+			if tryConsume(":") {
+				mem.isBitfield = true
+				mem.bitWidth = int(constExpr())
+			}
+
 			cur.next = mem
 			cur = cur.next
 		}
@@ -2530,19 +2545,31 @@ func structDecl() *Type {
 	}
 
 	// Assign offsets within the struct to members.
-	offset := 0
+	bits := 0
 	for m := ty.members; m != nil; m = m.next {
 		// 每个成员的地址必须是其类型大小的整数倍（对齐要求）
-		offset = alignTo(offset, m.align)
-		m.offset = offset
-		offset += m.ty.size
+		if m.isBitfield {
+			sz := m.ty.size
+			if (bits / (sz * 8)) != (bits+m.bitWidth-1)/(sz*8) {
+				bits = alignTo(bits, sz*8)
+			}
+
+			m.offset = alignDown(bits/8, sz)
+			m.bitOffset = bits % (sz * 8)
+			bits += m.bitWidth
+		} else {
+			bits = alignTo(bits, m.align*8)
+			m.offset = bits / 8
+			bits += m.ty.size * 8
+		}
 
 		// 结构体的整体大小必须是其最大对齐要求的整数倍
 		if ty.align < m.align {
 			ty.align = m.align
 		}
 	}
-	ty.size = alignTo(offset, ty.align)
+
+	ty.size = alignTo(bits, ty.align*8) / 8
 	return ty
 }
 

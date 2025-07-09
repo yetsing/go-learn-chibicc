@@ -810,6 +810,16 @@ func genExpr(node *Node) {
 	case ND_MEMBER:
 		genAddr(node)
 		load(node.ty)
+
+		mem := node.member
+		if mem.isBitfield {
+			sout("  shl $%d, %%rax", 64-mem.bitWidth-mem.bitOffset)
+			if mem.ty.isUnsigned {
+				sout("  shr $%d, %%rax", 64-mem.bitWidth)
+			} else {
+				sout("  sar $%d, %%rax", 64-mem.bitWidth)
+			}
+		}
 		return
 	case ND_DEREF:
 		genExpr(node.lhs)
@@ -822,6 +832,24 @@ func genExpr(node *Node) {
 		genAddr(node.lhs) // 赋值表达式的左边是个地址（左值）
 		push()
 		genExpr(node.rhs)
+
+		if node.lhs.kind == ND_MEMBER && node.lhs.member.isBitfield {
+			// If the lhs is a bitfield, we need to read the current value
+			// from memory and merge it with a new value.
+			mem := node.lhs.member
+			sout("  mov %%rax, %%rdi")
+			sout("  and $%d, %%rdi", (1<<mem.bitWidth)-1)
+			sout("  shl $%d, %%rdi", mem.bitOffset)
+
+			sout("  mov (%%rsp), %%rax")
+			load(mem.ty)
+
+			mask := ((1 << mem.bitWidth) - 1) << mem.bitOffset
+			sout("  mov $%d, %%r9", ^mask)
+			sout("  and %%r9, %%rax")
+			sout("  or %%rdi, %%rax")
+		}
+
 		store(node.ty)
 		return
 	case ND_STMT_EXPR:

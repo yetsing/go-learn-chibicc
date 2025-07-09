@@ -1825,3 +1825,11 @@ Date:   Tue Aug 18 11:09:32 2020 +0900
     Add -U option
 
 = easy
+
+commit cc852fe99d0acfc6d547b36c75ff85e90975ad36
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 23:36:12 2020 +0900
+
+    Add bitfield
+
+= emm

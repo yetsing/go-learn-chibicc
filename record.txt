@@ -1841,3 +1841,11 @@ Date:   Sun Sep 6 21:06:15 2020 +0900
     Support global struct bitfield initializer
 
 = emm
+
+commit 54c2b3b18fb80235ad9ee53cac3966e8aad9e12a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 27 23:50:05 2020 +0900
+
+    Handle op=-style assignments to bitfields
+
+= emm

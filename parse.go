@@ -2104,13 +2104,36 @@ func expr() *Node {
 // - 当 A 是一个复杂表达式（例如数组元素或结构体成员）时，直接写成 `A = A op B` 可能会导致 A 表达式被求值两次，从而出现不确定性或副作用。
 // - 通过先取 A 的地址，将它保存到一个临时变量 tmp 中，然后通过解引用 tmp 来进行操作，可以保证 A 只被计算一次，同时保持正确的赋值语义。
 //
-// Convert `A op= B` to `tmp = &A, *tmp = *tmp op B`
-// where tmp is a fresh pointer variable.
+// Convert op= operators to expressions containing an assignment.
+//
+// In general, `A op= C` is converted to “tmp = &A, *tmp = *tmp op B`.
+// However, if a given expression is of form `A.x op= C`, the input is
+// converted to `tmp = &A, (*tmp).x = (*tmp).x op C` to handle assignments
+// to bitfields.
 func toAssign(binary *Node) *Node {
 	addType(binary.lhs)
 	addType(binary.rhs)
 	tok := binary.tok
 
+	// Convert `A.x op= C` to `tmp = &A, (*tmp).x = (*tmp).x op C`.
+	if binary.lhs.kind == ND_MEMBER {
+		var_ := newLVar("", pointerTo(binary.lhs.lhs.ty))
+
+		expr1 := NewBinary(ND_ASSIGN, NewVarNode(var_, tok),
+			NewUnary(ND_ADDR, binary.lhs.lhs, tok), tok)
+
+		expr2 := NewUnary(ND_MEMBER, NewUnary(ND_DEREF, NewVarNode(var_, tok), tok), tok)
+		expr2.member = binary.lhs.member
+
+		expr3 := NewUnary(ND_MEMBER, NewUnary(ND_DEREF, NewVarNode(var_, tok), tok), tok)
+		expr3.member = binary.lhs.member
+
+		expr4 := NewBinary(ND_ASSIGN, expr2, NewBinary(binary.kind, expr3, binary.rhs, tok), tok)
+
+		return NewBinary(ND_COMMA, expr1, expr4, tok)
+	}
+
+	// Convert `A op= C` to ``tmp = &A, *tmp = *tmp op B`.
 	variable := newLVar("", pointerTo(binary.lhs.ty))
 
 	expr1 := NewBinary(

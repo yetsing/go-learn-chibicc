@@ -834,6 +834,8 @@ func genExpr(node *Node) {
 		genExpr(node.rhs)
 
 		if node.lhs.kind == ND_MEMBER && node.lhs.member.isBitfield {
+			sout("  mov %%rax, %%r8")
+
 			// If the lhs is a bitfield, we need to read the current value
 			// from memory and merge it with a new value.
 			mem := node.lhs.member
@@ -848,6 +850,9 @@ func genExpr(node *Node) {
 			sout("  mov $%d, %%r9", ^mask)
 			sout("  and %%r9, %%rax")
 			sout("  or %%rdi, %%rax")
+			store(node.ty)
+			sout("  mov %%r8, %%rax")
+			return
 		}
 
 		store(node.ty)

@@ -872,6 +872,26 @@ func lvarInitializer(var_ *Obj) *Node {
 	return NewBinary(ND_COMMA, lhs, rhs, st)
 }
 
+func readBuf(buf []byte, sz int) (val uint64) {
+	switch sz {
+	case 1:
+		val = uint64(buf[0])
+	case 2:
+		val = uint64(buf[0]) | (uint64(buf[1]) << 8)
+	case 4:
+		val = uint64(buf[0]) | (uint64(buf[1]) << 8) |
+			(uint64(buf[2]) << 16) | (uint64(buf[3]) << 24)
+	case 8:
+		val = uint64(buf[0]) | (uint64(buf[1]) << 8) |
+			(uint64(buf[2]) << 16) | (uint64(buf[3]) << 24) |
+			(uint64(buf[4]) << 32) | (uint64(buf[5]) << 40) |
+			(uint64(buf[6]) << 48) | (uint64(buf[7]) << 56)
+	default:
+		unreachable()
+	}
+	return val
+}
+
 func writeBuf(val uint64, sz int) (buf []byte) {
 	buf = make([]byte, sz)
 	switch sz {
@@ -911,7 +931,22 @@ func writeGvarData(cur *Relocation, init *Initializer, ty *Type, buf []byte, off
 
 	if ty.kind == TY_STRUCT {
 		for mem := ty.members; mem != nil; mem = mem.next {
-			cur = writeGvarData(cur, init.children[mem.idx], mem.ty, buf, offset+mem.offset)
+			if mem.isBitfield {
+				expr := init.children[mem.idx].expr
+				if expr == nil {
+					break
+				}
+
+				loc := buf[offset+mem.offset:]
+				oldval := readBuf(loc, mem.ty.size)
+				newval := uint64(eval(expr))
+				mask := uint64((1 << mem.bitWidth) - 1)
+				combined := (oldval | ((newval & mask) << uint64(mem.bitOffset)))
+				loc = writeBuf(combined, mem.ty.size)
+				copy(buf[offset+mem.offset:], loc)
+			} else {
+				cur = writeGvarData(cur, init.children[mem.idx], mem.ty, buf, offset+mem.offset)
+			}
 		}
 		return cur
 	}

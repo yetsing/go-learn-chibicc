@@ -1833,3 +1833,11 @@ Date:   Thu Aug 27 23:36:12 2020 +0900
     Add bitfield
 
 = emm
+
+commit 441a89b80babf98d3feb13e4594ee01eb6cc4dd5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 6 21:06:15 2020 +0900
+
+    Support global struct bitfield initializer
+
+= emm

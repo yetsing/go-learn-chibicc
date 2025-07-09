@@ -131,6 +131,17 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-U" {
+			undefMacro(os.Args[i+1])
+			i++
+			continue
+		}
+
+		if strings.HasPrefix(os.Args[i], "-U") {
+			undefMacro(strings.TrimPrefix(os.Args[i], "-U"))
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++

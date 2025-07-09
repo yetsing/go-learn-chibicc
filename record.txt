@@ -1817,3 +1817,11 @@ Date:   Fri Aug 28 01:34:10 2020 +0900
     Add -D option
 
 = easy
+
+commit be8b6f6d31f0c73c2aabffdf2794f20c69567cdb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 11:09:32 2020 +0900
+
+    Add -U option
+
+= easy

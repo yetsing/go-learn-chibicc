@@ -830,9 +830,8 @@ func preprocess2(tok *Token) *Token {
 				errorTok(tok, "macro name must be an identifier")
 			}
 			name := tok.literal
+			undefMacro(name)
 			tok = skipLine(tok.next)
-			m := addMacro(name, true, nil)
-			m.deleted = true
 			continue
 		}
 
@@ -924,6 +923,11 @@ func preprocess2(tok *Token) *Token {
 func defineMacro(name string, buf string) {
 	tok := tokenize(NewFile("<built-in>", 1, buf))
 	addMacro(name, true, tok)
+}
+
+func undefMacro(name string) {
+	m := addMacro(name, true, nil)
+	m.deleted = true
 }
 
 func addBuiltin(name string, fn macroHandlerFn) *Macro {

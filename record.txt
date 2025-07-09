@@ -1809,3 +1809,11 @@ Date:   Sun Sep 27 19:45:12 2020 +0900
     Tokenize numeric tokens as pp-numbers
 
 = emm
+
+commit fc69f5c6f9b3aeb5d6ee61353f0ed0df28f954c5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Aug 28 01:34:10 2020 +0900
+
+    Add -D option
+
+= easy

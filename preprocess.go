@@ -1024,7 +1024,6 @@ func joinAdjacentStringLiterals(tok1 *Token) {
 }
 
 func preprocess(tok *Token) *Token {
-	initMacros()
 	tok = preprocess2(tok)
 	convertPPTokens(tok)
 	joinAdjacentStringLiterals(tok)

@@ -51,6 +51,17 @@ func addDefaultIncludePaths(argv0 string) {
 	includePaths = append(includePaths, "/usr/include")
 }
 
+func define(name string) {
+	idx := strings.IndexRune(name, '=')
+	if idx != -1 {
+		value := name[idx+1:]
+		name = name[:idx]
+		defineMacro(name, value)
+	} else {
+		defineMacro(name, "1")
+	}
+}
+
 func parseArgs() {
 	for i := 1; i < len(os.Args); i++ {
 		// Make sure that all command line options that take an argument
@@ -106,6 +117,17 @@ func parseArgs() {
 
 		if strings.HasPrefix(os.Args[i], "-I") {
 			includePaths = append(includePaths, strings.TrimPrefix(os.Args[i], "-I"))
+			continue
+		}
+
+		if os.Args[i] == "-D" {
+			define(os.Args[i+1])
+			i++
+			continue
+		}
+
+		if strings.HasPrefix(os.Args[i], "-D") {
+			define(strings.TrimPrefix(os.Args[i], "-D"))
 			continue
 		}
 
@@ -352,6 +374,7 @@ func runLinker(inputs []string, output string) {
 
 func main() {
 	defer cleanup()
+	initMacros()
 	parseArgs()
 
 	if optCC1 {

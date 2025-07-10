@@ -1883,3 +1883,11 @@ Date:   Tue Aug 18 11:45:59 2020 +0900
     of succinctness, though.
 
 = easy
+
+commit b1fdddff1523d2ca7bab4050434499d3a5ac39a1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 11:46:32 2020 +0900
+
+    Ignore -O, -W and -g and other flags
+
+= easy

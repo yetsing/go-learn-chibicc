@@ -155,6 +155,22 @@ func parseArgs() {
 			continue
 		}
 
+		// These options are ignored for now.
+		if strings.HasPrefix(os.Args[i], "-O") ||
+			strings.HasPrefix(os.Args[i], "-W") ||
+			strings.HasPrefix(os.Args[i], "-g") ||
+			strings.HasPrefix(os.Args[i], "-std=") ||
+			os.Args[i] == "-ffreestanding" ||
+			os.Args[i] == "-fno-builtin" ||
+			os.Args[i] == "-fno-omit-frame-pointer" ||
+			os.Args[i] == "-fno-stack-protector" ||
+			os.Args[i] == "-fno-strict-aliasing" ||
+			os.Args[i] == "-m64" ||
+			os.Args[i] == "-mno-red-zone" ||
+			os.Args[i] == "-w" {
+			continue
+		}
+
 		if strings.HasPrefix(os.Args[i], "-") && os.Args[i] != "-" {
 			fmt.Fprintf(os.Stderr, "Unknown option: %s\n", os.Args[i])
 			panic("Unknown option")

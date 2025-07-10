@@ -1912,3 +1912,11 @@ Date:   Sun May 10 20:15:32 2020 +0900
     alignment of at least 16 bytes."
 
 = emm
+
+commit 9c36dd727c736dc3a3ffa6ce7ce473966d802068
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon May 11 20:21:17 2020 +0900
+
+    Make "main" to implicitly return 0
+
+= easy

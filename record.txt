@@ -1928,3 +1928,11 @@ Date:   Sun Aug 23 11:48:16 2020 +0900
     Add anonymous struct and union
 
 = emm
+
+commit e27417fcde500f6c01ce0dbee57a1af137510a09
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun May 17 13:34:36 2020 +0900
+
+    Add __DATE__ and __TIME__ macros
+
+= easy

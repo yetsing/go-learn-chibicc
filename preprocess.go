@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func consume(rest **Token, tok *Token, s string) bool {
@@ -950,6 +951,18 @@ func lineMacro(tmpl *Token) *Token {
 	return newNumToken(int64(tmpl.lineno), tmpl)
 }
 
+// __DATE__ is expanded to the current date, e.g. "May 17 2020".
+func formatDate(dt time.Time) string {
+	// Format the date as "May 17 2020".
+	return dt.Format("\"Jan 02 2006\"")
+}
+
+// __TIME__ is expanded to the current time, e.g. "13:34:03".
+func formatTime(dt time.Time) string {
+	// Format the time as "13:34:03".
+	return dt.Format("\"15:04:05\"")
+}
+
 func initMacros() {
 	// Define predefined macros
 	defineMacro("_LP64", "1")
@@ -996,6 +1009,10 @@ func initMacros() {
 
 	addBuiltin("__FILE__", fileMacro)
 	addBuiltin("__LINE__", lineMacro)
+
+	t := time.Now()
+	defineMacro("__DATE__", formatDate(t))
+	defineMacro("__TIME__", formatTime(t))
 }
 
 // Concatenate adjacent string literals into a single string literal

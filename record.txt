@@ -1899,3 +1899,16 @@ Date:   Sun May 10 14:47:10 2020 +0900
     Turn on -Wall compiler flag and fix compiler warnings
 
 = easy
+
+commit 5257ee0f202a5f9c4e5bcb576646cefe70f3ae91
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun May 10 20:15:32 2020 +0900
+
+    Make an array of at least 16 bytes long to have alignment of at least 16 bytes
+
+    Quote from AMD64 System V ABI: "An array uses the same alignment as
+    its elements, except that a local or global array variable of length
+    at least 16 bytes or a C99 variable-length array variable always has
+    alignment of at least 16 bytes."
+
+= emm

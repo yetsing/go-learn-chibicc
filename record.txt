@@ -1920,3 +1920,11 @@ Date:   Mon May 11 20:21:17 2020 +0900
     Make "main" to implicitly return 0
 
 = easy
+
+commit c3075b3030c0488df1e7aa9f600da0f66072186b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 23 11:48:16 2020 +0900
+
+    Add anonymous struct and union
+
+= emm

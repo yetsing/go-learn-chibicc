@@ -2516,6 +2516,23 @@ func structMembers(ty *Type) {
 		basety := declspec(&attr)
 		first := true
 
+		// Anonymous struct member
+		if (basety.kind == TY_STRUCT || basety.kind == TY_UNION) && tryConsume(";") {
+			mem := &Member{}
+			mem.ty = basety
+			mem.idx = idx
+			idx++
+			if attr.align != 0 {
+				mem.align = attr.align
+			} else {
+				mem.align = mem.ty.align
+			}
+			cur.next = mem
+			cur = cur.next
+			continue
+		}
+
+		// Regular struct members
 		for !tryConsume(";") {
 			if !first {
 				gtok = gtok.consume(",")
@@ -2664,24 +2681,58 @@ func unionDecl() *Type {
 	return ty
 }
 
+// Find a struct member by name.
 func getStructMember(ty *Type, tok *Token) *Member {
 	for m := ty.members; m != nil; m = m.next {
+		// Anonymous struct member
+		if (m.ty.kind == TY_STRUCT || m.ty.kind == TY_UNION) && m.name == nil {
+			if getStructMember(m.ty, tok) != nil {
+				return m
+			}
+			continue
+		}
+
+		// Regular struct member
 		if m.name.equal(tok.literal) {
 			return m
 		}
 	}
-	errorTok(tok, "unknown struct member: %s", tok.literal)
 	return nil
 }
 
-func structRef(lhs *Node) *Node {
-	addType(lhs)
-	if lhs.ty.kind != TY_STRUCT && lhs.ty.kind != TY_UNION {
-		errorTok(lhs.tok, "not a struct nor a union")
+// Create a node representing a struct member access, such as foo.bar
+// where foo is a struct and bar is a member name.
+//
+// C has a feature called "anonymous struct" which allows a struct to
+// have another unnamed struct as a member like this:
+//
+//	struct { struct { int a; }; int b; } x;
+//
+// The members of an anonymous struct belong to the outer struct's
+// member namespace. Therefore, in the above example, you can access
+// member "a" of the anonymous struct as "x.a".
+//
+// This function takes care of anonymous structs.
+func structRef(node *Node, tok *Token) *Node {
+	addType(node)
+	if node.ty.kind != TY_STRUCT && node.ty.kind != TY_UNION {
+		errorTok(node.tok, "not a struct nor a union")
 	}
 
-	node := NewUnary(ND_MEMBER, lhs, gtok)
-	node.member = getStructMember(lhs.ty, gtok)
+	ty := node.ty
+
+	for {
+		mem := getStructMember(ty, tok)
+		if mem == nil {
+			errorTok(tok, "no such member")
+		}
+		node = NewUnary(ND_MEMBER, node, tok)
+		node.member = mem
+		if mem.name != nil {
+			break
+		}
+		ty = mem.ty
+	}
 	return node
 }
 
@@ -2745,7 +2796,7 @@ func postfix() *Node {
 
 		if gtok.equal(".") {
 			gtok = gtok.next
-			node = structRef(node)
+			node = structRef(node, gtok)
 			gtok = gtok.next
 			continue
 		}
@@ -2754,7 +2805,7 @@ func postfix() *Node {
 			// x->y is short for (*x).y
 			node = NewUnary(ND_DEREF, node, gtok)
 			gtok = gtok.next
-			node = structRef(node)
+			node = structRef(node, gtok)
 			gtok = gtok.next
 			continue
 		}

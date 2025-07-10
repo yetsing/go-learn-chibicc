@@ -1944,3 +1944,11 @@ Date:   Tue Jun 9 01:40:02 2020 +0900
     [GNU] Add __COUNTER__ macro
 
 = easy
+
+commit 74bcec5b22a601451fac9d0878003d04205abca6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Jun 10 01:30:16 2020 +0900
+
+    Canonicalize newline character
+
+= easy

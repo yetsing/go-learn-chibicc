@@ -758,6 +758,24 @@ func NewFile(name string, fileNo int, contents string) *File {
 	}
 }
 
+// Replaces \r or \r\n with \n.
+func canonicalizeNewline(p string) string {
+	var sb strings.Builder
+	i := 0
+	for i < len(p) {
+		if p[i] == '\r' {
+			if i+1 < len(p) && p[i+1] == '\n' {
+				i++ // Skip \r\n
+			}
+			sb.WriteByte('\n')
+		} else {
+			sb.WriteByte(p[i])
+		}
+		i++
+	}
+	return sb.String()
+}
+
 // Removes backslashes followed by a newline.
 func removeBackslashNewline(p string) string {
 	var sb strings.Builder
@@ -779,6 +797,7 @@ var fileNo int = 0
 func tokenizeFile(filename string) *Token {
 	p := readFile(filename)
 
+	p = canonicalizeNewline(p)
 	p = removeBackslashNewline(p)
 
 	file := NewFile(filename, fileNo+1, p)

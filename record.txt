@@ -1891,3 +1891,11 @@ Date:   Tue Aug 18 11:46:32 2020 +0900
     Ignore -O, -W and -g and other flags
 
 = easy
+
+commit 2c91da54dff93a365feec5a34f8eaeccca3e3a70
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun May 10 14:47:10 2020 +0900
+
+    Turn on -Wall compiler flag and fix compiler warnings
+
+= easy

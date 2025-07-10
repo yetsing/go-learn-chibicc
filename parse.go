@@ -2606,7 +2606,11 @@ func structDecl() *Type {
 	bits := 0
 	for m := ty.members; m != nil; m = m.next {
 		// 每个成员的地址必须是其类型大小的整数倍（对齐要求）
-		if m.isBitfield {
+		if m.isBitfield && m.bitWidth == 0 {
+			// Zero-width anonymous bitfield has a special meaning.
+			// It affects only alignment.
+			bits = alignTo(bits, m.ty.size*8)
+		} else if m.isBitfield {
 			sz := m.ty.size
 			if (bits / (sz * 8)) != (bits+m.bitWidth-1)/(sz*8) {
 				bits = alignTo(bits, sz*8)

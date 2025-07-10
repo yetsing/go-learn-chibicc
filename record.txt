@@ -1849,3 +1849,11 @@ Date:   Thu Aug 27 23:50:05 2020 +0900
     Handle op=-style assignments to bitfields
 
 = emm
+
+commit 17ea802ceaa76f55726488379959a983f891f631
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 23 11:47:16 2020 +0900
+
+    Handle zero-width bitfield member
+
+= emm

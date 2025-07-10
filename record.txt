@@ -1952,3 +1952,11 @@ Date:   Wed Jun 10 01:30:16 2020 +0900
     Canonicalize newline character
 
 = easy
+
+commit c31886aa7a52fd8639e09bbdf8ac8ea854c313f6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 11:56:24 2020 +0900
+
+    Add \u and \U escape sequences
+
+= easy

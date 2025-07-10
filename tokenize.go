@@ -180,6 +180,15 @@ func isIdent2(ch rune) bool {
 	return isIdent1(ch) || unicode.IsDigit(ch)
 }
 
+func fromHex(ch rune) int {
+	if '0' <= ch && ch <= '9' {
+		return int(ch - '0')
+	} else if 'a' <= ch && ch <= 'f' {
+		return int(ch - 'a' + 10)
+	}
+	return int(ch - 'A' + 10)
+}
+
 func readPunct(input string, p int) int {
 	kw := []string{
 		"<<=", ">>=", "...",
@@ -792,6 +801,57 @@ func removeBackslashNewline(p string) string {
 	return sb.String()
 }
 
+func readUniversalChar(p string, len int) uint32 {
+	var c uint32 = 0
+	for i := range len {
+		if !ishexdigit(rune(p[i])) {
+			return 0
+		}
+		c = (c << 4) | uint32(fromHex(rune(p[i])))
+	}
+	return c
+}
+
+// Replace \u or \U escape sequences with corresponding UTF-8 bytes.
+func convertUniversalChars(p string) string {
+	var sb strings.Builder
+	idx := 0
+	len := len(p)
+
+	for idx < len {
+		if strings.HasPrefix(p[idx:], "\\u") {
+			c := readUniversalChar(p[idx+2:], 4)
+			if c != 0 {
+				idx += 6 // Skip \uXXXX
+				b := encodeUTF8(c)
+				sb.Write(b)
+			} else {
+				sb.WriteByte(p[idx])
+				idx++
+			}
+		} else if strings.HasPrefix(p[idx:], "\\U") {
+			c := readUniversalChar(p[idx+2:], 8)
+			if c != 0 {
+				idx += 10 // Skip \UXXXXXXXX
+				b := encodeUTF8(c)
+				sb.Write(b)
+			} else {
+				sb.WriteByte(p[idx])
+				idx++
+			}
+		} else if p[idx] == '\\' {
+			sb.WriteByte(p[idx])
+			idx++
+			sb.WriteByte(p[idx])
+			idx++
+		} else {
+			sb.WriteByte(p[idx])
+			idx++
+		}
+	}
+	return sb.String()
+}
+
 var fileNo int = 0
 
 func tokenizeFile(filename string) *Token {
@@ -799,6 +859,7 @@ func tokenizeFile(filename string) *Token {
 
 	p = canonicalizeNewline(p)
 	p = removeBackslashNewline(p)
+	p = convertUniversalChars(p)
 
 	file := NewFile(filename, fileNo+1, p)
 

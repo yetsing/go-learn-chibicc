@@ -1857,3 +1857,11 @@ Date:   Sun Aug 23 11:47:16 2020 +0900
     Handle zero-width bitfield member
 
 = emm
+
+commit c302a969d8217ab46113d494b8cd773cf057193d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 23 12:38:17 2020 +0900
+
+    Do not allow to obtain an address of a bitfield
+
+= emm

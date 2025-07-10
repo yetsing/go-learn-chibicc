@@ -2452,7 +2452,12 @@ func unary() *Node {
 
 	if gtok.equal("&") {
 		gtok = gtok.next
-		return NewUnary(ND_ADDR, cast(), st)
+		lhs := cast()
+		addType(lhs)
+		if lhs.kind == ND_MEMBER && lhs.member.isBitfield {
+			errorTok(gtok, "cannot take address of a bitfield")
+		}
+		return NewUnary(ND_ADDR, lhs, st)
 	}
 
 	if gtok.equal("*") {

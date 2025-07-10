@@ -1936,3 +1936,11 @@ Date:   Sun May 17 13:34:36 2020 +0900
     Add __DATE__ and __TIME__ macros
 
 = easy
+
+commit 0e77f3dff8b44547da4639c9609c216c9c896fa5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Jun 9 01:40:02 2020 +0900
+
+    [GNU] Add __COUNTER__ macro
+
+= easy

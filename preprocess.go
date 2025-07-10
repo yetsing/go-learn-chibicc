@@ -944,6 +944,15 @@ func fileMacro(tmpl *Token) *Token {
 	return newStrToken(tmpl.file.name, tmpl)
 }
 
+// __COUNTER__ is expanded to serial values starting from 0.
+var counter int64 = 0
+
+func counterMacro(tmpl *Token) *Token {
+	t := newNumToken(counter, tmpl)
+	counter++
+	return t
+}
+
 func lineMacro(tmpl *Token) *Token {
 	for tmpl.origin != nil {
 		tmpl = tmpl.origin
@@ -1009,6 +1018,7 @@ func initMacros() {
 
 	addBuiltin("__FILE__", fileMacro)
 	addBuiltin("__LINE__", lineMacro)
+	addBuiltin("__COUNTER__", counterMacro)
 
 	t := time.Now()
 	defineMacro("__DATE__", formatDate(t))

@@ -1865,3 +1865,21 @@ Date:   Sun Aug 23 12:38:17 2020 +0900
     Do not allow to obtain an address of a bitfield
 
 = emm
+
+commit 2bdc6b800c1dbe6db584b91046785d4c48c41fb2
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 11:45:59 2020 +0900
+
+    Write to an in-memory buffer before writing to an actual output file
+
+    We don't want to leave a partial assembly output if the compiler
+    fails during compilation.
+
+    Technically speaking, there's still a risk of leaving a partially-
+    written output file if the compiler dies during file copy. To fix
+    that, we have to write to a temporary file in the same filesystem as
+    the final output file and rename the temporary file to atomically
+    replace the output file. We don't do that in this patch for the sake
+    of succinctness, though.
+
+= easy

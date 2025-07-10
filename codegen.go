@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"math"
-	"os"
 )
 
 // #region output utils
@@ -11,7 +11,7 @@ import (
 var GP_MAX = 6
 var FP_MAX = 8
 
-var outFile *os.File
+var outFile io.Writer
 
 func sout(format string, args ...interface{}) {
 	_, err := fmt.Fprintf(outFile, format, args...)
@@ -1566,7 +1566,7 @@ func emitText(prog *Obj) {
 
 // #endregion
 
-func codegen(prog *Obj, out *os.File) {
+func codegen(prog *Obj, out io.Writer) {
 	outFile = out
 
 	files := getInputFiles()

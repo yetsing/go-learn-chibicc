@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -288,10 +289,18 @@ func cc1() {
 
 	prog := parse(tok)
 
+	// Open a temporary output buffer.
+	var buf bytes.Buffer
+
 	// Traverse the AST to emit assembly code.
+	codegen(prog, &buf)
+
 	out := openFile(outputFile)
 	defer out.Close()
-	codegen(prog, out)
+	if _, err := out.Write(buf.Bytes()); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing to output file: %s\n", err)
+		panic("Failed to write output")
+	}
 }
 
 func assemble(input string, output string) {

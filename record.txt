@@ -1979,3 +1979,11 @@ Date:   Wed May 6 18:47:42 2020 +0900
     We assume that source files are always encoded in UTF-8.
 
 = emm
+
+commit 454618cd15c2c87d9f5a6a6727e1b09a8e22a799
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 27 19:46:47 2020 +0900
+
+    Add UTF-16 character literal
+
+= emm

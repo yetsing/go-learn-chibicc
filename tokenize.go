@@ -330,7 +330,7 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
-func readCharLiteral(input string, p int, quote int) *Token {
+func readCharLiteral(input string, p int, quote int, ty *Type) *Token {
 	start := p
 	p = quote + 1
 	if p >= len(input) {
@@ -354,7 +354,7 @@ func readCharLiteral(input string, p int, quote int) *Token {
 
 	tok := NewToken(TK_NUM, input[start:p+1], start)
 	tok.val = int64(c)
-	tok.ty = intType()
+	tok.ty = ty
 	return tok
 }
 
@@ -714,16 +714,25 @@ func tokenize(file *File) *Token {
 
 		// Handle character literals
 		if ch == '\'' {
-			cur.next = readCharLiteral(input, p, p)
+			cur.next = readCharLiteral(input, p, p, intType())
 			cur = cur.next
 			cur.val = int64(int8(cur.val)) // Convert to int8
 			p += len(cur.literal)
 			continue
 		}
 
+		// UTF-16 character literal
+		if strings.HasPrefix(input[p:], "u'") {
+			cur.next = readCharLiteral(input, p, p+1, ushortType())
+			cur = cur.next
+			cur.val = int64(uint16(cur.val)) // Convert to uint16
+			p += len(cur.literal)
+			continue
+		}
+
 		// Wide character literal
 		if strings.HasPrefix(input[p:], "L'") {
-			cur.next = readCharLiteral(input, p, p+1)
+			cur.next = readCharLiteral(input, p, p+1, intType())
 			cur = cur.next
 			p += len(cur.literal)
 			continue

@@ -211,7 +211,7 @@ func ishexdigit(ch rune) bool {
 	return '0' <= ch && ch <= '9' || 'a' <= ch && ch <= 'f' || 'A' <= ch && ch <= 'F'
 }
 
-func readEscapedChar(input string, p int) (byte, int) {
+func readEscapedChar(input string, p int) (int, int) {
 	if input[p] >= '0' && input[p] <= '7' {
 		// Octal escape sequence
 		// Read up to 3 octal digits
@@ -220,7 +220,7 @@ func readEscapedChar(input string, p int) (byte, int) {
 		for ; i < 3 && p+i < len(input) && input[p+i] >= '0' && input[p+i] <= '7'; i++ {
 			octal = octal*8 + int(input[p+i]-'0')
 		}
-		return byte(octal), i
+		return octal, i
 	}
 
 	if input[p] == 'x' {
@@ -237,7 +237,7 @@ func readEscapedChar(input string, p int) (byte, int) {
 				hex = hex*16 + int(input[p+i]-'A'+10)
 			}
 		}
-		return byte(hex), i + 1
+		return hex, i + 1
 	}
 
 	// Escape sequences are defined using themselves here. E.g.
@@ -270,7 +270,7 @@ func readEscapedChar(input string, p int) (byte, int) {
 	case 'e':
 		return 27, 1
 	default:
-		return byte(input[p]), 1
+		return int(input[p]), 1
 	}
 
 }
@@ -300,7 +300,7 @@ func readStringLiteral(input string, p int) *Token {
 	for p = start + 1; p < end; p++ {
 		if input[p] == '\\' {
 			b, n := readEscapedChar(input, p+1)
-			sb.WriteByte(b)
+			sb.WriteByte(byte(b))
 			p += n
 		} else {
 			sb.WriteByte(input[p])
@@ -337,14 +337,15 @@ func readCharLiteral(input string, p int, quote int) *Token {
 		errorAt(p, "unclosed character literal")
 	}
 
-	var c byte
+	var c int
 	if input[p] == '\\' {
-		var n int
-		c, n = readEscapedChar(input, p+1)
+		c1, n := readEscapedChar(input, p+1)
+		c = int(c1)
 		p += n + 1
 	} else {
-		c = input[p]
-		p++
+		c1, len := decodeUTF8(input[p:])
+		p += len
+		c = int(c1)
 	}
 
 	if p >= len(input) || input[p] != '\'' {
@@ -352,7 +353,7 @@ func readCharLiteral(input string, p int, quote int) *Token {
 	}
 
 	tok := NewToken(TK_NUM, input[start:p+1], start)
-	tok.val = int64(int8(c))
+	tok.val = int64(c)
 	tok.ty = intType()
 	return tok
 }
@@ -715,6 +716,7 @@ func tokenize(file *File) *Token {
 		if ch == '\'' {
 			cur.next = readCharLiteral(input, p, p)
 			cur = cur.next
+			cur.val = int64(int8(cur.val)) // Convert to int8
 			p += len(cur.literal)
 			continue
 		}

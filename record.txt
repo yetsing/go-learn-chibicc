@@ -1960,3 +1960,22 @@ Date:   Tue Aug 18 11:56:24 2020 +0900
     Add \u and \U escape sequences
 
 = easy
+
+commit a57c661d46d9523bed01ad1b074f7a78d9e94ca3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed May 6 18:47:42 2020 +0900
+
+    Accept multibyte character as wide character literal
+
+    On most Unix-like systems, wide character literal is 32-bit long
+    and encodes a Unicode code point. On Windows, that is 16-bit
+    long and encodes a UTF-16 code unit. Clearly, there's a portability
+    issue here. Personally I've never used wide characters in my code
+    as I didn't find it useful.
+
+    Being said that, some header files contain wide character literal,
+    so we need to support that so that chibicc can include such files.
+
+    We assume that source files are always encoded in UTF-8.
+
+= emm

@@ -587,16 +587,33 @@ func stringInitializer(init *Initializer) {
 	}
 
 	length := min(init.ty.arrayLen, gtok.ty.arrayLen)
-	for i := range length {
-		if i >= len(gtok.str) {
-			// 不再末尾直接补 0 ，是因为有这种情况：char g19[3] = "foobar";
-			// 他的末尾就不是 '\0'，而是 'o'。
-			// C 字符串以 '\0' 结尾
-			init.children[i].expr = NewNumber(0, gtok)
-		} else {
-			init.children[i].expr = NewNumber(int64(gtok.str[i]), gtok)
+
+	switch init.ty.base.size {
+	case 1:
+		s := gtok.str
+		for i := range length {
+			if i >= len(gtok.str) {
+				// 不再末尾直接补 0 ，是因为有这种情况：char g19[3] = "foobar";
+				// 他的末尾就不是 '\0'，而是 'o'。
+				// C 字符串以 '\0' 结尾
+				init.children[i].expr = NewNumber(0, gtok)
+			} else {
+				init.children[i].expr = NewNumber(int64(s[i]), gtok)
+			}
 		}
+	case 2:
+		bs := []byte(gtok.str)
+		result := make([]uint16, len(bs)/2+1) // +1 for null terminator
+		for i := range len(result) - 1 {
+			result[i] = binary.LittleEndian.Uint16(bs[i*2:])
+		}
+		for i := range length {
+			init.children[i].expr = NewNumber(int64(result[i]), gtok)
+		}
+	default:
+		unreachable()
 	}
+
 	gtok = gtok.next
 }
 

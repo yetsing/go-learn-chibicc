@@ -2029,3 +2029,11 @@ Date:   Sun Jul 5 20:49:58 2020 +0900
     Add wide string literal
 
 = emm
+
+commit 36230e0827ca33a9b09ea5aa7b06e170fd188ca1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Jul 7 14:04:36 2020 +0900
+
+    Add UTF-16 string literal initializer
+
+= emm

@@ -376,6 +376,41 @@ func readUTF16StringLiteral(input string, p int, quote int) *Token {
 	return tok
 }
 
+// Read a UTF-8-encoded string literal and transcode it in UTF-32.
+//
+// UTF-32 is a fixed-width encoding for Unicode. Each code point is
+// encoded in 4 bytes.
+func readUTF32StringLiteral(input string, p int, quote int, ty *Type) *Token {
+	start := p
+	end := stringLiteralEnd(input, quote+1)
+	var buf []uint32
+
+	for p = quote + 1; p < end; {
+		if input[p] == '\\' {
+			c, n := readEscapedChar(input, p+1)
+			buf = append(buf, uint32(c))
+			p += n + 1
+			continue
+		}
+
+		c, n := decodeUTF8(input[p:])
+		p += n
+		buf = append(buf, c)
+	}
+
+	bytes := make([]byte, len(buf)*4+4) // +4 for null terminator
+	for i, c := range buf {
+		bytes[i*4] = byte(c & 0xFF)           // Low byte
+		bytes[i*4+1] = byte((c >> 8) & 0xFF)  // Second byte
+		bytes[i*4+2] = byte((c >> 16) & 0xFF) // Third byte
+		bytes[i*4+3] = byte((c >> 24) & 0xFF) // High byte
+	}
+	tok := NewToken(TK_STR, input[start:end+1], start)
+	tok.ty = arrayOf(ty, len(buf)+1) // +1 for null terminator
+	tok.str = string(bytes)
+	return tok
+}
+
 func readCharLiteral(input string, p int, quote int, ty *Type) *Token {
 	start := p
 	p = quote + 1
@@ -769,6 +804,14 @@ func tokenize(file *File) *Token {
 		// UTF-16 string literal
 		if strings.HasPrefix(input[p:], "u\"") {
 			cur.next = readUTF16StringLiteral(input, p, p+1)
+			cur = cur.next
+			p += len(cur.literal)
+			continue
+		}
+
+		// UTF-32 string literal
+		if strings.HasPrefix(input[p:], "U\"") {
+			cur.next = readUTF32StringLiteral(input, p, p+1, uintType())
 			cur = cur.next
 			p += len(cur.literal)
 			continue

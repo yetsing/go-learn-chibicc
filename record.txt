@@ -2012,3 +2012,12 @@ Date:   Sat Sep 26 19:56:56 2020 +0900
 
 = u"" 这些超出知识范围了，完全不了解
 = emm
+
+commit c467ee665de0c385170850ecc895add04b52b8a3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 19:57:36 2020 +0900
+
+    Add UTF-32 string literal
+
+= 第一次知道 C 语言有这么多种编码
+= emm

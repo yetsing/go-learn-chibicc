@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // Encode a given character in UTF-8.
 func encodeUTF8(c uint32) []byte {
 	if c < 0x80 {
@@ -51,7 +53,7 @@ func decodeUTF8(p string) (uint32, int) {
 		len = 2
 		c = uint32(p[0] & 0b11111)
 	} else {
-		panic("invalid UTF-8 sequence")
+		panic(fmt.Sprintf("invalid UTF-8 sequence: %d", p[0]))
 	}
 
 	for i := 1; i < len; i++ {

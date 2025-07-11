@@ -2003,3 +2003,12 @@ Date:   Sun Sep 27 19:47:36 2020 +0900
     Add UTF-8 string literal
 
 = emm
+
+commit 9cabe1f204a8a6139e8b072dfd6f0a15275ad25f
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 26 19:56:56 2020 +0900
+
+    Add UTF-16 string literal
+
+= u"" 这些超出知识范围了，完全不了解
+= emm

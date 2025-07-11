@@ -330,6 +330,52 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 	}
 }
 
+// Read a UTF-8-encoded string literal and transcode it in UTF-16.
+//
+// UTF-16 is yet another variable-width encoding for Unicode. Code
+// points smaller than U+10000 are encoded in 2 bytes. Code points
+// equal to or larger than that are encoded in 4 bytes. Each 2 bytes
+// in the 4 byte sequence is called "surrogate", and a 4 byte sequence
+// is called a "surrogate pair".
+func readUTF16StringLiteral(input string, p int, quote int) *Token {
+	start := p
+	end := stringLiteralEnd(input, quote+1)
+	var buf []uint16
+
+	for p = quote + 1; p < end; {
+		if input[p] == '\\' {
+			c, n := readEscapedChar(input, p+1)
+			buf = append(buf, uint16(c))
+			p += n + 1
+			continue
+		}
+
+		c, n := decodeUTF8(input[p:])
+		p += n
+		if c < 0x10000 {
+			// Encode a code point in 2 bytes.
+			buf = append(buf, uint16(c))
+		} else {
+			// Encode a code point in 4 bytes.
+			c -= 0x10000
+			// The first surrogate is 0xD800 + (c >> 10) & 0x3FF
+			buf = append(buf, uint16(0xD800+(c>>10)&0x3FF))
+			// The second surrogate is 0xDC00 + (c & 0x3FF)
+			buf = append(buf, uint16(0xDC00+(c&0x3FF)))
+		}
+	}
+
+	bytes := make([]byte, len(buf)*2+2) // +2 for null terminator
+	for i, c := range buf {
+		bytes[i*2] = byte(c & 0xFF)          // Low byte
+		bytes[i*2+1] = byte((c >> 8) & 0xFF) // High byte
+	}
+	tok := NewToken(TK_STR, input[start:end+1], start)
+	tok.ty = arrayOf(ushortType(), len(buf)+1) // +1 for null terminator
+	tok.str = string(bytes)
+	return tok
+}
+
 func readCharLiteral(input string, p int, quote int, ty *Type) *Token {
 	start := p
 	p = quote + 1
@@ -715,6 +761,14 @@ func tokenize(file *File) *Token {
 		// UTF-8 string literal
 		if strings.HasPrefix(input[p:], "u8\"") {
 			cur.next = readStringLiteral(input, p, p+2)
+			cur = cur.next
+			p += len(cur.literal)
+			continue
+		}
+
+		// UTF-16 string literal
+		if strings.HasPrefix(input[p:], "u\"") {
+			cur.next = readUTF16StringLiteral(input, p, p+1)
 			cur = cur.next
 			p += len(cur.literal)
 			continue

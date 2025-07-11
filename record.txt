@@ -1987,3 +1987,11 @@ Date:   Sun Sep 27 19:46:47 2020 +0900
     Add UTF-16 character literal
 
 = emm
+
+commit 2dac3afece31c27bf773efbc1f30c6a67088d3b6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Jul 6 18:59:25 2020 +0900
+
+    Add UTF-32 character literal
+
+= emm

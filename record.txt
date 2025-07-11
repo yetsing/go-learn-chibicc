@@ -2021,3 +2021,11 @@ Date:   Sat Sep 26 19:57:36 2020 +0900
 
 = 第一次知道 C 语言有这么多种编码
 = emm
+
+commit cae061af2b65ad0962fb4b6fe3b55abe2f3a5bf8
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Jul 5 20:49:58 2020 +0900
+
+    Add wide string literal
+
+= emm

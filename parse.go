@@ -610,6 +610,15 @@ func stringInitializer(init *Initializer) {
 		for i := range length {
 			init.children[i].expr = NewNumber(int64(result[i]), gtok)
 		}
+	case 4:
+		bs := []byte(gtok.str)
+		result := make([]uint32, len(bs)/4+1) // +1 for null terminator
+		for i := range len(result) - 1 {
+			result[i] = binary.LittleEndian.Uint32(bs[i*4:])
+		}
+		for i := range length {
+			init.children[i].expr = NewNumber(int64(result[i]), gtok)
+		}
 	default:
 		unreachable()
 	}

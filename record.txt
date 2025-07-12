@@ -2037,3 +2037,11 @@ Date:   Tue Jul 7 14:04:36 2020 +0900
     Add UTF-16 string literal initializer
 
 = emm
+
+commit 6adba75af879d8ac2bc43a7337b02e64d10e60f1
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Jul 7 14:04:36 2020 +0900
+
+    Add UTF-32 string literal initializer
+
+= emm

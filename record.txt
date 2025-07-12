@@ -2045,3 +2045,14 @@ Date:   Tue Jul 7 14:04:36 2020 +0900
     Add UTF-32 string literal initializer
 
 = emm
+
+commit e4491b811510d08f880d0f9c7553ecfd18635469
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Jul 8 13:01:34 2020 +0900
+
+    Define __STDC_UTF_{16,32}__ macros
+
+    These predefined macros indicates that our u and U chars/strings
+    are UTF-16 and UTF-32-encoded, respectively.
+
+= emm

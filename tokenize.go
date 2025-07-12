@@ -170,14 +170,27 @@ func (t *Token) getNumber() int64 {
 	return t.val
 }
 
-// Returns true if c is valid as the first character of an identifier.
-func isIdent1(ch rune) bool {
-	return unicode.IsLetter(ch) || ch == '_'
-}
+// Read an identifier and returns the length of it.
+// If p does not point to a valid identifier, 0 is returned.
+func readIdent(input string, p int) int {
+	start := p
+	c, n := decodeUTF8(input[p:])
+	if !isIdent1(c) {
+		return 0
+	}
+	p += n
 
-// Returns true if c is valid as a non-first character of an identifier.
-func isIdent2(ch rune) bool {
-	return isIdent1(ch) || unicode.IsDigit(ch)
+	for {
+		if p >= len(input) {
+			return p - start
+		}
+		c, n = decodeUTF8(input[p:])
+		if !isIdent2(c) {
+			return p - start
+		}
+		p += n
+	}
+	return p - start
 }
 
 func fromHex(ch rune) int {
@@ -860,10 +873,10 @@ func tokenize(file *File) *Token {
 		}
 
 		// Handle identifiers or keywords
-		if isIdent1(rune(ch)) {
-			for p < len(input) && isIdent2(rune(input[p])) {
-				p++
-			}
+		identLen := readIdent(input, p)
+		if identLen > 0 {
+			start := p
+			p += identLen
 			cur.next = NewToken(TK_IDENT, input[start:p], start)
 			cur = cur.next
 			continue

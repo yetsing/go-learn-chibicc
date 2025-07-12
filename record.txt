@@ -2056,3 +2056,11 @@ Date:   Wed Jul 8 13:01:34 2020 +0900
     are UTF-16 and UTF-32-encoded, respectively.
 
 = emm
+
+commit 0e5d250ebfd29845c8c26b0ad63379994a2b8560
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon May 4 16:53:48 2020 +0900
+
+    Allow multibyte UTF-8 character in identifier
+
+= emm

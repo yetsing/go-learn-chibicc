@@ -86,7 +86,7 @@ func inRange(range_ []uint32, c uint32) bool {
 // (U+3000, full-width space) are allowed because they are out of range.
 func isIdent1(c uint32) bool {
 	range_ := []uint32{
-		'_', '_', 'a', 'z', 'A', 'Z',
+		'_', '_', 'a', 'z', 'A', 'Z', '$', '$',
 		0x00A8, 0x00A8, 0x00AA, 0x00AA, 0x00AD, 0x00AD, 0x00AF, 0x00AF,
 		0x00B2, 0x00B5, 0x00B7, 0x00BA, 0x00BC, 0x00BE, 0x00C0, 0x00D6,
 		0x00D8, 0x00F6, 0x00F8, 0x00FF, 0x0100, 0x02FF, 0x0370, 0x167F,
@@ -109,7 +109,7 @@ func isIdent1(c uint32) bool {
 // character of an identifier.
 func isIdent2(c uint32) bool {
 	range_ := []uint32{
-		'0', '9', 0x0300, 0x036F, 0x1DC0, 0x1DFF, 0x20D0, 0x20FF,
+		'0', '9', '$', '$', 0x0300, 0x036F, 0x1DC0, 0x1DFF, 0x20D0, 0x20FF,
 		0xFE20, 0xFE2F,
 	}
 

@@ -2064,3 +2064,11 @@ Date:   Mon May 4 16:53:48 2020 +0900
     Allow multibyte UTF-8 character in identifier
 
 = emm
+
+commit adb8b988897758d0d4f74dcd9129bff0831634ae
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Jul 19 20:28:46 2020 +0900
+
+    [GNU] Accept $ as an identifier character
+
+= emm

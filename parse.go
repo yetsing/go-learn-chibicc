@@ -626,6 +626,52 @@ func stringInitializer(init *Initializer) {
 	gtok = gtok.next
 }
 
+// array-designator = "[" const-expr "]"
+//
+// C99 added the designated initializer to the language, which allows
+// programmers to move the "cursor" of an initializer to any element.
+// The syntax looks like this:
+//
+//	int x[10] = { 1, 2, [5]=3, 4, 5, 6, 7 };
+//
+// `[5]` moves the cursor to the 5th element, so the 5th element of x
+// is set to 3. Initialization then continues forward in order, so
+// 6th, 7th, 8th and 9th elements are initialized with 4, 5, 6 and 7,
+// respectively. Unspecified elements (in this case, 3rd and 4th
+// elements) are initialized with zero.
+//
+// Nesting is allowed, so the following initializer is valid:
+//
+//	int x[5][10] = { [5][8]=1, 2, 3 };
+//
+// It sets x[5][8], x[5][9] and x[6][0] to 1, 2 and 3, respectively.
+func arrayDesignator(ty *Type) int {
+	start := gtok
+	gtok = gtok.consume("[")
+	i := int(constExpr())
+	if i >= ty.arrayLen {
+		errorTok(start, "array designator index exceeds array bounds")
+	}
+	gtok = gtok.consume("]")
+	return i
+}
+
+// designation = ("[" const-expr "]")* "=" initializer
+func designation(init *Initializer) {
+	if gtok.equal("[") {
+		if init.ty.kind != TY_ARRAY {
+			errorTok(gtok, "array index in non-array initializer")
+		}
+		i := arrayDesignator(init.ty)
+		designation(init.children[i])
+		arrayInitializer2(init, i+1)
+		return
+	}
+
+	gtok = gtok.consume("=")
+	initializer2(init)
+}
+
 func countArrayInitElements(ty *Type) int {
 	dummy := newInitializer(ty.base, false)
 
@@ -642,6 +688,7 @@ func countArrayInitElements(ty *Type) int {
 // array-initializer1 = "{" initializer ("," initializer)* ","? "}"
 func arrayInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
+	first := true
 
 	if init.isFlexible {
 		tok := gtok
@@ -651,8 +698,15 @@ func arrayInitializer1(init *Initializer) {
 	}
 
 	for i := 0; !consumeEnd(); i++ {
-		if i > 0 {
+		if !first {
 			gtok = gtok.consume(",")
+		}
+		first = false
+
+		if gtok.equal("[") {
+			i = arrayDesignator(init.ty)
+			designation(init.children[i])
+			continue
 		}
 
 		if i < init.ty.arrayLen {
@@ -664,7 +718,7 @@ func arrayInitializer1(init *Initializer) {
 }
 
 // array-initializer2 = initializer ("," initializer)*
-func arrayInitializer2(init *Initializer) {
+func arrayInitializer2(init *Initializer, i int) {
 	if init.isFlexible {
 		tok := gtok
 		length := countArrayInitElements(init.ty)
@@ -672,10 +726,17 @@ func arrayInitializer2(init *Initializer) {
 		*init = *newInitializer(arrayOf(init.ty.base, length), false)
 	}
 
-	for i := 0; i < init.ty.arrayLen && !isEnd(gtok); i++ {
+	for ; i < init.ty.arrayLen && !isEnd(gtok); i++ {
+		start := gtok
 		if i > 0 {
 			gtok = gtok.consume(",")
 		}
+
+		if gtok.equal("[") {
+			gtok = start
+			return
+		}
+
 		initializer2(init.children[i])
 	}
 }
@@ -739,7 +800,7 @@ func initializer2(init *Initializer) {
 		if gtok.equal("{") {
 			arrayInitializer1(init)
 		} else {
-			arrayInitializer2(init)
+			arrayInitializer2(init, 0)
 		}
 		return
 	}

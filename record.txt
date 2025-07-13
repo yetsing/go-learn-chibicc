@@ -2089,3 +2089,11 @@ Date:   Thu Oct 15 14:21:45 2020 +0900
     Skip UTF-8 BOM markers
 
 = easy
+
+commit c618c3b582de1d0b10b334a4f2ba6b85d5128940
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 18 14:12:32 2020 +0900
+
+    Add array designated initializer
+
+= emm

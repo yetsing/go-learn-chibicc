@@ -656,7 +656,7 @@ func arrayDesignator(ty *Type) int {
 	return i
 }
 
-// designation = ("[" const-expr "]")* "=" initializer
+// designation = ("[" const-expr "]")* "="? initializer
 func designation(init *Initializer) {
 	if gtok.equal("[") {
 		if init.ty.kind != TY_ARRAY {
@@ -668,7 +668,9 @@ func designation(init *Initializer) {
 		return
 	}
 
-	gtok = gtok.consume("=")
+	if gtok.equal("=") {
+		gtok = gtok.next
+	}
 	initializer2(init)
 }
 

@@ -2105,3 +2105,11 @@ Date:   Sun Sep 20 16:07:43 2020 +0900
     Allow array designators to initialize incomplete arrays
 
 = emm
+
+commit 691c4fac1529eaf1d825ca6093800912a4df3c91
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Jul 24 01:51:45 2020 +0900
+
+    [GNU] Allow to omit "=" in designated initializers
+
+= emm

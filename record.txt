@@ -2072,3 +2072,12 @@ Date:   Sun Jul 19 20:28:46 2020 +0900
     [GNU] Accept $ as an identifier character
 
 = emm
+
+commit 238277714ddc407f966f3c503e13a114d6a91630
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Oct 4 14:58:00 2020 +0900
+
+    Allow to concatenate regular string literals with L/u/U string literals
+
+= 又是 debug 了几个小时，最后发现是 NULL 结尾处理不对
+= emm

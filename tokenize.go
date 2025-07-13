@@ -729,6 +729,17 @@ func isalnum(ch byte) bool {
 	return isdigit(ch) || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 }
 
+func tokenizeStringLiteral(tok *Token, basety *Type) *Token {
+	var t *Token
+	if basety.size == 2 {
+		t = readUTF16StringLiteral(tok.literal, 0, 0)
+	} else {
+		t = readUTF32StringLiteral(tok.literal, 0, 0, basety)
+	}
+	t.next = tok.next
+	return t
+}
+
 // Tokenize the input string and return a linked list of tokens.
 func tokenize(file *File) *Token {
 	currentFile = file

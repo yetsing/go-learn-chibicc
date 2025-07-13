@@ -2097,3 +2097,11 @@ Date:   Fri Sep 18 14:12:32 2020 +0900
     Add array designated initializer
 
 = emm
+
+commit 835cd24b2c4598ee784d8bfd1c0427bfa948b947
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 16:07:43 2020 +0900
+
+    Allow array designators to initialize incomplete arrays
+
+= emm

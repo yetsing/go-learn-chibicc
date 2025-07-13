@@ -2081,3 +2081,11 @@ Date:   Sun Oct 4 14:58:00 2020 +0900
 
 = 又是 debug 了几个小时，最后发现是 NULL 结尾处理不对
 = emm
+
+commit 2b2fa25507cdc491d2b5dafb2c4b5e33158b996a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Oct 15 14:21:45 2020 +0900
+
+    Skip UTF-8 BOM markers
+
+= easy

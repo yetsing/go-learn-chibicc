@@ -1013,6 +1013,14 @@ var fileNo int = 0
 func tokenizeFile(filename string) *Token {
 	p := readFile(filename)
 
+	// UTF-8 texts may start with a 3-byte "BOM" marker sequence.
+	// If exists, just skip them because they are useless bytes.
+	// (It is actually not recommended to add BOM markers to UTF-8
+	// texts, but it's not uncommon particularly on Windows.)
+	if len(p) >= 3 && p[0] == 0xEF && p[1] == 0xBB && p[2] == 0xBF {
+		p = p[3:] // Skip BOM
+	}
+
 	p = canonicalizeNewline(p)
 	p = removeBackslashNewline(p)
 	p = convertUniversalChars(p)

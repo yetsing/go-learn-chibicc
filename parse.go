@@ -645,6 +645,12 @@ func stringInitializer(init *Initializer) {
 //	int x[5][10] = { [5][8]=1, 2, 3 };
 //
 // It sets x[5][8], x[5][9] and x[6][0] to 1, 2 and 3, respectively.
+//
+// Use `.fieldname` to move the cursor for a struct initializer. E.g.
+//
+//	struct { int a, b, c; } x = { .c=5 };
+//
+// The above initializer sets x.c to 5.
 func arrayDesignator(ty *Type) int {
 	start := gtok
 	gtok = gtok.consume("[")
@@ -656,7 +662,25 @@ func arrayDesignator(ty *Type) int {
 	return i
 }
 
-// designation = ("[" const-expr "]")* "="? initializer
+// struct-designator = "." ident
+func structDesignator(ty *Type) *Member {
+	gtok = gtok.consume(".")
+	if gtok.kind != TK_IDENT {
+		errorTok(gtok, "expected a field designator")
+	}
+
+	for mem := ty.members; mem != nil; mem = mem.next {
+		if mem.name.literal == gtok.literal {
+			gtok = gtok.next
+			return mem
+		}
+	}
+
+	errorTok(gtok, "struct has no such member")
+	return nil
+}
+
+// designation = ("[" const-expr "]" | "." ident)* "="? initializer
 func designation(init *Initializer) {
 	if gtok.equal("[") {
 		if init.ty.kind != TY_ARRAY {
@@ -666,6 +690,18 @@ func designation(init *Initializer) {
 		designation(init.children[i])
 		arrayInitializer2(init, i+1)
 		return
+	}
+
+	if gtok.equal(".") && init.ty.kind == TY_STRUCT {
+		mem := structDesignator(init.ty)
+		designation(init.children[mem.idx])
+		init.expr = nil
+		structInitializer2(init, mem.next)
+		return
+	}
+
+	if gtok.equal(".") {
+		errorTok(gtok, "field name not in struct or union initializer")
 	}
 
 	if gtok.equal("=") {
@@ -764,7 +800,7 @@ func arrayInitializer2(init *Initializer, i int) {
 			gtok = gtok.consume(",")
 		}
 
-		if gtok.equal("[") {
+		if gtok.equal("[") || gtok.equal(".") {
 			gtok = start
 			return
 		}
@@ -778,10 +814,19 @@ func structInitializer1(init *Initializer) {
 	gtok = gtok.consume("{")
 
 	mem := init.ty.members
+	first := true
 
 	for !consumeEnd() {
-		if mem != init.ty.members {
+		if !first {
 			gtok = gtok.consume(",")
+		}
+		first = false
+
+		if gtok.equal(".") {
+			mem = structDesignator(init.ty)
+			designation(init.children[mem.idx])
+			mem = mem.next
+			continue
 		}
 
 		if mem != nil {
@@ -794,14 +839,22 @@ func structInitializer1(init *Initializer) {
 }
 
 // struct-initializer2 = initializer ("," initializer)*
-func structInitializer2(init *Initializer) {
+func structInitializer2(init *Initializer, mem *Member) {
 	first := true
 
-	for mem := init.ty.members; mem != nil && !isEnd(gtok); mem = mem.next {
+	for ; mem != nil && !isEnd(gtok); mem = mem.next {
+		start := gtok
+
 		if !first {
 			gtok = gtok.consume(",")
 		}
 		first = false
+
+		if gtok.equal("[") || gtok.equal(".") {
+			gtok = start
+			return
+		}
+
 		initializer2(init.children[mem.idx])
 	}
 }
@@ -855,7 +908,7 @@ func initializer2(init *Initializer) {
 		}
 
 		gtok = tok
-		structInitializer2(init)
+		structInitializer2(init, init.ty.members)
 		return
 	}
 

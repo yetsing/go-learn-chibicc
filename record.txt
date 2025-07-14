@@ -2113,3 +2113,11 @@ Date:   Fri Jul 24 01:51:45 2020 +0900
     [GNU] Allow to omit "=" in designated initializers
 
 = emm
+
+commit 67f5834378660abf271722a16294a634106d047e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Oct 6 13:09:15 2020 +0900
+
+    Add struct designated initializer
+
+= emm

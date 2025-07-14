@@ -776,6 +776,27 @@ func skipLine(tok *Token) *Token {
 	return tok
 }
 
+// Read #line arguments
+func readLineMarker(rest **Token, tok *Token) {
+	start := tok
+	tok = preprocess(copyLine(rest, tok))
+
+	if tok.kind != TK_NUM || tok.ty.kind != TY_INT {
+		errorTok(tok, "invalid line marker")
+	}
+	start.file.lineDelta = int(tok.val) - start.lineno
+
+	tok = tok.next
+	if tok.kind == TK_EOF {
+		return
+	}
+
+	if tok.kind != TK_STR {
+		errorTok(tok, "filename expected")
+	}
+	start.file.displayName = tok.str
+}
+
 // Visit all tokens in `tok` while evaluating preprocessing
 // macros and directives.
 func preprocess2(tok *Token) *Token {
@@ -790,6 +811,8 @@ func preprocess2(tok *Token) *Token {
 
 		// Pass through if it is not a "#"
 		if !isHash(tok) {
+			tok.lineDelta = tok.file.lineDelta
+			tok.filename = tok.file.displayName
 			cur.next = tok
 			cur = cur.next
 			tok = tok.next
@@ -905,6 +928,11 @@ func preprocess2(tok *Token) *Token {
 			continue
 		}
 
+		if tok.equal("line") {
+			readLineMarker(&tok, tok.next)
+			continue
+		}
+
 		if tok.equal("error") {
 			errorTok(tok, "error")
 		}
@@ -941,7 +969,7 @@ func fileMacro(tmpl *Token) *Token {
 	for tmpl.origin != nil {
 		tmpl = tmpl.origin
 	}
-	return newStrToken(tmpl.file.name, tmpl)
+	return newStrToken(tmpl.file.displayName, tmpl)
 }
 
 // __COUNTER__ is expanded to serial values starting from 0.
@@ -957,7 +985,8 @@ func lineMacro(tmpl *Token) *Token {
 	for tmpl.origin != nil {
 		tmpl = tmpl.origin
 	}
-	return newNumToken(int64(tmpl.lineno), tmpl)
+	i := tmpl.lineno + tmpl.file.lineDelta
+	return newNumToken(int64(i), tmpl)
 }
 
 // __DATE__ is expanded to the current date, e.g. "May 17 2020".
@@ -1134,5 +1163,9 @@ func preprocess(tok *Token) *Token {
 	tok = preprocess2(tok)
 	convertPPTokens(tok)
 	joinAdjacentStringLiterals(tok)
+
+	for t := tok; t != nil; t = t.next {
+		t.lineno += t.lineDelta
+	}
 	return tok
 }

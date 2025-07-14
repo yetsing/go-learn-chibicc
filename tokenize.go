@@ -129,6 +129,10 @@ type File struct {
 	name     string // File name
 	fileNo   int    // File number
 	contents string // File contents
+
+	// For #line directive
+	displayName string
+	lineDelta   int
 }
 
 type Token struct {
@@ -144,9 +148,11 @@ type Token struct {
 	ty   *Type  // Used if TK_NUM or TK_STR
 	str  string // String literal contents
 
-	file     *File // Source location
-	atBol    bool  // True if this token is at the beginning of a line
-	hasSpace bool  // True if this token follows a space character
+	file      *File  // Source location
+	filename  string // Filename
+	lineDelta int    // Line number
+	atBol     bool   // True if this token is at the beginning of a line
+	hasSpace  bool   // True if this token follows a space character
 
 	hideset *Hideset // For macro expansion
 	origin  *Token   // If this is expanded from a macro, the original token
@@ -338,6 +344,7 @@ func NewToken(kind TokenKind, literal string, pos int) *Token {
 		literal:  literal,
 		pos:      pos,
 		file:     currentFile,
+		filename: currentFile.displayName,
 		atBol:    v,
 		hasSpace: v2,
 	}
@@ -917,9 +924,10 @@ func getInputFiles() []*File {
 
 func NewFile(name string, fileNo int, contents string) *File {
 	return &File{
-		name:     name,
-		fileNo:   fileNo,
-		contents: contents,
+		name:        name,
+		fileNo:      fileNo,
+		contents:    contents,
+		displayName: name,
 	}
 }
 

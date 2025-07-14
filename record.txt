@@ -2177,3 +2177,11 @@ Date:   Thu Aug 20 22:24:20 2020 +0900
     [GNU] Add __BASE_FILE__ macro
 
 = easy
+
+commit 338144869fa82097d7767a032cbaac616ba0cd01
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Jul 23 13:25:15 2020 +0900
+
+    Add __VA_OPT__
+
+= emm

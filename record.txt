@@ -2121,3 +2121,11 @@ Date:   Tue Oct 6 13:09:15 2020 +0900
     Add struct designated initializer
 
 = emm
+
+commit 31dc1dfa211ee27e74907ce3aa3986401dcedb82
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 15 17:01:54 2020 +0900
+
+    Add union designated initializer
+
+= emm

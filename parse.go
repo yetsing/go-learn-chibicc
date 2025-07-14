@@ -61,6 +61,10 @@ type Initializer struct {
 	// If it's an initializer for an aggregate type (e.g. array or struct),
 	// `children` has initializers for its children.
 	children []*Initializer
+
+	// Only one member can be initialized for a union.
+	// `mem` is used to clarify which member is initialized.
+	mem *Member
 }
 
 // For local variable initializer.
@@ -700,6 +704,13 @@ func designation(init *Initializer) {
 		return
 	}
 
+	if gtok.equal(".") && init.ty.kind == TY_UNION {
+		mem := structDesignator(init.ty)
+		init.mem = mem
+		designation(init.children[mem.idx])
+		return
+	}
+
 	if gtok.equal(".") {
 		errorTok(gtok, "field name not in struct or union initializer")
 	}
@@ -861,7 +872,19 @@ func structInitializer2(init *Initializer, mem *Member) {
 
 func unionInitializer(init *Initializer) {
 	// Unlike structs, union initializers take only one initializer,
-	// and that initializes the first union member.
+	// and that initializes the first union member by default.
+	// You can initialize other member using a designated initializer.
+	if gtok.equal("{") && gtok.next.equal(".") {
+		gtok = gtok.next
+		mem := structDesignator(init.ty)
+		init.mem = mem
+		designation(init.children[mem.idx])
+		gtok = gtok.consume("}")
+		return
+	}
+
+	init.mem = init.ty.members
+
 	if gtok.equal("{") {
 		gtok = gtok.next
 		initializer2(init.children[0])
@@ -1006,8 +1029,12 @@ func createLvarInit(init *Initializer, ty *Type, desg *InitDesg, tok *Token) *No
 	}
 
 	if ty.kind == TY_UNION {
-		desg2 := InitDesg{desg, 0, ty.members, nil}
-		return createLvarInit(init.children[0], ty.members.ty, &desg2, tok)
+		mem := ty.members
+		if init.mem != nil {
+			mem = init.mem
+		}
+		desg2 := InitDesg{desg, 0, mem, nil}
+		return createLvarInit(init.children[mem.idx], mem.ty, &desg2, tok)
 	}
 
 	if init.expr == nil {
@@ -1124,7 +1151,10 @@ func writeGvarData(cur *Relocation, init *Initializer, ty *Type, buf []byte, off
 	}
 
 	if ty.kind == TY_UNION {
-		return writeGvarData(cur, init.children[0], ty.members.ty, buf, offset)
+		if init.mem == nil {
+			return cur
+		}
+		return writeGvarData(cur, init.children[init.mem.idx], init.mem.ty, buf, offset)
 	}
 
 	if init.expr == nil {

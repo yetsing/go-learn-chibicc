@@ -62,7 +62,7 @@ func verrorAt(filename string, input string, pos int, format string, args ...int
 	fmt.Fprintf(os.Stderr, "%s\n", lineContent)
 
 	// Print spaces up to the error position
-	fmt.Fprint(os.Stderr, strings.Repeat(" ", col+n))
+	fmt.Fprint(os.Stderr, strings.Repeat(" ", col+n+displayWidth(lineContent)))
 
 	// Print caret and error message
 	fmt.Fprintf(os.Stderr, "^ ")

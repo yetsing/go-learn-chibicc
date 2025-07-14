@@ -2137,3 +2137,11 @@ Date:   Sun Jul 19 17:19:50 2020 +0900
     Handle struct designator for anonymous struct member
 
 = emm
+
+commit 37998be0c183508e54f10f57d63d87e6e7eb0607
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Jul 20 14:00:00 2020 +0900
+
+    Improve error message for multibyte characters
+
+= emm

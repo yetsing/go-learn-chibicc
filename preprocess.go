@@ -26,6 +26,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -994,6 +995,19 @@ func lineMacro(tmpl *Token) *Token {
 	return newNumToken(int64(i), tmpl)
 }
 
+// __TIMESTAMP__ is expanded to a string describing the last
+// modification time of the current file. E.g.
+// "Fri Jul 24 01:32:50 2020"
+func timestampMacro(tmpl *Token) *Token {
+	var fileinfo os.FileInfo
+	var err error
+	if fileinfo, err = os.Stat(tmpl.file.name); err != nil {
+		return newStrToken("??? ??? ?? ??:??:?? ????", tmpl)
+	}
+
+	return newStrToken(fileinfo.ModTime().Format("Mon Jan 02 15:04:05 2006"), tmpl)
+}
+
 // __DATE__ is expanded to the current date, e.g. "May 17 2020".
 func formatDate(dt time.Time) string {
 	// Format the date as "May 17 2020".
@@ -1055,6 +1069,7 @@ func initMacros() {
 	addBuiltin("__FILE__", fileMacro)
 	addBuiltin("__LINE__", lineMacro)
 	addBuiltin("__COUNTER__", counterMacro)
+	addBuiltin("__TIMESTAMP__", timestampMacro)
 
 	t := time.Now()
 	defineMacro("__DATE__", formatDate(t))

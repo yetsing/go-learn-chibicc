@@ -2153,3 +2153,11 @@ Date:   Wed Jul 22 19:45:03 2020 +0900
     Add #line
 
 = emm
+
+commit aaf20fb96eaf21ead775fde6bad00d8e71650b5a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Jul 22 22:16:01 2020 +0900
+
+    [GNU] Add line marker directive
+
+= emm

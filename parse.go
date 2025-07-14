@@ -668,12 +668,23 @@ func arrayDesignator(ty *Type) int {
 
 // struct-designator = "." ident
 func structDesignator(ty *Type) *Member {
+	start := gtok
 	gtok = gtok.consume(".")
 	if gtok.kind != TK_IDENT {
 		errorTok(gtok, "expected a field designator")
 	}
 
 	for mem := ty.members; mem != nil; mem = mem.next {
+		// Anonymous struct member
+		if mem.ty.kind == TY_STRUCT && mem.name == nil {
+			if getStructMember(mem.ty, gtok) != nil {
+				gtok = start
+				return mem
+			}
+			continue
+		}
+
+		// Regular struct member
 		if mem.name.literal == gtok.literal {
 			gtok = gtok.next
 			return mem

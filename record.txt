@@ -2129,3 +2129,11 @@ Date:   Sat Aug 15 17:01:54 2020 +0900
     Add union designated initializer
 
 = emm
+
+commit 95eb5b01b30b24d68cbeb3991f65c617fc2a35cb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Jul 19 17:19:50 2020 +0900
+
+    Handle struct designator for anonymous struct member
+
+= emm

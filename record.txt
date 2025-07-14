@@ -2169,3 +2169,11 @@ Date:   Wed Jul 22 21:48:49 2020 +0900
     [GNU] Add __TIMESTAMP__ macro
 
 = easy
+
+commit 3a10c8aa44250e51dfe33e50b3121d6061faee4b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Aug 20 22:24:20 2020 +0900
+
+    [GNU] Add __BASE_FILE__ macro
+
+= easy

@@ -1008,6 +1008,10 @@ func timestampMacro(tmpl *Token) *Token {
 	return newStrToken(fileinfo.ModTime().Format("Mon Jan 02 15:04:05 2006"), tmpl)
 }
 
+func basefileMacro(tmpl *Token) *Token {
+	return newStrToken(baseFile, tmpl)
+}
+
 // __DATE__ is expanded to the current date, e.g. "May 17 2020".
 func formatDate(dt time.Time) string {
 	// Format the date as "May 17 2020".
@@ -1070,6 +1074,7 @@ func initMacros() {
 	addBuiltin("__LINE__", lineMacro)
 	addBuiltin("__COUNTER__", counterMacro)
 	addBuiltin("__TIMESTAMP__", timestampMacro)
+	addBuiltin("__BASE_FILE__", basefileMacro)
 
 	t := time.Now()
 	defineMacro("__DATE__", formatDate(t))

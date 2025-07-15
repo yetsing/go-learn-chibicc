@@ -2201,3 +2201,11 @@ Date:   Sat Sep 19 22:09:33 2020 +0900
     Ignore #pragma
 
 = emm
+
+commit 007e526ec50bde4b366d0927ad20d9cd4ac53abf
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 01:28:04 2020 +0900
+
+    [GNU] Support GCC-style variadic macro
+
+= emm

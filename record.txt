@@ -2193,3 +2193,11 @@ Date:   Thu Jul 23 14:28:33 2020 +0900
     [GNU] Handle ,##__VA_ARG__
 
 = emm
+
+commit 74ec9f6f3964d4beaa3970bd99c8660f958b694e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 22:09:33 2020 +0900
+
+    Ignore #pragma
+
+= emm

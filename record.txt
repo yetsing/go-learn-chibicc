@@ -2185,3 +2185,11 @@ Date:   Thu Jul 23 13:25:15 2020 +0900
     Add __VA_OPT__
 
 = emm
+
+commit 083c27559e5d8fce9c3b588fc4c01769ca9dd10d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Jul 23 14:28:33 2020 +0900
+
+    [GNU] Handle ,##__VA_ARG__
+
+= emm

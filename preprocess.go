@@ -562,6 +562,23 @@ func subst(tok *Token, args *MacroArg) *Token {
 			continue
 		}
 
+		// [GNU] If __VA_ARG__ is empty, `,##__VA_ARGS__` is expanded
+		// to the empty token list. Otherwise, its expaned to `,` and
+		// __VA_ARGS__.
+		if tok.equal(",") && tok.next.equal("##") {
+			arg := findArg(args, tok.next.next)
+			if arg != nil && arg.name == "__VA_ARGS__" {
+				if arg.tok.kind == TK_EOF {
+					tok = tok.next.next.next // Skip ",##__VA_ARGS__"
+				} else {
+					cur.next = copyToken(tok) // Keep the comma
+					cur = cur.next
+					tok = tok.next.next
+				}
+				continue
+			}
+		}
+
 		if tok.equal("##") {
 			if cur == &head {
 				errorTok(tok, "'##' cannot appear at start of macro expansion")

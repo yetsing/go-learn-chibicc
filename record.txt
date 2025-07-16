@@ -2266,3 +2266,11 @@ Date:   Fri Sep 4 12:54:07 2020 +0900
     Handle inline functions as static functions
 
 = emm
+
+commit e5f4ca90fd2bf950189c98ed7f1873c9f35131f3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 13 10:49:25 2020 +0900
+
+    Do not emit static inline functions if referenced by no one
+
+= emm

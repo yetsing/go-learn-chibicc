@@ -124,6 +124,11 @@ type Obj struct {
 	locals    *Obj
 	vaArea    *Obj
 	stackSize int // Stack size
+
+	// Static inline function
+	isLive bool
+	isRoot bool
+	refs   []string
 }
 
 // Global variable can be initialized either by a constant expression
@@ -3307,6 +3312,16 @@ func primary() *Node {
 		tok := gtok
 		sc := findVar(gtok.literal)
 		gtok = gtok.next
+
+		// For "static inline" function
+		if sc != nil && sc.variable != nil && sc.variable.isFunction {
+			if pcurrentFn != nil {
+				pcurrentFn.refs = append(pcurrentFn.refs, sc.variable.name)
+			} else {
+				sc.variable.isRoot = true
+			}
+		}
+
 		if sc != nil {
 			if sc.variable != nil {
 				return NewVarNode(sc.variable, tok)
@@ -3397,6 +3412,35 @@ func resolveGotoLabels() {
 	gotos = nil
 }
 
+func findFunc(name string) *Obj {
+	sc := scope
+	for sc.next != nil {
+		sc = sc.next
+	}
+
+	for sc2 := sc.vars; sc2 != nil; sc2 = sc2.next {
+		if sc2.name == name && sc2.variable != nil && sc2.variable.isFunction {
+			return sc2.variable
+		}
+	}
+	return nil
+}
+
+func markLive(var_ *Obj) {
+	if !var_.isFunction || var_.isLive {
+		return
+	}
+	var_.isLive = true
+
+	for i := 0; i < len(var_.refs); i++ {
+		refname := var_.refs[i]
+		fn := findFunc(refname)
+		if fn != nil {
+			markLive(fn)
+		}
+	}
+}
+
 func function(basety *Type, attr *VarAttr) *Obj {
 	ty := declarator(basety)
 	if ty.name == nil {
@@ -3408,6 +3452,7 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	fn.isDefinition = !tryConsume(";")
 	fn.isStatic = attr.isStatic || (attr.isInline && !attr.isExtern)
 	fn.isInline = attr.isInline
+	fn.isRoot = !(fn.isStatic && fn.isInline)
 
 	if !fn.isDefinition {
 		return fn
@@ -3509,6 +3554,12 @@ func program() *Obj {
 
 		// Global variable
 		globalVariable(basety, &attr)
+	}
+
+	for var_ := globals; var_ != nil; var_ = var_.next {
+		if var_.isRoot {
+			markLive(var_)
+		}
 	}
 
 	return globals

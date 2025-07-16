@@ -2290,3 +2290,11 @@ Date:   Sat Sep 19 20:50:36 2020 +0900
     Add -idirafter option
 
 = easy
+
+commit 1b99badce48083c5fa6b8b5872e899c7d1a47f9a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 15 20:06:23 2020 +0900
+
+    Add offsetof
+
+= emm

@@ -1227,7 +1227,7 @@ func isTypename(tok *Token) bool {
 		"signed", "unsigned",
 		"const", "volatile", "auto", "register", "restrict",
 		"__restrict", "__restrict__", "_Noreturn",
-		"float", "double",
+		"float", "double", "typeof",
 	}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
@@ -1252,7 +1252,7 @@ func pushTagScope(tok *Token, ty *Type) {
 // .           | "typedef" | "static" | "extern"
 // .           | "signed" | "unsigned"
 // .           | struct-decl | union-decl | typedef-name
-// .           | enum-specifier
+// .           | enum-specifier | typeof-specifier
 // .           | "const" | "volatile" | "auto" | "register" | "restrict"
 // .           | "__restrict" | "__restrict__" | "_Noreturn")+
 //
@@ -1338,7 +1338,7 @@ func declspec(attr *VarAttr) *Type {
 
 		// Handle user-defined types.
 		ty2 := findTypedef(gtok)
-		if gtok.equal("struct") || gtok.equal("union") || gtok.equal("enum") || ty2 != nil {
+		if gtok.equal("struct") || gtok.equal("union") || gtok.equal("enum") || gtok.equal("typeof") || ty2 != nil {
 			if counter != 0 {
 				break
 			}
@@ -1352,6 +1352,9 @@ func declspec(attr *VarAttr) *Type {
 			} else if gtok.equal("enum") {
 				gtok = gtok.next
 				ty = enumSpecifier()
+			} else if gtok.equal("typeof") {
+				gtok = gtok.next
+				ty = typeofSpecifier()
 			} else {
 				ty = ty2
 				gtok = gtok.next
@@ -1698,6 +1701,22 @@ func enumSpecifier() *Type {
 	if tag != nil {
 		pushTagScope(tag, ty)
 	}
+	return ty
+}
+
+// typeof-specifier = "(" (expr | typename) ")"
+func typeofSpecifier() *Type {
+	gtok = gtok.consume("(")
+
+	var ty *Type
+	if isTypename(gtok) {
+		ty = typename()
+	} else {
+		expr := expr()
+		addType(expr)
+		ty = expr.ty
+	}
+	gtok = gtok.consume(")")
 	return ty
 }
 

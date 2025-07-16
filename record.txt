@@ -2209,3 +2209,11 @@ Date:   Sun Aug 30 01:28:04 2020 +0900
     [GNU] Support GCC-style variadic macro
 
 = emm
+
+commit 7d80a5136d1b2926dd0776c51896c40723c518c5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Jul 23 19:29:25 2020 +0900
+
+    Add typeof
+
+= emm

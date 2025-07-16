@@ -42,6 +42,7 @@ type VarAttr struct {
 	isTypedef bool
 	isStatic  bool
 	isExtern  bool
+	isInline  bool
 	align     int
 }
 
@@ -117,6 +118,7 @@ type Obj struct {
 	rel      *Relocation
 
 	// Function
+	isInline  bool
 	params    *Obj
 	body      *Node
 	locals    *Obj
@@ -1231,7 +1233,7 @@ func isTypename(tok *Token) bool {
 		"signed", "unsigned",
 		"const", "volatile", "auto", "register", "restrict",
 		"__restrict", "__restrict__", "_Noreturn",
-		"float", "double", "typeof",
+		"float", "double", "typeof", "inline",
 	}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
@@ -1253,7 +1255,7 @@ func pushTagScope(tok *Token, ty *Type) {
 }
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
-// .           | "typedef" | "static" | "extern"
+// .           | "typedef" | "static" | "extern" | "inline"
 // .           | "signed" | "unsigned"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier | typeof-specifier
@@ -1293,7 +1295,7 @@ func declspec(attr *VarAttr) *Type {
 
 	for isTypename(gtok) {
 		// Handle storage class specifiers.
-		if gtok.equal("typedef") || gtok.equal("static") || gtok.equal("extern") {
+		if gtok.equal("typedef") || gtok.equal("static") || gtok.equal("extern") || gtok.equal("inline") {
 			if attr == nil {
 				errorTok(gtok, "storage class specifier is not allowed in this context")
 			}
@@ -1302,12 +1304,14 @@ func declspec(attr *VarAttr) *Type {
 				attr.isTypedef = true
 			} else if gtok.equal("static") {
 				attr.isStatic = true
-			} else {
+			} else if gtok.equal("extern") {
 				attr.isExtern = true
+			} else {
+				attr.isInline = true
 			}
 
-			if attr.isTypedef && (attr.isStatic || attr.isExtern) {
-				errorTok(gtok, "typedef may not be used together with static or extern")
+			if attr.isTypedef && (attr.isStatic || attr.isExtern || attr.isInline) {
+				errorTok(gtok, "typedef may not be used together with static, extern or inline")
 			}
 			gtok = gtok.next
 			continue
@@ -3402,7 +3406,8 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	fn := newGVar(ty.name.literal, ty)
 	fn.isFunction = true
 	fn.isDefinition = !tryConsume(";")
-	fn.isStatic = attr.isStatic
+	fn.isStatic = attr.isStatic || (attr.isInline && !attr.isExtern)
+	fn.isInline = attr.isInline
 
 	if !fn.isDefinition {
 		return fn

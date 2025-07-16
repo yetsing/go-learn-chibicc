@@ -2258,3 +2258,11 @@ Date:   Thu Aug 27 23:50:52 2020 +0900
     Add basic "asm" statement
 
 = emm
+
+commit 31087f8d4bbc06e5bec44cb14cab3a922b5e4855
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 12:54:07 2020 +0900
+
+    Handle inline functions as static functions
+
+= emm

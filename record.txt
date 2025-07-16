@@ -2225,3 +2225,12 @@ Date:   Sun Sep 6 21:06:56 2020 +0900
     [GNU] Add __builtin_types_compatible_p
 
 = emm
+
+commit 1faab48ecf83d31a4fd781f10f6f00acb681d2dd
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Jul 24 16:18:03 2020 +0900
+
+    Add _Generic
+
+= _Generic 是 C11 标准引入的一个关键字，用于实现泛型选择（generic selection），也称为编译时多态。
+= emm

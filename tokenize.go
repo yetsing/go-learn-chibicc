@@ -702,6 +702,7 @@ var keywords = map[string]TokenKind{
 	"float":        TK_KEYWORD,
 	"double":       TK_KEYWORD,
 	"typeof":       TK_KEYWORD,
+	"asm":          TK_KEYWORD,
 }
 
 func convertPPTokens(tok *Token) {

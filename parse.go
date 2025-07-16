@@ -310,6 +310,7 @@ const (
 	ND_NUM                // Integer
 	ND_CAST               // Type cast
 	ND_MEMZERO            // Zero-clear a stack variable
+	ND_ASM                // "asm"
 )
 
 // AST node
@@ -354,6 +355,9 @@ type Node struct {
 	// Switch-cases
 	caseNext    *Node
 	defaultCase *Node
+
+	// "asm" string literal
+	asmStr string
 
 	// Variable
 	variable *Obj // Used if kind is ND_VAR
@@ -1782,6 +1786,24 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 	return node
 }
 
+// asm-stmt = "asm" ("volatile" | "inline")* "(" string-literal ")"
+func asmStmt() *Node {
+	node := NewNode(ND_ASM, gtok)
+	gtok = gtok.next
+
+	for gtok.equal("volatile") || gtok.equal("inline") {
+		gtok = gtok.next
+	}
+
+	gtok = gtok.consume("(")
+	if gtok.kind != TK_STR || gtok.ty.base.kind != TY_CHAR {
+		errorTok(gtok, "expected string literal")
+	}
+	node.asmStr = gtok.str
+	gtok = gtok.next.consume(")")
+	return node
+}
+
 // stmt = "return" expr? ";"
 // .    | if-stmt
 // .    | "switch" "(" expr ")" stmt
@@ -1790,6 +1812,7 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 // .    | for-stmt
 // .    | while-stmt
 // .    | "do" stmt "while" "(" expr ")" ";"
+// .    | "asm" asm-stmt
 // .    | "goto" ident ";"
 // .    | "break" ";"
 // .    | "continue" ";"
@@ -1901,6 +1924,10 @@ func stmt() *Node {
 		gtok = gtok.consume(")")
 		gtok = gtok.consume(";")
 		return node
+	}
+
+	if gtok.equal("asm") {
+		return asmStmt()
 	}
 
 	if gtok.equal("goto") {

@@ -1286,6 +1286,9 @@ func genStmt(node *Node) {
 	case ND_EXPR_STMT:
 		genExpr(node.lhs)
 		return
+	case ND_ASM:
+		sout("  %s", node.asmStr)
+		return
 	}
 
 	if node.kind == ND_EXPR_STMT {

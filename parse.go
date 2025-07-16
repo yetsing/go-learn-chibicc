@@ -3129,6 +3129,7 @@ func funcall(fn *Node) *Node {
 // .       | "sizeof" unary
 // .       | "_Alignof" "(" type-name ")"
 // .       | "_Alignof" unary
+// .       | "__builtin_types_compatible_p" "(" type-name, type-name, ")"
 // .       | "__builtin_reg_class" "(" type-name ")"
 // .       | ident
 // .       | funcall
@@ -3179,6 +3180,15 @@ func primary() *Node {
 		node := unary()
 		addType(node)
 		return NewUlong(int64(node.ty.align), st)
+	}
+
+	if gtok.equal("__builtin_types_compatible_p") {
+		gtok = gtok.next.consume("(")
+		ty1 := typename()
+		gtok = gtok.consume(",")
+		ty2 := typename()
+		gtok = gtok.consume(")")
+		return NewNumber(int64(b2i(isCompatible(ty1, ty2))), st)
 	}
 
 	if gtok.equal("__builtin_reg_class") {

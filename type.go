@@ -24,6 +24,7 @@ type Type struct {
 	size       int      // sizeof() value
 	align      int      // alignment
 	isUnsigned bool     // unsigned or signed
+	origin     *Type    // for type compatibility check
 
 	// Pointer-to or array-of type. We intentionally use the same member
 	// to represent pointer/array duality(二元性) in C.
@@ -239,8 +240,73 @@ func (t *Type) copy() *Type {
 		returnTy:   t.returnTy,
 		params:     t.params,
 		next:       t.next,
+		origin:     t,
 	}
 	return c
+}
+
+func isCompatible(t1 *Type, t2 *Type) bool {
+	if t1 == t2 {
+		return true
+	}
+
+	if t1.origin != nil {
+		return isCompatible(t1.origin, t2)
+	}
+
+	if t2.origin != nil {
+		return isCompatible(t1, t2.origin)
+	}
+
+	if t1.kind != t2.kind {
+		return false
+	}
+
+	switch t1.kind {
+	case TY_CHAR:
+		fallthrough
+	case TY_SHORT:
+		fallthrough
+	case TY_INT:
+		fallthrough
+	case TY_LONG:
+		return t1.isUnsigned == t2.isUnsigned
+	case TY_FLOAT:
+		fallthrough
+	case TY_DOUBLE:
+		return true
+	case TY_PTR:
+		return isCompatible(t1.base, t2.base)
+	case TY_FUNC:
+		if !isCompatible(t1.returnTy, t2.returnTy) {
+			return false
+		}
+		if t1.isVariadic != t2.isVariadic {
+			return false
+		}
+
+		p1 := t1.params
+		p2 := t2.params
+		for p1 != nil && p2 != nil {
+			if !isCompatible(p1, p2) {
+				return false
+			}
+			p1 = p1.next
+			p2 = p2.next
+		}
+		return p1 == nil && p2 == nil
+	case TY_ARRAY:
+		if !isCompatible(t1.base, t2.base) {
+			return false
+		}
+		return t1.arrayLen < 0 && t2.arrayLen < 0 && t1.arrayLen == t2.arrayLen
+
+	case TY_VOID:
+		fallthrough
+	case TY_BOOL:
+		return true
+	}
+	return false
 }
 
 func structType() *Type {

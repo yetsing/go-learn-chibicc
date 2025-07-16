@@ -2217,3 +2217,11 @@ Date:   Thu Jul 23 19:29:25 2020 +0900
     Add typeof
 
 = emm
+
+commit 1433b404d68f9fe314ae2955d0988dd74e5ecb92
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 6 21:06:56 2020 +0900
+
+    [GNU] Add __builtin_types_compatible_p
+
+= emm

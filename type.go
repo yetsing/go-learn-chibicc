@@ -187,10 +187,8 @@ func pointerTo(base *Type) *Type {
 }
 
 func funcType(returnTy *Type) *Type {
-	t := &Type{
-		kind:     TY_FUNC,
-		returnTy: returnTy,
-	}
+	t := newType(TY_FUNC, 1, 1)
+	t.returnTy = returnTy
 	return t
 }
 

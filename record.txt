@@ -2234,3 +2234,11 @@ Date:   Fri Jul 24 16:18:03 2020 +0900
 
 = _Generic 是 C11 标准引入的一个关键字，用于实现泛型选择（generic selection），也称为编译时多态。
 = emm
+
+commit aee7891acb3e653dcfb10ec4172ae4d099ebf034
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Jul 24 21:43:48 2020 +0900
+
+    [GNU] Allow sizeof(<function type>)
+
+= easy

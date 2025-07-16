@@ -2298,3 +2298,11 @@ Date:   Sat Aug 15 20:06:23 2020 +0900
     Add offsetof
 
 = emm
+
+commit 85e46b1071b54649740b35df939f32ed188c0e13
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 17:29:15 2020 +0900
+
+    Add tentative definition
+
+= emm

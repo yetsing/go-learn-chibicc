@@ -1401,6 +1401,11 @@ func emitData(prog *Obj) {
 		}
 		sout("  .align %d", align)
 
+		if g.isTentative {
+			sout("  .comm %s, %d, %d", g.name, g.ty.size, align)
+			continue
+		}
+
 		if len(g.initData) > 0 {
 			sout("  .data")
 			sout("%s:", g.name)

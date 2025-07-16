@@ -2274,3 +2274,11 @@ Date:   Sun Sep 13 10:49:25 2020 +0900
     Do not emit static inline functions if referenced by no one
 
 = emm
+
+commit 6a2dc5a48a75b65aa2e3f606d195ef0fef3c4442
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 2 10:04:55 2020 +0900
+
+    Use __attribute__((format(print, ...))) to find programming errors
+
+= nothing to do

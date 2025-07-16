@@ -31,7 +31,7 @@ func usage(status int) {
 }
 
 func takeArg(arg string) bool {
-	options := []string{"-o", "-I"}
+	options := []string{"-o", "-I", "-idirafter"}
 
 	for _, opt := range options {
 		if arg == opt {
@@ -74,6 +74,8 @@ func parseArgs() {
 			i++
 		}
 	}
+
+	var idirafter []string
 
 	for i := 1; i < len(os.Args); i++ {
 		if os.Args[i] == "-###" {
@@ -155,6 +157,12 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-idirafter" {
+			idirafter = append(idirafter, os.Args[i+1])
+			i++
+			continue
+		}
+
 		// These options are ignored for now.
 		if strings.HasPrefix(os.Args[i], "-O") ||
 			strings.HasPrefix(os.Args[i], "-W") ||
@@ -177,6 +185,10 @@ func parseArgs() {
 		}
 
 		inputPaths = append(inputPaths, os.Args[i])
+	}
+
+	for _, idir := range idirafter {
+		includePaths = append(includePaths, idir)
 	}
 
 	if len(inputPaths) == 0 {

@@ -2282,3 +2282,11 @@ Date:   Sun Aug 2 10:04:55 2020 +0900
     Use __attribute__((format(print, ...))) to find programming errors
 
 = nothing to do
+
+commit 11fc259b01c4a855e53ffdb2b86c1030f9c18586
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 20:50:36 2020 +0900
+
+    Add -idirafter option
+
+= easy

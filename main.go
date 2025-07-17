@@ -10,9 +10,19 @@ import (
 	"strings"
 )
 
+type FileType int
+
+const (
+	FILE_NONE FileType = iota // No file type
+	FILE_C                    // C source file
+	FILE_ASM                  // Assembly file
+	FILE_OBJ                  // Object file
+)
+
 var includePaths []string
 var optFcommon bool = true
 
+var optX FileType
 var optInclude []string
 var optE bool
 var optS bool
@@ -33,7 +43,7 @@ func usage(status int) {
 }
 
 func takeArg(arg string) bool {
-	options := []string{"-o", "-I", "-idirafter", "-include"}
+	options := []string{"-o", "-I", "-idirafter", "-include", "-x"}
 
 	for _, opt := range options {
 		if arg == opt {
@@ -63,6 +73,18 @@ func define(name string) {
 	} else {
 		defineMacro(name, "1")
 	}
+}
+
+func parseOptX(arg string) FileType {
+	switch arg {
+	case "c":
+		return FILE_C
+	case "assembler":
+		return FILE_ASM
+	case "none":
+		return FILE_NONE
+	}
+	panic(fmt.Sprintf("<command line>: unknown argument for -x: %s", arg))
 }
 
 func parseArgs() {
@@ -160,6 +182,17 @@ func parseArgs() {
 		if os.Args[i] == "-include" {
 			optInclude = append(optInclude, os.Args[i+1])
 			i++
+			continue
+		}
+
+		if os.Args[i] == "-x" {
+			optX = parseOptX(os.Args[i+1])
+			i++
+			continue
+		}
+
+		if strings.HasPrefix(os.Args[i], "-x") {
+			optX = parseOptX(os.Args[i][2:])
 			continue
 		}
 
@@ -475,6 +508,25 @@ func runLinker(inputs []string, output string) {
 	runSubprocess(arr)
 }
 
+func getFileType(filename string) FileType {
+	if strings.HasSuffix(filename, ".o") {
+		return FILE_OBJ
+	}
+
+	if optX != FILE_NONE {
+		return optX
+	}
+
+	if strings.HasSuffix(filename, ".c") {
+		return FILE_C
+	}
+	if strings.HasSuffix(filename, ".s") {
+		return FILE_ASM
+	}
+
+	panic(fmt.Sprintf("<command line>: unknown file extension: %s", filename))
+}
+
 func main() {
 	defer cleanup()
 	initMacros()
@@ -503,18 +555,24 @@ func main() {
 			output = replaceExtn(input, ".o")
 		}
 
+		ftype := getFileType(input)
+
 		// Handle .o
-		if strings.HasSuffix(input, ".o") {
+		if ftype == FILE_OBJ {
 			ldArgs = append(ldArgs, input)
 			continue
 		}
 
 		// Handle .s
-		if strings.HasSuffix(input, ".s") {
+		if ftype == FILE_ASM {
 			if !optS {
 				assemble(input, output)
 			}
 			continue
+		}
+
+		if ftype != FILE_C {
+			panic(fmt.Sprintf("unknown file extension: %s", input))
 		}
 
 		// Just preprocess

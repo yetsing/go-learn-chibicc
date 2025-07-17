@@ -13,6 +13,7 @@ import (
 var includePaths []string
 var optFcommon bool = true
 
+var optInclude []string
 var optE bool
 var optS bool
 var optC bool
@@ -32,7 +33,7 @@ func usage(status int) {
 }
 
 func takeArg(arg string) bool {
-	options := []string{"-o", "-I", "-idirafter"}
+	options := []string{"-o", "-I", "-idirafter", "-include"}
 
 	for _, opt := range options {
 		if arg == opt {
@@ -156,6 +157,12 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-include" {
+			optInclude = append(optInclude, os.Args[i+1])
+			i++
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -259,7 +266,7 @@ func runSubprocess(args []string) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error running command: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error running command(%v): %s\n", args, err)
 		panic("Subprocess failed")
 	}
 
@@ -310,14 +317,51 @@ func printTokens(tok *Token) {
 	efprintf(out, "\n")
 }
 
-func cc1() {
-	// Tokenize and parse.
-	tok := tokenizeFile(baseFile)
+func mustTokenizeFile(path string) *Token {
+	tok := tokenizeFile(path)
 	if tok == nil {
-		fmt.Fprintf(os.Stderr, "Failed to tokenize file: %s\n", baseFile)
+		fmt.Fprintf(os.Stderr, "Failed to tokenize file: %s\n", path)
 		panic("Tokenization failed")
 	}
+	return tok
+}
 
+func appendTokens(tok1 *Token, tok2 *Token) *Token {
+	if tok1 == nil || tok1.kind == TK_EOF {
+		return tok2
+	}
+
+	t := tok1
+	for t.next.kind != TK_EOF {
+		t = t.next
+	}
+	t.next = tok2
+	return tok1
+}
+
+func cc1() {
+	var tok *Token
+
+	// Process -include option
+	for _, incl := range optInclude {
+		var path string
+		if fileExists(incl) {
+			path = incl
+		} else {
+			path = searchIncludePaths(incl)
+			if path == "" {
+				fmt.Fprintf(os.Stderr, "include file not found: %s\n", incl)
+				panic("Include file not found")
+			}
+		}
+
+		tok2 := mustTokenizeFile(path)
+		tok = appendTokens(tok, tok2)
+	}
+
+	// Tokenize and parse.
+	tok2 := mustTokenizeFile(baseFile)
+	tok = appendTokens(tok, tok2)
 	tok = preprocess(tok)
 
 	// If -E is given, print out preprocessed C code as a result.
@@ -338,7 +382,7 @@ func cc1() {
 	defer out.Close()
 	if _, err := out.Write(buf.Bytes()); err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing to output file: %s\n", err)
-		panic("Failed to write output")
+		// panic("Failed to write output")
 	}
 }
 

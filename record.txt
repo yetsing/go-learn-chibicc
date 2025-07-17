@@ -2322,3 +2322,12 @@ Date:   Mon Sep 7 10:02:10 2020 +0900
     Add thread-local variable
 
 = emm
+
+commit 8f5ff07dc08d258209adf60ed8e796efa7b7a476
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 20:53:13 2020 +0900
+
+    Add -include option
+
+= 奇怪的 pipeline 行为
+= emm

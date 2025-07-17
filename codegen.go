@@ -769,6 +769,35 @@ func copyStructMem() {
 	}
 }
 
+func builtinAlloca() {
+	// Align size to 16 bytes.
+	sout("  add $15, %%rdi")
+	sout("  and $0xfffffff0, %%edi")
+
+	// Shift the temporary area by %rdi.
+	// Shift the temporary area by %rdi.
+	sout("  mov %d(%%rbp), %%rcx", currentFn.allocaBottom.offset)
+	sout("  sub %%rsp, %%rcx")
+	sout("  mov %%rsp, %%rax")
+	sout("  sub %%rdi, %%rsp")
+	sout("  mov %%rsp, %%rdx")
+	sout("1:")
+	sout("  cmp $0, %%rcx")
+	sout("  je 2f")
+	sout("  mov (%%rax), %%r8b")
+	sout("  mov %%r8b, (%%rdx)")
+	sout("  inc %%rdx")
+	sout("  inc %%rax")
+	sout("  dec %%rcx")
+	sout("  jmp 1b")
+	sout("2:")
+
+	// Move alloca_bottom pointer.
+	sout("  mov %d(%%rbp), %%rax", currentFn.allocaBottom.offset)
+	sout("  sub %%rdi, %%rax")
+	sout("  mov %%rax, %d(%%rbp)", currentFn.allocaBottom.offset)
+}
+
 // Generate code for a given node.
 func genExpr(node *Node) {
 	sout("  .loc %d %d", node.tok.file.fileNo, node.tok.lineno)
@@ -934,6 +963,13 @@ func genExpr(node *Node) {
 		sout(".L.end.%d:", c)
 		return
 	case ND_FUNCALL:
+		if node.lhs.kind == ND_VAR && node.lhs.variable.name == "alloca" {
+			genExpr(node.args)
+			sout("  mov %%rax, %%rdi")
+			builtinAlloca()
+			return
+		}
+
 		stackArgs := pushArgs(node)
 		genExpr(node.lhs)
 
@@ -1513,6 +1549,7 @@ func emitText(prog *Obj) {
 		sout("  push %%rbp")
 		sout("  mov %%rsp, %%rbp")
 		sout("  sub $%d, %%rsp", fn.stackSize)
+		sout("  mov %%rsp, %d(%%rbp)", fn.allocaBottom.offset)
 
 		// Save arg registers if function is variadic
 		if fn.vaArea != nil {

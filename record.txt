@@ -2346,4 +2346,12 @@ Date:   Mon Sep 28 22:59:52 2020 +0900
 
     Make -E to imply -xc
 
-=
+= emm
+
+commit 77275c546a5340f94ad011cd759ef162bc714ba6
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 11:59:38 2020 +0900
+
+    Add alloca()
+
+= emm

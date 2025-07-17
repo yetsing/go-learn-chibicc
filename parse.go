@@ -121,12 +121,13 @@ type Obj struct {
 	rel         *Relocation
 
 	// Function
-	isInline  bool
-	params    *Obj
-	body      *Node
-	locals    *Obj
-	vaArea    *Obj
-	stackSize int // Stack size
+	isInline     bool
+	params       *Obj
+	body         *Node
+	locals       *Obj
+	vaArea       *Obj
+	allocaBottom *Obj
+	stackSize    int // Stack size
 
 	// Static inline function
 	isLive bool
@@ -3480,9 +3481,11 @@ func function(basety *Type, attr *VarAttr) *Obj {
 	}
 
 	fn.params = locals
+
 	if ty.isVariadic {
 		fn.vaArea = newLVar("__va_area__", arrayOf(charType(), 136))
 	}
+	fn.allocaBottom = newLVar("__alloca_size__", pointerTo(charType()))
 
 	// [https://www.sigbus.info/n1570#6.4.2.2p1] "__func__" is
 	// automatically defined as a local variable containing the
@@ -3576,8 +3579,16 @@ func scanGlobals() {
 	globals = head.next
 }
 
+func declareBuiltinFunctions() {
+	ty := funcType(pointerTo(voidType()))
+	ty.params = intType()
+	builtin := newGVar("alloca", ty)
+	builtin.isDefinition = false
+}
+
 // program = (typedef | function-definition | global-variable)*
 func program() *Obj {
+	declareBuiltinFunctions()
 	globals = nil
 
 	for gtok.kind != TK_EOF {

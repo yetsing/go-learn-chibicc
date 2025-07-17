@@ -85,6 +85,13 @@ func genAddr(node *Node) {
 			return
 		}
 
+		// Thread-local variable
+		if node.variable.isTls {
+			sout("  mov %%fs:0, %%rax")
+			sout("  add $%s@tpoff, %%rax", node.variable.name)
+			return
+		}
+
 		// Here, we generate an absolute address of a function or a global
 		// variable. Even though they exist at a certain address at runtime,
 		// their addresses are not known at link-time for the following
@@ -1401,13 +1408,19 @@ func emitData(prog *Obj) {
 		}
 		sout("  .align %d", align)
 
+		// Common symbol
 		if optFcommon && g.isTentative {
 			sout("  .comm %s, %d, %d", g.name, g.ty.size, align)
 			continue
 		}
 
+		// .data or .tdata
 		if len(g.initData) > 0 {
-			sout("  .data")
+			if g.isTls {
+				sout("  .section .tdata,\"awT\",@progbits")
+			} else {
+				sout("  .data")
+			}
 			sout("%s:", g.name)
 
 			rel := g.rel
@@ -1425,7 +1438,13 @@ func emitData(prog *Obj) {
 			continue
 		}
 
-		sout("  .bss")
+		// .bss or .tbss
+		if g.isTls {
+			sout("  .section .tbss,\"awT\",@nobits")
+		} else {
+			sout("  .bss")
+		}
+
 		sout("%s:", g.name)
 		sout("  .zero %d", g.ty.size)
 	}

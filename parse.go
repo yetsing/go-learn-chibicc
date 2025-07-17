@@ -43,6 +43,7 @@ type VarAttr struct {
 	isStatic  bool
 	isExtern  bool
 	isInline  bool
+	isTls     bool
 	align     int
 }
 
@@ -115,6 +116,7 @@ type Obj struct {
 
 	// Global variable
 	isTentative bool
+	isTls       bool // Thread-local storage variable
 	initData    []byte
 	rel         *Relocation
 
@@ -1240,6 +1242,7 @@ func isTypename(tok *Token) bool {
 		"const", "volatile", "auto", "register", "restrict",
 		"__restrict", "__restrict__", "_Noreturn",
 		"float", "double", "typeof", "inline",
+		"_Thread_local", "__thread",
 	}
 	if slices.ContainsFunc(kw, tok.equal) {
 		return true
@@ -1262,6 +1265,7 @@ func pushTagScope(tok *Token, ty *Type) {
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
 // .           | "typedef" | "static" | "extern" | "inline"
+// .           | "_Thread_local" | "__thread"
 // .           | "signed" | "unsigned"
 // .           | struct-decl | union-decl | typedef-name
 // .           | enum-specifier | typeof-specifier
@@ -1301,7 +1305,9 @@ func declspec(attr *VarAttr) *Type {
 
 	for isTypename(gtok) {
 		// Handle storage class specifiers.
-		if gtok.equal("typedef") || gtok.equal("static") || gtok.equal("extern") || gtok.equal("inline") {
+		if gtok.equal("typedef") || gtok.equal("static") || gtok.equal("extern") ||
+			gtok.equal("inline") || gtok.equal("_Thread_local") ||
+			gtok.equal("__thread") {
 			if attr == nil {
 				errorTok(gtok, "storage class specifier is not allowed in this context")
 			}
@@ -1312,12 +1318,14 @@ func declspec(attr *VarAttr) *Type {
 				attr.isStatic = true
 			} else if gtok.equal("extern") {
 				attr.isExtern = true
-			} else {
+			} else if gtok.equal("inline") {
 				attr.isInline = true
+			} else {
+				attr.isTls = true
 			}
 
-			if attr.isTypedef && (attr.isStatic || attr.isExtern || attr.isInline) {
-				errorTok(gtok, "typedef may not be used together with static, extern or inline")
+			if attr.isTypedef && (attr.isStatic || attr.isExtern || attr.isInline || attr.isTls) {
+				errorTok(gtok, "typedef may not be used together with static, extern or inline, __thread or _Thread_local")
 			}
 			gtok = gtok.next
 			continue
@@ -3508,6 +3516,7 @@ func globalVariable(basety *Type, attr *VarAttr) {
 		var_ := newGVar(ty.name.literal, ty)
 		var_.isDefinition = !attr.isExtern
 		var_.isStatic = attr.isStatic
+		var_.isTls = attr.isTls
 		if attr.align != 0 {
 			var_.align = attr.align
 		}
@@ -3515,7 +3524,7 @@ func globalVariable(basety *Type, attr *VarAttr) {
 		if gtok.equal("=") {
 			gtok = gtok.next
 			gvarInitializer(var_)
-		} else if !attr.isExtern {
+		} else if !attr.isExtern && !attr.isTls {
 			var_.isTentative = true
 		}
 	}

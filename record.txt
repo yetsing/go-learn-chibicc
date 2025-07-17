@@ -2314,3 +2314,11 @@ Date:   Wed Aug 19 17:24:16 2020 +0900
     Add -fcommon and -fno-common flags
 
 = easy
+
+commit b3772845bd07fb695ca6b6e67ad7640776ae0f6c
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Sep 7 10:02:10 2020 +0900
+
+    Add thread-local variable
+
+= emm

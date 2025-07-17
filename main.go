@@ -11,6 +11,7 @@ import (
 )
 
 var includePaths []string
+var optFcommon bool = true
 
 var optE bool
 var optS bool
@@ -105,6 +106,16 @@ func parseArgs() {
 
 		if os.Args[i] == "-S" {
 			optS = true
+			continue
+		}
+
+		if os.Args[i] == "-fcommon" {
+			optFcommon = true
+			continue
+		}
+
+		if os.Args[i] == "-fno-common" {
+			optFcommon = false
 			continue
 		}
 

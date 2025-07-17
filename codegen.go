@@ -1401,7 +1401,7 @@ func emitData(prog *Obj) {
 		}
 		sout("  .align %d", align)
 
-		if g.isTentative {
+		if optFcommon && g.isTentative {
 			sout("  .comm %s, %d, %d", g.name, g.ty.size, align)
 			continue
 		}

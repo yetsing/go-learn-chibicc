@@ -2306,3 +2306,11 @@ Date:   Fri Sep 4 17:29:15 2020 +0900
     Add tentative definition
 
 = emm
+
+commit 6d344ed9459bd0328de53a58505a397d92cb0c8a
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Aug 19 17:24:16 2020 +0900
+
+    Add -fcommon and -fno-common flags
+
+= easy

@@ -246,6 +246,11 @@ func parseArgs() {
 		fmt.Fprintln(os.Stderr, "no input files")
 		usage(1)
 	}
+
+	// -E implies that the input is the C macro language.
+	if optE {
+		optX = FILE_C
+	}
 }
 
 func openFile(path string) *os.File {

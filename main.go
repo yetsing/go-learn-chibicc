@@ -196,6 +196,11 @@ func parseArgs() {
 			continue
 		}
 
+		if strings.HasPrefix(os.Args[i], "-l") {
+			inputPaths = append(inputPaths, os.Args[i][2:])
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -551,6 +556,12 @@ func main() {
 	ldArgs := []string{}
 
 	for _, input := range inputPaths {
+		if strings.HasPrefix(input, "-l") {
+			// If the input starts with -l, it is a library name.
+			ldArgs = append(ldArgs, input)
+			continue
+		}
+
 		var output string
 		if optO != "" {
 			output = optO

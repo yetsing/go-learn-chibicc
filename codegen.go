@@ -79,6 +79,12 @@ func alignTo(n, align int) int {
 func genAddr(node *Node) {
 	switch node.kind {
 	case ND_VAR:
+		// Variable-length array, which is always local.
+		if node.variable.ty.kind == TY_VLA {
+			sout("  mov %d(%%rbp), %%rax", node.variable.offset)
+			return
+		}
+
 		if node.variable.isLocal {
 			// Local variable
 			sout("  lea %d(%%rbp), %%rax", node.variable.offset)
@@ -145,6 +151,9 @@ func genAddr(node *Node) {
 			genExpr(node)
 			return
 		}
+	case ND_VLA_PTR:
+		sout("  lea %d(%%rbp), %%rax", node.variable.offset)
+		return
 	}
 
 	errorTok(node.tok, "not a lvalue %s", node.kind)
@@ -159,7 +168,7 @@ func load(ty *Type) {
 		fallthrough
 	case TY_UNION:
 		fallthrough
-	case TY_FUNC:
+	case TY_FUNC, TY_VLA:
 		// If it is an array, do not attempt to load a value to the
 		// register because in general we can't load an entire array to a
 		// register. As a result, the result of an evaluation of an array

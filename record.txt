@@ -2363,3 +2363,11 @@ Date:   Fri Sep 4 14:44:12 2020 +0900
     Add sizeof() for VLA
 
 = emm
+
+commit 07f901057f5c6aa77c0f15f7a22dc0b88923c227
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 22:27:13 2020 +0900
+
+    Add pointer arithmetic for VLA
+
+= emm

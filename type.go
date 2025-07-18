@@ -463,7 +463,7 @@ func addType(node *Node) {
 	case ND_SHR:
 		node.ty = node.lhs.ty
 		return
-	case ND_VAR:
+	case ND_VAR, ND_VLA_PTR:
 		node.ty = node.variable.ty
 		return
 	case ND_COND:

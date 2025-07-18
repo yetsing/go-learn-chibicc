@@ -2371,3 +2371,11 @@ Date:   Thu Sep 3 22:27:13 2020 +0900
     Add pointer arithmetic for VLA
 
 = emm
+
+commit 2fa8f489f3a852bd5bb17e023fdc5ea3a606100d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 25 09:34:41 2020 +0900
+
+    Support sizeof(typename) where typename is a VLA
+
+= emm

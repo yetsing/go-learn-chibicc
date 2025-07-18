@@ -3375,7 +3375,13 @@ func primary() *Node {
 		ty := typename()
 		gtok = gtok.consume(")")
 		if ty.kind == TY_VLA {
-			return NewVarNode(ty.vlaSize, st)
+			if ty.vlaSize != nil {
+				return NewVarNode(ty.vlaSize, st)
+			}
+
+			lhs := computeVlaSize(ty, st)
+			rhs := NewVarNode(ty.vlaSize, st)
+			return NewBinary(ND_COMMA, lhs, rhs, st)
 		}
 		return NewUlong(int64(ty.size), st)
 	}

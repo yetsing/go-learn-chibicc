@@ -2419,3 +2419,13 @@ Date:   Tue Aug 25 14:47:43 2020 +0900
     Recognize .a and .so files
 
 = emm
+
+commit e0bf168041ef60687b5d4454a93fc78c4f3acc48
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Aug 29 10:37:53 2020 +0900
+
+    Add long double
+
+= 由于 golang 没有 long double 类型
+= 虽然测试通过了，但并不代表转写是对的
+= emm

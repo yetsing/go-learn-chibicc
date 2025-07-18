@@ -1496,9 +1496,9 @@ func declspec(attr *VarAttr) *Type {
 		case FLOAT:
 			ty = floatType()
 		case DOUBLE:
-			fallthrough
-		case LONG + DOUBLE:
 			ty = doubleType()
+		case LONG + DOUBLE:
+			ty = ldoubleType()
 		default:
 			errorTok(gtok, "invalid type specifier")
 		}

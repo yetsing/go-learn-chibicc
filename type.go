@@ -3,21 +3,22 @@ package main
 type TypeKind int
 
 const (
-	TY_VOID   TypeKind = iota // void
-	TY_BOOL                   // bool
-	TY_CHAR                   // char
-	TY_SHORT                  // short
-	TY_INT                    // int
-	TY_LONG                   // long
-	TY_FLOAT                  // float
-	TY_DOUBLE                 // double
-	TY_ENUM                   // enum
-	TY_PTR                    // pointer
-	TY_FUNC                   // function
-	TY_ARRAY                  // array
-	TY_VLA                    // variable-length array
-	TY_STRUCT                 // struct
-	TY_UNION                  // union
+	TY_VOID    TypeKind = iota // void
+	TY_BOOL                    // bool
+	TY_CHAR                    // char
+	TY_SHORT                   // short
+	TY_INT                     // int
+	TY_LONG                    // long
+	TY_FLOAT                   // float
+	TY_DOUBLE                  // double
+	TY_LDOUBLE                 // long double
+	TY_ENUM                    // enum
+	TY_PTR                     // pointer
+	TY_FUNC                    // function
+	TY_ARRAY                   // array
+	TY_VLA                     // variable-length array
+	TY_STRUCT                  // struct
+	TY_UNION                   // union
 )
 
 type Type struct {
@@ -180,6 +181,15 @@ func doubleType() *Type {
 	return t
 }
 
+func ldoubleType() *Type {
+	t := &Type{
+		kind:  TY_LDOUBLE,
+		size:  16,
+		align: 16,
+	}
+	return t
+}
+
 func pointerTo(base *Type) *Type {
 	t := &Type{
 		kind:       TY_PTR,
@@ -229,7 +239,7 @@ func (t *Type) isInteger() bool {
 }
 
 func (t *Type) isFlonum() bool {
-	return t.kind == TY_FLOAT || t.kind == TY_DOUBLE
+	return t.kind == TY_FLOAT || t.kind == TY_DOUBLE || t.kind == TY_LDOUBLE
 }
 
 func (t *Type) isNumeric() bool {
@@ -283,7 +293,7 @@ func isCompatible(t1 *Type, t2 *Type) bool {
 		return t1.isUnsigned == t2.isUnsigned
 	case TY_FLOAT:
 		fallthrough
-	case TY_DOUBLE:
+	case TY_DOUBLE, TY_LDOUBLE:
 		return true
 	case TY_PTR:
 		return isCompatible(t1.base, t2.base)
@@ -340,6 +350,9 @@ func getCommonType(ty1 *Type, ty2 *Type) *Type {
 		return pointerTo(ty2)
 	}
 
+	if ty1.kind == TY_LDOUBLE || ty2.kind == TY_LDOUBLE {
+		return ldoubleType()
+	}
 	if ty1.kind == TY_DOUBLE || ty2.kind == TY_DOUBLE {
 		return doubleType()
 	}

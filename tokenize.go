@@ -647,7 +647,7 @@ func convertPPNumber(tok *Token) {
 		ty = floatType()
 	} else if input[numEnd] == 'l' || input[numEnd] == 'L' {
 		numEnd++
-		ty = doubleType()
+		ty = ldoubleType()
 	} else {
 		ty = doubleType()
 	}

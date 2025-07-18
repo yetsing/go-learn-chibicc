@@ -2411,3 +2411,11 @@ Date:   Thu Sep 10 15:51:47 2020 +0900
     Emit size and type for symbols
 
 = emm
+
+commit d56dd2f46e4049f017eae0dc99b2d16e78b88bee
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 25 14:47:43 2020 +0900
+
+    Recognize .a and .so files
+
+= emm

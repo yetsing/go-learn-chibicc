@@ -17,6 +17,8 @@ const (
 	FILE_C                    // C source file
 	FILE_ASM                  // Assembly file
 	FILE_OBJ                  // Object file
+	FILE_AR
+	FILE_DSO
 )
 
 var includePaths []string
@@ -528,14 +530,19 @@ func runLinker(inputs []string, output string) {
 }
 
 func getFileType(filename string) FileType {
-	if strings.HasSuffix(filename, ".o") {
-		return FILE_OBJ
-	}
-
 	if optX != FILE_NONE {
 		return optX
 	}
 
+	if strings.HasSuffix(filename, ".a") {
+		return FILE_AR
+	}
+	if strings.HasSuffix(filename, ".so") {
+		return FILE_DSO
+	}
+	if strings.HasSuffix(filename, ".o") {
+		return FILE_OBJ
+	}
 	if strings.HasSuffix(filename, ".c") {
 		return FILE_C
 	}
@@ -582,8 +589,8 @@ func main() {
 
 		ftype := getFileType(input)
 
-		// Handle .o
-		if ftype == FILE_OBJ {
+		// Handle .o or .a
+		if ftype == FILE_OBJ || ftype == FILE_AR || ftype == FILE_DSO {
 			ldArgs = append(ldArgs, input)
 			continue
 		}

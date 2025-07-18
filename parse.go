@@ -168,6 +168,8 @@ var contLabel string
 // a switch statement. Otherwise, NULL.
 var currentSwitch *Node
 
+var pbuiltinAlloca *Obj
+
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
@@ -1553,10 +1555,14 @@ func arrayDimensions(ty *Type) *Type {
 		return arrayOf(ty, -1)
 	}
 
-	sz := constExpr()
+	expr := conditional()
 	gtok = gtok.consume("]")
 	ty = typeSuffix(ty)
-	return arrayOf(ty, int(int32(sz)))
+
+	if ty.kind == TY_VLA || !isConstExpr(expr) {
+		return vlaOf(ty, expr)
+	}
+	return arrayOf(ty, int(eval(expr)))
 }
 
 // type-suffix = "(" func-params
@@ -1743,6 +1749,38 @@ func typeofSpecifier() *Type {
 	return ty
 }
 
+// Generate code for computing a VLA size.
+func computeVlaSize(ty *Type, tok *Token) *Node {
+	node := NewNode(ND_NULL_EXPR, tok)
+	if ty.base != nil {
+		node = NewBinary(ND_COMMA, node, computeVlaSize(ty.base, tok), tok)
+	}
+
+	if ty.kind != TY_VLA {
+		return node
+	}
+
+	var basesz *Node
+	if ty.base.kind == TY_VLA {
+		basesz = NewVarNode(ty.base.vlaSize, tok)
+	} else {
+		basesz = NewNumber(int64(ty.base.size), tok)
+	}
+
+	ty.vlaSize = newLVar("", ulongType())
+	expr := NewBinary(ND_ASSIGN, NewVarNode(ty.vlaSize, tok), NewBinary(ND_MUL, ty.vlaLen, basesz, tok), tok)
+	return NewBinary(ND_COMMA, node, expr, tok)
+}
+
+func newAlloca(sz *Node) *Node {
+	node := NewUnary(ND_FUNCALL, NewVarNode(pbuiltinAlloca, sz.tok), sz.tok)
+	node.funcTy = pbuiltinAlloca.ty
+	node.ty = pbuiltinAlloca.ty.returnTy
+	node.args = sz
+	addType(sz)
+	return node
+}
+
 // declaration = declspec (declarator ("=" expr)? ("," declarator ("=" expr)?)*)? ";"
 func declaration(basety *Type, attr *VarAttr) *Node {
 	st := gtok
@@ -1773,6 +1811,28 @@ func declaration(basety *Type, attr *VarAttr) *Node {
 				gtok = gtok.next
 				gvarInitializer(var_)
 			}
+			continue
+		}
+
+		// Generate code for computing a VLA size. We need to do this
+		// even if ty is not VLA because ty may be a pointer to VLA
+		// (e.g. int (*foo)[n][m] where n and m are variables.)
+		cur.next = NewUnary(ND_EXPR_STMT, computeVlaSize(ty, gtok), gtok)
+		cur = cur.next
+
+		if ty.kind == TY_VLA {
+			if gtok.equal("=") {
+				errorTok(gtok, "variable-sized object may not be initialized")
+			}
+
+			// Variable length arrays (VLAs) are translated to alloca() calls.
+			// For example, `int x[n+2]` is translated to `tmp = n + 2,
+			// x = alloca(tmp)`.
+			var_ := newLVar(ty.name.literal, ty)
+			tok := ty.name
+			expr := NewBinary(ND_ASSIGN, NewVarNode(var_, tok), newAlloca(NewVarNode(ty.vlaSize, tok)), tok)
+			cur.next = NewUnary(ND_EXPR_STMT, expr, tok)
+			cur = cur.next
 			continue
 		}
 
@@ -2178,6 +2238,33 @@ func evalRval(node *Node, label *string) int64 {
 
 	errorTok(node.tok, "invalid initializer")
 	return 0
+}
+
+func isConstExpr(node *Node) bool {
+	addType(node)
+
+	switch node.kind {
+	case ND_ADD, ND_SUB, ND_MUL, ND_DIV,
+		ND_BITAND, ND_BITOR, ND_BITXOR,
+		ND_SHL, ND_SHR, ND_EQ, ND_NE, ND_LT, ND_LE,
+		ND_LOGAND, ND_LOGOR:
+		return isConstExpr(node.lhs) && isConstExpr(node.rhs)
+	case ND_COND:
+		if !isConstExpr(node.cond) {
+			return false
+		}
+		if eval(node.cond) != 0 {
+			return isConstExpr(node.then)
+		}
+		return isConstExpr(node.els)
+	case ND_COMMA:
+		return isConstExpr(node.rhs)
+	case ND_NEG, ND_NOT, ND_BITNOT, ND_CAST:
+		return isConstExpr(node.lhs)
+	case ND_NUM:
+		return true
+	}
+	return false
 }
 
 func constExpr() int64 {
@@ -3265,6 +3352,9 @@ func primary() *Node {
 		gtok = gtok.next.next
 		ty := typename()
 		gtok = gtok.consume(")")
+		if ty.kind == TY_VLA {
+			return NewVarNode(ty.vlaSize, st)
+		}
 		return NewUlong(int64(ty.size), st)
 	}
 
@@ -3272,6 +3362,9 @@ func primary() *Node {
 		gtok = gtok.next
 		node := unary()
 		addType(node)
+		if node.ty.kind == TY_VLA {
+			return NewVarNode(node.ty.vlaSize, st)
+		}
 		return NewUlong(int64(node.ty.size), st)
 	}
 
@@ -3582,8 +3675,8 @@ func scanGlobals() {
 func declareBuiltinFunctions() {
 	ty := funcType(pointerTo(voidType()))
 	ty.params = intType()
-	builtin := newGVar("alloca", ty)
-	builtin.isDefinition = false
+	pbuiltinAlloca = newGVar("alloca", ty)
+	pbuiltinAlloca.isDefinition = false
 }
 
 // program = (typedef | function-definition | global-variable)*

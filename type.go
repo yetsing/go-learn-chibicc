@@ -15,6 +15,7 @@ const (
 	TY_PTR                    // pointer
 	TY_FUNC                   // function
 	TY_ARRAY                  // array
+	TY_VLA                    // variable-length array
 	TY_STRUCT                 // struct
 	TY_UNION                  // union
 )
@@ -42,6 +43,10 @@ type Type struct {
 
 	// Array
 	arrayLen int // array length
+
+	// Variable-length array
+	vlaLen  *Node // length expression
+	vlaSize *Obj  // sizeof() value
 
 	// Struct
 	members    *Member
@@ -201,6 +206,13 @@ func arrayOf(base *Type, len int) *Type {
 		arrayLen: len,
 	}
 	return t
+}
+
+func vlaOf(base *Type, len *Node) *Type {
+	ty := newType(TY_VLA, 8, 8)
+	ty.base = base
+	ty.vlaLen = len
+	return ty
 }
 
 func enumType() *Type {
@@ -435,7 +447,7 @@ func addType(node *Node) {
 		node.ty = intType()
 		return
 	case ND_FUNCALL:
-		node.ty = longType()
+		node.ty = node.funcTy.returnTy
 		return
 	case ND_NOT:
 		fallthrough

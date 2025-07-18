@@ -2355,3 +2355,11 @@ Date:   Fri Sep 4 11:59:38 2020 +0900
     Add alloca()
 
 = emm
+
+commit e8667afd08ecbf7c9b05beb4ff399959d9722ff9
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 14:44:12 2020 +0900
+
+    Add sizeof() for VLA
+
+= emm

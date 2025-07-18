@@ -31,6 +31,8 @@ var optCC1 bool
 var optHashHashHash bool
 var optO string
 
+var ldExtraArgs []string
+
 var baseFile string
 var outputFile string
 
@@ -198,6 +200,11 @@ func parseArgs() {
 
 		if strings.HasPrefix(os.Args[i], "-l") {
 			inputPaths = append(inputPaths, os.Args[i][2:])
+			continue
+		}
+
+		if os.Args[i] == "-s" {
+			ldExtraArgs = append(ldExtraArgs, "-s")
 			continue
 		}
 
@@ -501,6 +508,8 @@ func runLinker(inputs []string, output string) {
 		"-L/usr/lib",
 		"-L/lib",
 	)
+
+	arr = append(arr, ldExtraArgs...)
 
 	arr = append(arr, inputs...)
 

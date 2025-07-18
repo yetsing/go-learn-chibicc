@@ -2395,3 +2395,11 @@ Date:   Tue Aug 25 11:02:38 2020 +0900
     Add -l option
 
 = emm
+
+commit c32f0e21e71f43e64a7b98c9d96d4c513d42ba37
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 21:00:04 2020 +0900
+
+    Add -s option
+
+= emm

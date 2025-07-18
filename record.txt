@@ -2403,3 +2403,11 @@ Date:   Sat Sep 19 21:00:04 2020 +0900
     Add -s option
 
 = emm
+
+commit 8d130ab93f65f7ef79839aba87459e4f9507ba39
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 10 15:51:47 2020 +0900
+
+    Emit size and type for symbols
+
+= emm

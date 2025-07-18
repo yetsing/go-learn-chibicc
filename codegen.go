@@ -673,7 +673,7 @@ func copyRetBuffer(var_ *Obj) {
 
 	if hasFlonum1(ty) {
 		if !(ty.size == 4 || 8 <= ty.size) {
-			panic(fmt.Sprintf("unexpected size of struct/union %s: %d", ty, ty.size))
+			panic(fmt.Sprintf("unexpected size of struct/union %v: %d", ty, ty.size))
 		}
 		if ty.size == 4 {
 			sout("  movss %%xmm0, %d(%%rbp)", var_.offset)
@@ -1451,7 +1451,6 @@ func emitData(prog *Obj) {
 		} else {
 			align = g.align
 		}
-		sout("  .align %d", align)
 
 		// Common symbol
 		if optFcommon && g.isTentative {
@@ -1466,6 +1465,10 @@ func emitData(prog *Obj) {
 			} else {
 				sout("  .data")
 			}
+
+			sout("  .type %s, @object", g.name)
+			sout("  .size %s, %d", g.name, g.ty.size)
+			sout("  .align %d", align)
 			sout("%s:", g.name)
 
 			rel := g.rel
@@ -1490,6 +1493,7 @@ func emitData(prog *Obj) {
 			sout("  .bss")
 		}
 
+		sout("  .align %d", align)
 		sout("%s:", g.name)
 		sout("  .zero %d", g.ty.size)
 	}
@@ -1529,7 +1533,6 @@ func storeGP(r, offset, sz int) {
 		}
 		return
 	}
-	unreachable()
 }
 
 func emitText(prog *Obj) {
@@ -1551,6 +1554,7 @@ func emitText(prog *Obj) {
 		}
 
 		sout("  .text")
+		sout("  .type %s, @function", fn.name)
 		sout("%s:", fn.name)
 		currentFn = fn
 

@@ -29,6 +29,7 @@ var optInclude []string
 var optE bool
 var optM bool
 var optMD bool
+var optMMD bool
 var optMP bool
 var optS bool
 var optC bool
@@ -39,6 +40,7 @@ var optMT string
 var optO string
 
 var ldExtraArgs []string
+var stdIncludePaths []string
 
 var baseFile string
 var outputFile string
@@ -71,6 +73,9 @@ func addDefaultIncludePaths(argv0 string) {
 	includePaths = append(includePaths, "/usr/local/include")
 	includePaths = append(includePaths, "/usr/include/x86_64-linux-gnu")
 	includePaths = append(includePaths, "/usr/include")
+
+	// Keep a copy of the standard include paths for -MMD option.
+	stdIncludePaths = append(stdIncludePaths, includePaths...)
 }
 
 func define(name string) {
@@ -277,6 +282,12 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-MMD" {
+			optMD = true
+			optMMD = true
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -440,6 +451,16 @@ func printTokens(tok *Token) {
 	efprintf(out, "\n")
 }
 
+func inStdIncludePath(path string) bool {
+	for _, stdPath := range stdIncludePaths {
+		length := len(stdPath)
+		if stdPath == path && path[length] == '/' {
+			return true
+		}
+	}
+	return false
+}
+
 // If -M options is given, the compiler write a list of input files to
 // stdout in a format that "make" command can read. This feature is
 // used to automate file dependency management.
@@ -469,12 +490,18 @@ func printDependencies() {
 	files := getInputFiles()
 
 	for _, file := range files {
+		if optMMD && inStdIncludePath(file.name) {
+			continue
+		}
 		fmt.Fprintf(out, " \\\n  %s", file.name)
 	}
 	fmt.Fprintf(out, "\n\n")
 
 	if optMP {
 		for i := 1; i < len(files); i++ {
+			if optMMD && inStdIncludePath(files[i].name) {
+				continue
+			}
 			fmt.Fprintf(out, "%s:\n\n", quoteMakefile(files[i].name))
 		}
 	}

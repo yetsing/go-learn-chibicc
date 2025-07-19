@@ -2544,3 +2544,11 @@ Date:   Thu Sep 3 00:32:47 2020 +0900
     Add -MQ option
 
 = emm
+
+commit c3edffbbb06be9d586ee4f1cf678049b7d81369d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 21:03:19 2020 +0900
+
+    Add -MMD option
+
+= emm

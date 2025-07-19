@@ -2504,3 +2504,11 @@ Date:   Thu Sep 3 19:34:07 2020 +0900
     Add -M option
 
 = easy
+
+commit 95d5a46234f98f3793c965bebe036361cbb1978e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 12:27:27 2020 +0900
+
+    Add -MF option
+
+= easy

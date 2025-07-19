@@ -32,6 +32,7 @@ var optS bool
 var optC bool
 var optCC1 bool
 var optHashHashHash bool
+var optMF string
 var optO string
 
 var ldExtraArgs []string
@@ -48,7 +49,7 @@ func usage(status int) {
 }
 
 func takeArg(arg string) bool {
-	options := []string{"-o", "-I", "-idirafter", "-include", "-x"}
+	options := []string{"-o", "-I", "-idirafter", "-include", "-x", "-MF"}
 
 	for _, opt := range options {
 		if arg == opt {
@@ -213,6 +214,12 @@ func parseArgs() {
 
 		if os.Args[i] == "-M" {
 			optM = true
+			continue
+		}
+
+		if os.Args[i] == "-MF" {
+			optMF = os.Args[i+1]
+			i++
 			continue
 		}
 
@@ -385,7 +392,15 @@ func printTokens(tok *Token) {
 // stdout in a format that "make" command can read. This feature is
 // used to automate file dependency management.
 func printDependencies() {
-	out := openFile(optO)
+	path := ""
+	if optMF != "" {
+		path = optMF
+	} else if optO != "" {
+		path = optO
+	} else {
+		path = "-"
+	}
+	out := openFile(path)
 	fmt.Fprintf(out, "%s:", replaceExtn(filepath.Base(baseFile), ".o"))
 
 	files := getInputFiles()

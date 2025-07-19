@@ -2496,3 +2496,11 @@ Date:   Thu Sep 3 22:55:50 2020 +0900
     Use hashmap for keyword lookup
 
 = easy
+
+commit d0c4667b6bccf35ddf069c777689cd18c6a632b3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 19:34:07 2020 +0900
+
+    Add -M option
+
+= easy

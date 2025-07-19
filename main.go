@@ -27,6 +27,7 @@ var optFcommon bool = true
 var optX FileType
 var optInclude []string
 var optE bool
+var optM bool
 var optS bool
 var optC bool
 var optCC1 bool
@@ -210,6 +211,11 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-M" {
+			optM = true
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -375,6 +381,21 @@ func printTokens(tok *Token) {
 	efprintf(out, "\n")
 }
 
+// If -M options is given, the compiler write a list of input files to
+// stdout in a format that "make" command can read. This feature is
+// used to automate file dependency management.
+func printDependencies() {
+	out := openFile(optO)
+	fmt.Fprintf(out, "%s:", replaceExtn(filepath.Base(baseFile), ".o"))
+
+	files := getInputFiles()
+
+	for _, file := range files {
+		fmt.Fprintf(out, " \\\n  %s", file.name)
+	}
+	fmt.Fprintf(out, "\n\n")
+}
+
 func mustTokenizeFile(path string) *Token {
 	tok := tokenizeFile(path)
 	if tok == nil {
@@ -421,6 +442,12 @@ func cc1() {
 	tok2 := mustTokenizeFile(baseFile)
 	tok = appendTokens(tok, tok2)
 	tok = preprocess(tok)
+
+	// If -M is given, print file dependencies.
+	if optM {
+		printDependencies()
+		return
+	}
 
 	// If -E is given, print out preprocessed C code as a result.
 	if optE {
@@ -614,7 +641,7 @@ func main() {
 		}
 
 		// Just preprocess
-		if optE {
+		if optE || optM {
 			runCC1(os.Args, input, "")
 			continue
 		}

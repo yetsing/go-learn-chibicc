@@ -92,6 +92,21 @@ func genAddr(node *Node) {
 			return
 		}
 
+		if optFpic {
+			// Thread-local variable
+			if node.variable.isTls {
+				sout("  data16 lea %s@tlsgd(%%rip), %%rdi", node.variable.name)
+				sout("  .value 0x6666")
+				sout("  rex64")
+				sout("  call __tls_get_addr@PLT")
+				return
+			}
+
+			// Function or global variable
+			sout("  mov %s@GOTPCREL(%%rip), %%rax", node.variable.name)
+			return
+		}
+
 		// Thread-local variable
 		if node.variable.isTls {
 			sout("  mov %%fs:0, %%rax")

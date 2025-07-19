@@ -23,6 +23,7 @@ const (
 
 var includePaths []string
 var optFcommon bool = true
+var optFpic bool = true
 
 var optX FileType
 var optInclude []string
@@ -285,6 +286,11 @@ func parseArgs() {
 		if os.Args[i] == "-MMD" {
 			optMD = true
 			optMMD = true
+			continue
+		}
+
+		if os.Args[i] == "-fpic" || os.Args[i] == "-fPIC" {
+			optFpic = true
 			continue
 		}
 

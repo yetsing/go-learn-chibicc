@@ -1421,12 +1421,26 @@ func genStmt(node *Node) {
 		genExpr(node.cond)
 
 		for n := node.caseNext; n != nil; n = n.caseNext {
-			reg := "%eax"
-			if node.cond.ty.size == 8 {
-				reg = "%rax"
+			ax := "%rax"
+			if node.cond.ty.size != 8 {
+				ax = "%eax"
 			}
-			sout("  cmp $%d, %s", n.val, reg)
-			sout("  je %s", n.label)
+			di := "%rdi"
+			if node.cond.ty.size != 8 {
+				di = "%edi"
+			}
+
+			if n.begin == n.end {
+				sout("  cmp $%d, %s", n.begin, ax)
+				sout("  je %s", n.label)
+				continue
+			}
+
+			// [GNU] Case ranges
+			sout("  mov %s, %s", ax, di)
+			sout("  sub $%d, %s", n.begin, di)
+			sout("  cmp $%d, %s", n.end-n.begin, di)
+			sout("  jbe %s", n.label)
 		}
 
 		if node.defaultCase != nil {

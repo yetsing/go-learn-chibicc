@@ -366,9 +366,13 @@ type Node struct {
 	uniqueLabel string
 	gotoNext    *Node
 
-	// Switch-cases
+	// Switch
 	caseNext    *Node
 	defaultCase *Node
+
+	// case
+	begin int64
+	end   int64
 
 	// "asm" string literal
 	asmStr string
@@ -1908,7 +1912,7 @@ func asmStmt() *Node {
 // stmt = "return" expr? ";"
 // .    | if-stmt
 // .    | "switch" "(" expr ")" stmt
-// .    | "case" const-expr ":" stmt
+// .    | "case" const-expr ("..." const-expr)? ":" stmt
 // .    | "default" ":" stmt
 // .    | for-stmt
 // .    | while-stmt
@@ -1967,16 +1971,30 @@ func stmt() *Node {
 
 	if gtok.equal("case") {
 		if currentSwitch == nil {
-			errorTok(gtok, "case label not within switch")
+			errorTok(gtok, "stray case")
 		}
 
 		node := NewNode(ND_CASE, gtok)
 		gtok = gtok.next
-		val := constExpr()
+		begin := constExpr()
+		end := int64(0)
+
+		if gtok.equal("...") {
+			gtok = gtok.next
+			// [GNU] Case ranges, e.g. "case 1 ... 5:"
+			end = constExpr()
+			if end < begin {
+				errorTok(gtok, "empty case range specified")
+			}
+		} else {
+			end = begin
+		}
+
 		gtok = gtok.consume(":")
 		node.label = newUniqueName()
 		node.lhs = stmt()
-		node.val = val
+		node.begin = begin
+		node.end = end
 		node.caseNext = currentSwitch.caseNext
 		currentSwitch.caseNext = node
 		return node

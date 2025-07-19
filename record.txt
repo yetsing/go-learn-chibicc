@@ -2429,3 +2429,11 @@ Date:   Sat Aug 29 10:37:53 2020 +0900
 = 由于 golang 没有 long double 类型
 = 虽然测试通过了，但并不代表转写是对的
 = emm
+
+commit d90c73b6058af4b22a4edd610713f75b2478e356
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Aug 30 12:51:05 2020 +0900
+
+    [GNU] Support case ranges
+
+= emm

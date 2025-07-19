@@ -2488,3 +2488,11 @@ Date:   Wed Oct 7 11:13:22 2020 +0900
 
 = golang map nil 不能用，但是 slice nil 可以用
 = easy
+
+commit f6944133d211ec6fb71c41f118905e16a752135b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Thu Sep 3 22:55:50 2020 +0900
+
+    Use hashmap for keyword lookup
+
+= easy

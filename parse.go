@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"slices"
 )
 
 // #region Scope
@@ -1287,16 +1286,38 @@ func gvarInitializer(var_ *Obj) {
 
 // Returns true if a given token represents a type.
 func isTypename(tok *Token) bool {
-	kw := []string{
-		"void", "_Bool", "char", "short", "int", "long",
-		"struct", "union", "typedef", "enum", "static", "extern", "_Alignas",
-		"signed", "unsigned",
-		"const", "volatile", "auto", "register", "restrict",
-		"__restrict", "__restrict__", "_Noreturn",
-		"float", "double", "typeof", "inline",
-		"_Thread_local", "__thread",
+	kw := map[string]bool{
+		"void":          true,
+		"_Bool":         true,
+		"char":          true,
+		"short":         true,
+		"int":           true,
+		"long":          true,
+		"struct":        true,
+		"union":         true,
+		"typedef":       true,
+		"enum":          true,
+		"static":        true,
+		"extern":        true,
+		"_Alignas":      true,
+		"signed":        true,
+		"unsigned":      true,
+		"const":         true,
+		"volatile":      true,
+		"auto":          true,
+		"register":      true,
+		"restrict":      true,
+		"__restrict":    true,
+		"__restrict__":  true,
+		"_Noreturn":     true,
+		"float":         true,
+		"double":        true,
+		"typeof":        true,
+		"inline":        true,
+		"_Thread_local": true,
+		"__thread":      true,
 	}
-	if slices.ContainsFunc(kw, tok.equal) {
+	if _, ok := kw[tok.literal]; ok {
 		return true
 	}
 	return findTypedef(tok) != nil

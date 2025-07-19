@@ -2520,3 +2520,11 @@ Date:   Tue Aug 18 12:30:30 2020 +0900
     Add -MP option
 
 = easy
+
+commit db850f37a2a284bf18cea427e4676a22d83d04b8
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Aug 18 12:38:21 2020 +0900
+
+    Add -MT option
+
+= easy

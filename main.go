@@ -34,6 +34,7 @@ var optC bool
 var optCC1 bool
 var optHashHashHash bool
 var optMF string
+var optMT string
 var optO string
 
 var ldExtraArgs []string
@@ -50,7 +51,7 @@ func usage(status int) {
 }
 
 func takeArg(arg string) bool {
-	options := []string{"-o", "-I", "-idirafter", "-include", "-x", "-MF"}
+	options := []string{"-o", "-I", "-idirafter", "-include", "-x", "-MF", "-MT"}
 
 	for _, opt := range options {
 		if arg == opt {

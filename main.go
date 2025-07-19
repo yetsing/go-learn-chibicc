@@ -28,6 +28,7 @@ var optX FileType
 var optInclude []string
 var optE bool
 var optM bool
+var optMP bool
 var optS bool
 var optC bool
 var optCC1 bool
@@ -223,6 +224,11 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-MP" {
+			optMP = true
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -271,9 +277,7 @@ func parseArgs() {
 		inputPaths = append(inputPaths, os.Args[i])
 	}
 
-	for _, idir := range idirafter {
-		includePaths = append(includePaths, idir)
-	}
+	includePaths = append(includePaths, idirafter...)
 
 	if len(inputPaths) == 0 {
 		fmt.Fprintln(os.Stderr, "no input files")
@@ -409,6 +413,12 @@ func printDependencies() {
 		fmt.Fprintf(out, " \\\n  %s", file.name)
 	}
 	fmt.Fprintf(out, "\n\n")
+
+	if optMP {
+		for i := 1; i < len(files); i++ {
+			fmt.Fprintf(out, "%s:\n\n", files[i].name)
+		}
+	}
 }
 
 func mustTokenizeFile(path string) *Token {

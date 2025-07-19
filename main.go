@@ -28,6 +28,7 @@ var optX FileType
 var optInclude []string
 var optE bool
 var optM bool
+var optMD bool
 var optMP bool
 var optS bool
 var optC bool
@@ -230,6 +231,21 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-MT" {
+			if optMT == "" {
+				optMT = os.Args[i+1]
+			} else {
+				optMT = fmt.Sprintf("%s %s", optMT, os.Args[i+1])
+			}
+			i++
+			continue
+		}
+
+		if os.Args[i] == "-MD" {
+			optMD = true
+			continue
+		}
+
 		if os.Args[i] == "-cc1-input" {
 			baseFile = os.Args[i+1]
 			i++
@@ -400,13 +416,23 @@ func printDependencies() {
 	path := ""
 	if optMF != "" {
 		path = optMF
+	} else if optMD {
+		if optO != "" {
+			path = replaceExtn(optO, ".d")
+		} else {
+			path = replaceExtn(baseFile, ".d")
+		}
 	} else if optO != "" {
 		path = optO
 	} else {
 		path = "-"
 	}
 	out := openFile(path)
-	fmt.Fprintf(out, "%s:", replaceExtn(filepath.Base(baseFile), ".o"))
+	if optMT != "" {
+		fmt.Fprintf(out, "%s:", optMT)
+	} else {
+		fmt.Fprintf(out, "%s:", replaceExtn(filepath.Base(baseFile), ".o"))
+	}
 
 	files := getInputFiles()
 
@@ -469,10 +495,12 @@ func cc1() {
 	tok = appendTokens(tok, tok2)
 	tok = preprocess(tok)
 
-	// If -M is given, print file dependencies.
-	if optM {
+	// If -M or -MD are given, print file dependencies.
+	if optM || optMD {
 		printDependencies()
-		return
+		if optM {
+			return
+		}
 	}
 
 	// If -E is given, print out preprocessed C code as a result.

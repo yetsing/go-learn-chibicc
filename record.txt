@@ -2437,3 +2437,11 @@ Date:   Sun Aug 30 12:51:05 2020 +0900
     [GNU] Support case ranges
 
 = emm
+
+commit 3d5550e29a92708613c3a351c0857aea90e147a5
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 15:39:38 2020 +0900
+
+    [GNU] Support array range designator
+
+= emm

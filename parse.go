@@ -698,15 +698,27 @@ func stringInitializer(init *Initializer) {
 //	struct { int a, b, c; } x = { .c=5 };
 //
 // The above initializer sets x.c to 5.
-func arrayDesignator(ty *Type) int {
-	start := gtok
-	gtok = gtok.consume("[")
-	i := int(constExpr())
-	if i >= ty.arrayLen {
-		errorTok(start, "array designator index exceeds array bounds")
+func arrayDesignator(ty *Type, begin *int, end *int) {
+	gtok = gtok.next
+	*begin = int(constExpr())
+	if *begin >= ty.arrayLen {
+		errorTok(gtok, "array designator index exceeds array bounds")
 	}
+
+	if gtok.equal("...") {
+		gtok = gtok.next
+		*end = int(constExpr())
+		if *end >= ty.arrayLen {
+			errorTok(gtok, "array designator index exceeds array bounds")
+		}
+		if *end < *begin {
+			errorTok(gtok, "array designator range [%d, %d] is empty", *begin, *end)
+		}
+	} else {
+		*end = *begin
+	}
+
 	gtok = gtok.consume("]")
-	return i
 }
 
 // struct-designator = "." ident
@@ -744,9 +756,19 @@ func designation(init *Initializer) {
 		if init.ty.kind != TY_ARRAY {
 			errorTok(gtok, "array index in non-array initializer")
 		}
-		i := arrayDesignator(init.ty)
-		designation(init.children[i])
-		arrayInitializer2(init, i+1)
+		var begin int
+		var end int
+		arrayDesignator(init.ty, &begin, &end)
+
+		var tok2 *Token
+		st := gtok
+		for i := begin; i <= end; i++ {
+			designation(init.children[i])
+			tok2 = gtok
+			gtok = st
+		}
+		gtok = tok2
+		arrayInitializer2(init, begin+1)
 		return
 	}
 
@@ -837,8 +859,18 @@ func arrayInitializer1(init *Initializer) {
 		first = false
 
 		if gtok.equal("[") {
-			i = arrayDesignator(init.ty)
-			designation(init.children[i])
+			var begin, end int
+			arrayDesignator(init.ty, &begin, &end)
+
+			var tok2 *Token
+			st := gtok
+			for j := begin; j <= end; j++ {
+				designation(init.children[j])
+				tok2 = gtok
+				gtok = st
+			}
+			gtok = tok2
+			i = end
 			continue
 		}
 

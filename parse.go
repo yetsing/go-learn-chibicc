@@ -12,19 +12,10 @@ import (
 // Scope for local variables, global variables, typedefs
 // or enum constants
 type VarScope struct {
-	next     *VarScope // Next scope
-	name     string    // Scope name
-	variable *Obj      // Variable
-	typedef  *Type     // Typedef
-	enumTy   *Type     // Enum type
-	enumVal  int       // Enum value
-}
-
-// Scope for struct, union or enum tags (结构体/union 名字)
-type TagScope struct {
-	next *TagScope // Next scope
-	name string    // Tag name
-	ty   *Type     // Type
+	variable *Obj  // Variable
+	typedef  *Type // Typedef
+	enumTy   *Type // Enum type
+	enumVal  int   // Enum value
 }
 
 // Represents a block scope.
@@ -33,8 +24,8 @@ type Scope struct {
 
 	// C has two block scopes; one is for variables/typedefs and
 	// the other is for struct/union/enum tags.
-	vars *VarScope
-	tags *TagScope
+	vars map[string]*VarScope
+	tags map[string]*Type
 }
 
 // Variable attributes such as typedef or extern.
@@ -77,14 +68,20 @@ type InitDesg struct {
 	var_   *Obj // Variable
 }
 
-var scope = &Scope{}
+var scope = &Scope{
+	vars: make(map[string]*VarScope),
+	tags: make(map[string]*Type),
+}
 
 func alignDown(n, align int) int {
 	return alignTo(n-align+1, align)
 }
 
 func enterScope() {
-	s := &Scope{}
+	s := &Scope{
+		vars: make(map[string]*VarScope),
+		tags: make(map[string]*Type),
+	}
 	s.next = scope
 	scope = s
 }
@@ -173,10 +170,8 @@ var pbuiltinAlloca *Obj
 // Find a local variable by name
 func findVar(name string) *VarScope {
 	for sc := scope; sc != nil; sc = sc.next {
-		for vsc := sc.vars; vsc != nil; vsc = vsc.next {
-			if vsc.name == name {
-				return vsc
-			}
+		if sc2, ok := sc.vars[name]; ok {
+			return sc2
 		}
 	}
 
@@ -186,11 +181,8 @@ func findVar(name string) *VarScope {
 func findTag(tok *Token) *Type {
 	// 第一层链表是 scope
 	for sc := scope; sc != nil; sc = sc.next {
-		// 第二层链表是 scopy 里面的 tag
-		for vsc := sc.tags; vsc != nil; vsc = vsc.next {
-			if vsc.name == tok.literal {
-				return vsc.ty
-			}
+		if ty, ok := sc.tags[tok.literal]; ok {
+			return ty
 		}
 	}
 
@@ -479,11 +471,8 @@ func NewCast(expr *Node, ty *Type) *Node {
 }
 
 func pushScope(name string) *VarScope {
-	vsc := &VarScope{
-		name: name,
-		next: scope.vars,
-	}
-	scope.vars = vsc
+	vsc := &VarScope{}
+	scope.vars[name] = vsc
 	return vsc
 }
 
@@ -1318,12 +1307,7 @@ func isTypename(tok *Token) bool {
 // #region Parser
 
 func pushTagScope(tok *Token, ty *Type) {
-	sc := &TagScope{
-		name: tok.literal,
-		ty:   ty,
-		next: scope.tags,
-	}
-	scope.tags = sc
+	scope.tags[tok.literal] = ty
 }
 
 // declspec = ("void" | "_Bool" | "char" | "short" | "int" | "long"
@@ -3078,11 +3062,9 @@ func structUnionDecl() *Type {
 	if tag != nil {
 		// If this is a redefinition, overwrite a previous type.
 		// Otherwise, register the struct type.
-		for sc := scope.tags; sc != nil; sc = sc.next {
-			if tag.equal(sc.name) {
-				*sc.ty = *ty
-				return sc.ty
-			}
+		if ty2, ok := scope.tags[tag.literal]; ok {
+			*ty2 = *ty
+			return ty2
 		}
 
 		pushTagScope(tag, ty)
@@ -3624,10 +3606,9 @@ func findFunc(name string) *Obj {
 		sc = sc.next
 	}
 
-	for sc2 := sc.vars; sc2 != nil; sc2 = sc2.next {
-		if sc2.name == name && sc2.variable != nil && sc2.variable.isFunction {
-			return sc2.variable
-		}
+	sc2, ok := sc.vars[name]
+	if ok && sc2.variable != nil && sc2.variable.isFunction {
+		return sc2.variable
 	}
 	return nil
 }

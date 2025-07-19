@@ -2479,3 +2479,12 @@ Date:   Wed Sep 2 01:32:00 2020 +0900
     Use hashmap for macro name lookup
 
 = easy
+
+commit 655954e301621737988a4fa0a2c72ffc24285c8d
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 11:13:22 2020 +0900
+
+    Use hashmap for block-scope lookup
+
+= golang map nil 不能用，但是 slice nil 可以用
+= easy

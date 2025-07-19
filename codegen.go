@@ -1174,6 +1174,10 @@ func genExpr(node *Node) {
 		}
 
 		return
+
+	case ND_LABEL_VAL:
+		sout("  lea %s(%%rip), %%rax", node.uniqueLabel)
+		return
 	}
 
 	switch node.lhs.ty.kind {
@@ -1462,6 +1466,10 @@ func genStmt(node *Node) {
 		return
 	case ND_GOTO:
 		sout("  jmp %s", node.uniqueLabel)
+		return
+	case ND_GOTO_EXPR:
+		genExpr(node.lhs)
+		sout("  jmp *%%rax")
 		return
 	case ND_LABEL:
 		sout("%s:", node.uniqueLabel)

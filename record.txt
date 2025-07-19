@@ -2445,3 +2445,12 @@ Date:   Sun Sep 20 15:39:38 2020 +0900
     [GNU] Support array range designator
 
 = emm
+
+commit 4f165ec60baa74f244d0a7c9b64c4bb3cbb76173
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 4 12:26:27 2020 +0900
+
+    [GNU] Support labels-as-values
+
+= 还有这种特性
+= emm

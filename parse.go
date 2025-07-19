@@ -315,7 +315,9 @@ const (
 	ND_CASE               // case
 	ND_BLOCK              // Block { ... }
 	ND_GOTO               // "goto"
+	ND_GOTO_EXPR          // "goto" labels-as-values
 	ND_LABEL              // Labeled statement
+	ND_LABEL_VAL          // [GNU] Labels-as-values
 	ND_FUNCALL            // Function call
 	ND_EXPR_STMT          // Expression statement
 	ND_STMT_EXPR          // Statement expression
@@ -361,7 +363,7 @@ type Node struct {
 	passByStack bool
 	retBuffer   *Obj
 
-	// Goto or labeled statement
+	// Goto or labeled statement, or labels-as-values
 	label       string
 	uniqueLabel string
 	gotoNext    *Node
@@ -2082,6 +2084,15 @@ func stmt() *Node {
 	}
 
 	if gtok.equal("goto") {
+		if gtok.next.equal("*") {
+			// [GNU] `goto *ptr` jumps to the address specified by `ptr`.
+			node := NewNode(ND_GOTO_EXPR, gtok)
+			gtok = gtok.next.next
+			node.lhs = expr()
+			gtok = gtok.consume(";")
+			return node
+		}
+
 		node := NewNode(ND_GOTO, gtok)
 		node.label = gtok.next.literal
 		node.gotoNext = gotos
@@ -2889,6 +2900,7 @@ func cast() *Node {
 
 // unary = ( ("+" | "-" | "*" | "&" | "!" | "~") cast )
 // .     | ("++" | "--") unary
+// .     | "&&" ident
 // .     | postfix
 func unary() *Node {
 	if gtok.equal("+") {
@@ -2951,6 +2963,16 @@ func unary() *Node {
 		return toAssign(
 			newSub(unary(), NewNumber(1, st), st),
 		)
+	}
+
+	// [GNU] labels-as-values
+	if gtok.equal("&&") {
+		node := NewNode(ND_LABEL_VAL, gtok)
+		node.label = gtok.next.literal
+		node.gotoNext = gotos
+		gotos = node
+		gtok = gtok.next.next // Skip `&&` and the label
+		return node
 	}
 
 	return postfix()
@@ -3570,7 +3592,7 @@ func createParamLvars(param *Type) {
 	}
 }
 
-// This function matches gotos with labels.
+// This function matches gotos or labels-as-values with labels.
 //
 // We cannot resolve gotos as we parse a function because gotos
 // can refer a label that appears later in the function.

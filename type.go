@@ -523,5 +523,8 @@ func addType(node *Node) {
 		}
 		errorTok(node.tok, "statement expression returning void is not supported")
 		return
+	case ND_LABEL_VAL:
+		node.ty = pointerTo(voidType())
+		return
 	}
 }

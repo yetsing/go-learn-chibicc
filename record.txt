@@ -2454,3 +2454,11 @@ Date:   Fri Sep 4 12:26:27 2020 +0900
 
 = 还有这种特性
 = emm
+
+commit f0c98e0d590ffae286a8a4847c91212c734be8e3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 13:23:53 2020 +0900
+
+    [GNU] Treat labels-as-values as compile-time constant
+
+= emm

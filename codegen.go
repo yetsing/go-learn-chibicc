@@ -1633,7 +1633,7 @@ func emitData(prog *Obj) {
 			pos := 0
 			for pos < g.ty.size {
 				if rel != nil && pos == rel.offset {
-					sout("  .quad %s%+d", rel.label, rel.addend)
+					sout("  .quad %s%+d", *rel.label, rel.addend)
 					rel = rel.next
 					pos += 8
 				} else {

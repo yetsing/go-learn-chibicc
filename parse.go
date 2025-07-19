@@ -141,7 +141,7 @@ type Obj struct {
 type Relocation struct {
 	next   *Relocation // Next relocation
 	offset int
-	label  string
+	label  *string
 	addend int64 // Addend for the relocation
 }
 
@@ -1263,10 +1263,10 @@ func writeGvarData(cur *Relocation, init *Initializer, ty *Type, buf []byte, off
 		return cur
 	}
 
-	label := ""
+	var label *string = nil
 	val := eval2(init.expr, &label)
 
-	if label == "" {
+	if label == nil {
 		res := writeBuf(uint64(val), ty.size)
 		copy(buf[offset:], res)
 		return cur
@@ -2150,7 +2150,7 @@ func eval(node *Node) int64 {
 // is a pointer to a global variable and n is a postiive/negative
 // number. The latter form is accepted only as an initialization
 // expression for a global variable.
-func eval2(node *Node, label *string) int64 {
+func eval2(node *Node, label **string) int64 {
 	addType(node)
 
 	if node.ty.isFlonum() {
@@ -2280,6 +2280,9 @@ func eval2(node *Node, label *string) int64 {
 		return val
 	case ND_ADDR:
 		return evalRval(node.lhs, label)
+	case ND_LABEL_VAL:
+		*label = &node.uniqueLabel
+		return 0
 	case ND_MEMBER:
 		if label == nil {
 			errorTok(node.tok, "not a compile-time constant")
@@ -2295,7 +2298,7 @@ func eval2(node *Node, label *string) int64 {
 		if node.variable.ty.kind != TY_ARRAY && node.variable.ty.kind != TY_FUNC {
 			errorTok(node.tok, "invalid initializer")
 		}
-		*label = node.variable.name
+		*label = &node.variable.name
 		return 0
 	case ND_NUM:
 		return node.val
@@ -2305,13 +2308,13 @@ func eval2(node *Node, label *string) int64 {
 	return 0
 }
 
-func evalRval(node *Node, label *string) int64 {
+func evalRval(node *Node, label **string) int64 {
 	switch node.kind {
 	case ND_VAR:
 		if node.variable.isLocal {
 			errorTok(node.tok, "not a compile-time constant")
 		}
-		*label = node.variable.name
+		*label = &node.variable.name
 		return 0
 	case ND_DEREF:
 		return eval2(node.lhs, label)

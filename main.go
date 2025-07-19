@@ -228,6 +228,12 @@ func parseArgs() {
 			continue
 		}
 
+		if os.Args[i] == "-hashmap-test" {
+			// golang has built-in hashmap, so
+			// we don't need to test it.
+			os.Exit(0)
+		}
+
 		// These options are ignored for now.
 		if strings.HasPrefix(os.Args[i], "-O") ||
 			strings.HasPrefix(os.Args[i], "-W") ||

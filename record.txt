@@ -2462,3 +2462,12 @@ Date:   Sun Sep 20 13:23:53 2020 +0900
     [GNU] Treat labels-as-values as compile-time constant
 
 = emm
+
+commit 0aad326f3550b3d4c499d4078fcc65cc2dbf7626
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Sep 2 01:30:29 2020 +0900
+
+    Add string hashmap
+
+= nothing to do
+= easy

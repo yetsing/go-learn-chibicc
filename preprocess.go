@@ -64,13 +64,11 @@ type MacroArg struct {
 type macroHandlerFn func(tok *Token) *Token
 
 type Macro struct {
-	next       *Macro // Next macro
 	name       string // Name of the macro
 	isObjlike  bool   // Object-lik or function-like macro
 	params     *MacroParam
 	vaArgsName string
-	body       *Token // Body of the macro
-	deleted    bool
+	body       *Token         // Body of the macro
 	handler    macroHandlerFn // Handler for this macro
 }
 
@@ -82,8 +80,8 @@ type CondIncl struct {
 	included bool         // Whether this condition is included
 }
 
-var sMacros *Macro      // List of defined macros
-var sCondIncl *CondIncl // Stack of conditional inclusions
+var sMacros map[string]*Macro // List of defined macros
+var sCondIncl *CondIncl       // Stack of conditional inclusions
 
 type Hideset struct {
 	next *Hideset // Next hideset
@@ -339,26 +337,20 @@ func findMacro(tok *Token) *Macro {
 	if tok.kind != TK_IDENT {
 		return nil
 	}
-	for m := sMacros; m != nil; m = m.next {
-		if m.name == tok.literal {
-			if m.deleted {
-				return nil
-			} else {
-				return m
-			}
-		}
+	m, exists := sMacros[tok.literal]
+	if exists {
+		return m
 	}
 	return nil
 }
 
 func addMacro(name string, isObjlike bool, body *Token) *Macro {
 	m := &Macro{
-		next:      sMacros,
 		name:      name,
 		isObjlike: isObjlike,
 		body:      body,
 	}
-	sMacros = m
+	sMacros[name] = m
 	return m
 }
 
@@ -1018,8 +1010,7 @@ func defineMacro(name string, buf string) {
 }
 
 func undefMacro(name string) {
-	m := addMacro(name, true, nil)
-	m.deleted = true
+	delete(sMacros, name)
 }
 
 func addBuiltin(name string, fn macroHandlerFn) *Macro {
@@ -1082,6 +1073,7 @@ func formatTime(dt time.Time) string {
 }
 
 func initMacros() {
+	sMacros = make(map[string]*Macro)
 	// Define predefined macros
 	defineMacro("_LP64", "1")
 	defineMacro("__C99_MACRO_WITH_VA_ARGS", "1")

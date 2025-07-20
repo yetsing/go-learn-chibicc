@@ -3773,14 +3773,32 @@ func function(basety *Type, attr *VarAttr) *Obj {
 		errorTok(ty.namePos, "function name omitted")
 	}
 
-	fn := newGVar(ty.name.literal, ty)
-	fn.isFunction = true
-	fn.isDefinition = !tryConsume(";")
-	fn.isStatic = attr.isStatic || (attr.isInline && !attr.isExtern)
-	fn.isInline = attr.isInline
+	nameStr := ty.name.literal
+
+	fn := findFunc(nameStr)
+	if fn != nil {
+		// Redeclaration
+		if !fn.isFunction {
+			errorTok(gtok, "redeclared as a different kind of symbol")
+		}
+		if fn.isDefinition && gtok.equal("{") {
+			errorTok(gtok, "redefinition of %s", nameStr)
+		}
+		if !fn.isStatic && attr.isStatic {
+			errorTok(gtok, "static declaration follows a non-static declaration")
+		}
+		fn.isDefinition = fn.isDefinition || gtok.equal("{")
+	} else {
+		fn = newGVar(ty.name.literal, ty)
+		fn.isFunction = true
+		fn.isDefinition = gtok.equal("{")
+		fn.isStatic = attr.isStatic || (attr.isInline && !attr.isExtern)
+		fn.isInline = attr.isInline
+	}
+
 	fn.isRoot = !(fn.isStatic && fn.isInline)
 
-	if !fn.isDefinition {
+	if tryConsume(";") {
 		return fn
 	}
 

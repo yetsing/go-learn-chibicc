@@ -2680,3 +2680,11 @@ Date:   Sun Sep 20 12:14:19 2020 +0900
     Add test/thirdparty/cpython.sh
 
 = emm
+
+commit 395308c77b94fc16b146c01cc1316b9a07635686
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Sep 23 20:57:17 2020 +0900
+
+    redefinition
+
+= emm

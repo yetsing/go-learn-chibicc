@@ -2672,3 +2672,11 @@ Date:   Wed Sep 16 15:59:56 2020 +0900
     Complete stdatomic.h
 
 = emm
+
+commit 2ed3fdafa3d2f60bd1bcdb2bc5df6c1e58c357f7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 12:14:19 2020 +0900
+
+    Add test/thirdparty/cpython.sh
+
+= emm

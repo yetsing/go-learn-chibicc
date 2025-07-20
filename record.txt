@@ -2696,3 +2696,11 @@ Date:   Wed Oct 7 11:14:15 2020 +0900
     Add __attribute__((packed))
 
 = emm
+
+commit b35d148a8d8f7d9237173c70f18cd42d20f299ff
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 25 14:48:38 2020 +0900
+
+    Add __attribute__((aligned(N)) for struct declaration
+
+= emm

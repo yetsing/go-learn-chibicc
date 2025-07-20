@@ -617,6 +617,15 @@ func tryConsume(s string) bool {
 	return false
 }
 
+func consume2(rest **Token, tok *Token, s string) bool {
+	if tok.equal(s) {
+		*rest = tok.next
+		return true
+	}
+	*rest = tok
+	return false
+}
+
 func skipExcessElement() *Token {
 	if gtok.equal("{") {
 		gtok = gtok.next
@@ -3149,26 +3158,46 @@ func structMembers(ty *Type) {
 	ty.members = head.next
 }
 
-// attribute = ("__attribute__" "(" "(" "packed" ")" ")")?
-func attribute(tok *Token, ty *Type) *Token {
-	if !gtok.equal("__attribute__") {
-		return tok
-	}
+// attribute = ("__attribute__" "(" "(" "packed" ")" ")")*
+func attributeList(tok *Token, ty *Type) *Token {
+	for consume2(&tok, tok, "__attribute__") {
+		tok = tok.consume("(")
+		tok = tok.consume("(")
 
-	tok = tok.next
-	tok = tok.consume("(")
-	tok = tok.consume("(")
-	tok = tok.consume("packed")
-	tok = tok.consume(")")
-	tok = tok.consume(")")
-	ty.isPacked = true
+		first := true
+
+		for !consume2(&tok, tok, ")") {
+			if !first {
+				tok = tok.consume(",")
+			}
+			first = false
+
+			if consume2(&tok, tok, "packed") {
+				ty.isPacked = true
+				continue
+			}
+
+			if consume2(&tok, tok, "aligned") {
+				tok = tok.consume("(")
+				gtok = tok
+				ty.align = int(constExpr())
+				tok = gtok
+				tok = tok.consume(")")
+				continue
+			}
+
+			errorTok(tok, "unknown attribute")
+		}
+
+		tok = tok.consume(")")
+	}
 	return tok
 }
 
 // struct-union-decl = attribute? ident? ("{" struct-members)?
 func structUnionDecl() *Type {
 	ty := structType()
-	gtok = attribute(gtok, ty)
+	gtok = attributeList(gtok, ty)
 
 	// Read a tag
 	var tag *Token = nil
@@ -3192,7 +3221,7 @@ func structUnionDecl() *Type {
 
 	// Construct a struct object.
 	structMembers(ty)
-	gtok = attribute(gtok, ty)
+	gtok = attributeList(gtok, ty)
 
 	if tag != nil {
 		// If this is a redefinition, overwrite a previous type.

@@ -319,6 +319,7 @@ const (
 	ND_MEMZERO            // Zero-clear a stack variable
 	ND_ASM                // "asm"
 	ND_CAS                // Atomic compare-and-swap
+	ND_EXCH               // Atomic exchange
 )
 
 // AST node
@@ -3530,6 +3531,16 @@ func primary() *Node {
 		node.casOld = assign()
 		gtok = gtok.consume(",")
 		node.casNew = assign()
+		gtok = gtok.consume(")")
+		return node
+	}
+
+	if gtok.equal("__builtin_atomic_exchange") {
+		node := NewNode(ND_EXCH, gtok)
+		gtok = gtok.next.consume("(")
+		node.lhs = assign()
+		gtok = gtok.consume(",")
+		node.rhs = assign()
 		gtok = gtok.consume(")")
 		return node
 	}

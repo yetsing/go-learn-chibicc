@@ -2648,3 +2648,11 @@ Date:   Tue Sep 15 11:30:56 2020 +0900
     Add atomic_compare_exchange
 
 = emm
+
+commit 80ea9d427c5041415b014a0a97193f1f7e0a871b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Sep 15 11:30:56 2020 +0900
+
+    Add atomic_exchange
+
+= emm

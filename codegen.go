@@ -1242,6 +1242,15 @@ func genExpr(node *Node) {
 		sout("1:")
 		sout("  movzbl %%cl, %%eax")
 		return
+	case ND_EXCH:
+		genExpr(node.lhs)
+		push()
+		genExpr(node.rhs)
+		pop("%rdi")
+
+		sz := node.lhs.ty.base.size
+		sout("  xchg %s, (%%rdi)", regAx(sz))
+		return
 	}
 
 	switch node.lhs.ty.kind {

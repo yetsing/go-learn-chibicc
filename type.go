@@ -538,5 +538,10 @@ func addType(node *Node) {
 		if node.casOld.ty.kind != TY_PTR {
 			errorTok(node.casOld.tok, "pointer expected")
 		}
+	case ND_EXCH:
+		if node.lhs.ty.kind != TY_PTR {
+			errorTok(node.casAddr.tok, "pointer expected")
+		}
+		node.ty = node.lhs.ty.base
 	}
 }

@@ -2624,3 +2624,11 @@ Date:   Sat Sep 19 21:09:17 2020 +0900
     Add -Wl, option
 
 = easy
+
+commit 469f159bb1adebb92ca2c9a7841466a98e6ad956
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sun Sep 20 13:29:23 2020 +0900
+
+    Add -Xlinker option
+
+= easy

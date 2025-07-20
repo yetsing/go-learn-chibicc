@@ -2576,3 +2576,11 @@ Date:   Mon Oct 5 14:27:04 2020 +0900
     Add include guard optimization
 
 = easy
+
+commit a6c662207d38813b3dd490d81d8afe14ac99272b
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Oct 5 14:27:19 2020 +0900
+
+    [GNU] Add "#pragma once"
+
+=

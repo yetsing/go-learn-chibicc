@@ -80,8 +80,9 @@ type CondIncl struct {
 	included bool         // Whether this condition is included
 }
 
-var sMacros map[string]*Macro // List of defined macros
-var sCondIncl *CondIncl       // Stack of conditional inclusions
+var sMacros map[string]*Macro           // List of defined macros
+var sCondIncl *CondIncl                 // Stack of conditional inclusions
+var programOnce = make(map[string]bool) // Program once macros
 
 type Hideset struct {
 	next *Hideset // Next hideset
@@ -851,6 +852,10 @@ func detectIncludeGuard(tok *Token) string {
 var includeGuards = make(map[string]string)
 
 func includeFile(tok *Token, path string, filenameTok *Token) *Token {
+	if _, ok := programOnce[path]; ok {
+		return tok
+	}
+
 	// If we read the same file before, and if the file was guarded
 	// by the usual #ifndef ... #endif pattern, we may be able to
 	// skip the file without opening it.
@@ -1048,6 +1053,12 @@ func preprocess2(tok *Token) *Token {
 
 		if tok.kind == TK_PP_NUM {
 			readLineMarker(&tok, tok)
+			continue
+		}
+
+		if tok.equal("pragma") && tok.next.equal("once") {
+			programOnce[tok.file.name] = true
+			tok = skipLine(tok.next.next)
 			continue
 		}
 

@@ -2560,3 +2560,11 @@ Date:   Tue Sep 8 18:50:40 2020 +0900
     Add -fpic and -fPIC options
 
 = emm
+
+commit c0f0614e6b7647fd4703abf4c455024c2ade8cd7
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 21:04:38 2020 +0900
+
+    Cache file search results
+
+= easy

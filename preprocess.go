@@ -738,15 +738,22 @@ func expandMacro(rest **Token, tok *Token) bool {
 	return true
 }
 
+var cache = make(map[string]string)
+
 func searchIncludePaths(filename string) string {
 	if filename[0] == '/' {
 		return filename // Absolute path
+	}
+
+	if res, ok := cache[filename]; ok {
+		return res
 	}
 
 	// Search a file from the include paths.
 	for i := 0; i < len(includePaths); i++ {
 		path := fmt.Sprintf("%s/%s", includePaths[i], filename)
 		if fileExists(path) {
+			cache[filename] = path
 			return path
 		}
 	}

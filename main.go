@@ -235,7 +235,7 @@ func parseArgs() {
 		}
 
 		if strings.HasPrefix(os.Args[i], "-l") {
-			inputPaths = append(inputPaths, os.Args[i][2:])
+			inputPaths = append(inputPaths, os.Args[i])
 			continue
 		}
 
@@ -323,6 +323,17 @@ func parseArgs() {
 		if os.Args[i] == "-shared" {
 			optShared = true
 			ldExtraArgs = append(ldExtraArgs, "-shared")
+			continue
+		}
+
+		if os.Args[i] == "-L" {
+			ldExtraArgs = append(ldExtraArgs, "-L", os.Args[i+1])
+			i++
+			continue
+		}
+
+		if strings.HasPrefix(os.Args[i], "-L") {
+			ldExtraArgs = append(ldExtraArgs, "-L", os.Args[i][2:])
 			continue
 		}
 

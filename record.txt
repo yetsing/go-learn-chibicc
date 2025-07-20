@@ -2616,3 +2616,11 @@ Date:   Sun Sep 13 15:34:58 2020 +0900
     Add -L option
 
 = easy
+
+commit d1bc9a4eb0e205b10a583c347a9fe7d4bed7b813
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Sat Sep 19 21:09:17 2020 +0900
+
+    Add -Wl, option
+
+= easy

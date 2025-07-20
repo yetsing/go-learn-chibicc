@@ -234,7 +234,7 @@ func parseArgs() {
 			continue
 		}
 
-		if strings.HasPrefix(os.Args[i], "-l") {
+		if strings.HasPrefix(os.Args[i], "-l") || strings.HasPrefix(os.Args[i], "-Wl,") {
 			inputPaths = append(inputPaths, os.Args[i])
 			continue
 		}
@@ -779,6 +779,18 @@ func main() {
 		if strings.HasPrefix(input, "-l") {
 			// If the input starts with -l, it is a library name.
 			ldArgs = append(ldArgs, input)
+			continue
+		}
+
+		if strings.HasPrefix(input, "-Wl,") {
+			s := input[4:]
+			// Split the string by commas and append each part to ldArgs.
+			parts := strings.Split(s, ",")
+			for _, part := range parts {
+				if part != "" {
+					ldArgs = append(ldArgs, part)
+				}
+			}
 			continue
 		}
 

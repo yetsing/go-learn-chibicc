@@ -75,6 +75,36 @@ func alignTo(n, align int) int {
 	return (n + align - 1) / align * align
 }
 
+func regDx(sz int) string {
+	switch sz {
+	case 1:
+		return "%dl"
+	case 2:
+		return "%dx"
+	case 4:
+		return "%edx"
+	case 8:
+		return "%rdx"
+	}
+	unreachable()
+	return ""
+}
+
+func regAx(sz int) string {
+	switch sz {
+	case 1:
+		return "%al"
+	case 2:
+		return "%ax"
+	case 4:
+		return "%eax"
+	case 8:
+		return "%rax"
+	}
+	unreachable()
+	return ""
+}
+
 // Compute the absolute address of a given node.
 // It's an error if a given node does not reside in memory.
 func genAddr(node *Node) {
@@ -1192,6 +1222,25 @@ func genExpr(node *Node) {
 
 	case ND_LABEL_VAL:
 		sout("  lea %s(%%rip), %%rax", node.uniqueLabel)
+		return
+	case ND_CAS:
+		genExpr(node.casAddr)
+		push()
+		genExpr(node.casNew)
+		push()
+		genExpr(node.casOld)
+		sout("  mov %%rax, %%r8") // casAddr
+		load(node.casOld.ty.base)
+		pop("%rdx") // casNew
+		pop("%rdi") // casOld
+
+		sz := node.casAddr.ty.base.size
+		sout("  lock cmpxchg %s, (%%rdi)", regDx(sz))
+		sout("  sete %%cl")
+		sout("  je 1f")
+		sout("  mov %s, (%%r8)", regAx(sz))
+		sout("1:")
+		sout("  movzbl %%cl, %%eax")
 		return
 	}
 

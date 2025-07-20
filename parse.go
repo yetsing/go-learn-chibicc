@@ -318,6 +318,7 @@ const (
 	ND_CAST               // Type cast
 	ND_MEMZERO            // Zero-clear a stack variable
 	ND_ASM                // "asm"
+	ND_CAS                // Atomic compare-and-swap
 )
 
 // AST node
@@ -369,6 +370,11 @@ type Node struct {
 
 	// "asm" string literal
 	asmStr string
+
+	// Atomic compare-and-swap
+	casAddr *Node
+	casOld  *Node
+	casNew  *Node
 
 	// Variable
 	variable *Obj // Used if kind is ND_VAR
@@ -3514,6 +3520,18 @@ func primary() *Node {
 			return NewNumber(1, st)
 		}
 		return NewNumber(2, st)
+	}
+
+	if gtok.equal("__builtin_compare_and_swap") {
+		node := NewNode(ND_CAS, gtok)
+		gtok = gtok.next.consume("(")
+		node.casAddr = assign()
+		gtok = gtok.consume(",")
+		node.casOld = assign()
+		gtok = gtok.consume(",")
+		node.casNew = assign()
+		gtok = gtok.consume(")")
+		return node
 	}
 
 	if gtok.kind == TK_IDENT {

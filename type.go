@@ -526,5 +526,17 @@ func addType(node *Node) {
 	case ND_LABEL_VAL:
 		node.ty = pointerTo(voidType())
 		return
+	case ND_CAS:
+		addType(node.casAddr)
+		addType(node.casOld)
+		addType(node.casNew)
+		node.ty = boolType()
+
+		if node.casAddr.ty.kind != TY_PTR {
+			errorTok(node.casAddr.tok, "pointer expected")
+		}
+		if node.casOld.ty.kind != TY_PTR {
+			errorTok(node.casOld.tok, "pointer expected")
+		}
 	}
 }

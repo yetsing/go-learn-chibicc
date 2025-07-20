@@ -705,6 +705,7 @@ var keywords = map[string]TokenKind{
 	"asm":           TK_KEYWORD,
 	"_Thread_local": TK_KEYWORD,
 	"__thread":      TK_KEYWORD,
+	"_Atomic":       TK_KEYWORD,
 }
 
 func convertPPTokens(tok *Token) {

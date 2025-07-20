@@ -377,6 +377,10 @@ type Node struct {
 	casOld  *Node
 	casNew  *Node
 
+	// Atomic op= operators
+	atomicAddr *Obj
+	atomicExpr *Node
+
 	// Variable
 	variable *Obj // Used if kind is ND_VAR
 
@@ -1323,6 +1327,7 @@ func isTypename(tok *Token) bool {
 		"inline":        true,
 		"_Thread_local": true,
 		"__thread":      true,
+		"_Atomic":       true,
 	}
 	if _, ok := kw[tok.literal]; ok {
 		return true
@@ -1377,6 +1382,7 @@ func declspec(attr *VarAttr) *Type {
 
 	ty := intType()
 	counter := 0
+	isAtomic := false
 
 	for isTypename(gtok) {
 		// Handle storage class specifiers.
@@ -1415,6 +1421,17 @@ func declspec(attr *VarAttr) *Type {
 			tryConsume("__restrict") ||
 			tryConsume("__restrict__") ||
 			tryConsume("_Noreturn") {
+			continue
+		}
+
+		if gtok.equal("_Atomic") {
+			gtok = gtok.next
+			if gtok.equal("(") {
+				gtok = gtok.next
+				ty = typename()
+				gtok = gtok.consume(")")
+			}
+			isAtomic = true
 			continue
 		}
 
@@ -1554,6 +1571,11 @@ func declspec(attr *VarAttr) *Type {
 		}
 
 		gtok = gtok.next
+	}
+
+	if isAtomic {
+		ty = ty.copy()
+		ty.isAtomic = true
 	}
 
 	return ty
@@ -2596,7 +2618,74 @@ func toAssign(binary *Node) *Node {
 		return NewBinary(ND_COMMA, expr1, expr4, tok)
 	}
 
-	// Convert `A op= C` to ``tmp = &A, *tmp = *tmp op B`.
+	// If A is an atomic type, Convert `A op= B` to
+	//
+	// ({
+	//   T1 *addr = &A; T2 val = (B); T1 old = *addr; T1 new;
+	//   do {
+	//    new = old op val;
+	//   } while (!atomic_compare_exchange_strong(addr, &old, new));
+	//   new;
+	// })
+	if binary.lhs.ty.isAtomic {
+		var head Node
+		cur := &head
+
+		addr := newLVar("", pointerTo(binary.lhs.ty))
+		val := newLVar("", binary.rhs.ty)
+		old := newLVar("", binary.lhs.ty)
+		new := newLVar("", binary.lhs.ty)
+
+		cur.next = NewUnary(
+			ND_EXPR_STMT,
+			NewBinary(ND_ASSIGN, NewVarNode(addr, tok),
+				NewUnary(ND_ADDR, binary.lhs, tok), tok),
+			tok)
+		cur = cur.next
+
+		cur.next = NewUnary(
+			ND_EXPR_STMT,
+			NewBinary(ND_ASSIGN, NewVarNode(val, tok), binary.rhs, tok),
+			tok)
+		cur = cur.next
+
+		cur.next = NewUnary(
+			ND_EXPR_STMT,
+			NewBinary(ND_ASSIGN, NewVarNode(old, tok),
+				NewUnary(ND_DEREF, NewVarNode(addr, tok), tok), tok),
+			tok)
+		cur = cur.next
+
+		loop := NewNode(ND_DO, tok)
+		loop.breakLabel = newUniqueName()
+		loop.continueLabel = newUniqueName()
+
+		body := NewBinary(
+			ND_ASSIGN,
+			NewVarNode(new, tok),
+			NewBinary(binary.kind, NewVarNode(old, tok), NewVarNode(val, tok), tok),
+			tok)
+
+		loop.then = NewNode(ND_BLOCK, tok)
+		loop.then.body = NewUnary(ND_EXPR_STMT, body, tok)
+
+		cas := NewNode(ND_CAS, tok)
+		cas.casAddr = NewVarNode(addr, tok)
+		cas.casOld = NewUnary(ND_ADDR, NewVarNode(old, tok), tok)
+		cas.casNew = NewVarNode(new, tok)
+		loop.cond = NewUnary(ND_NOT, cas, tok)
+
+		cur.next = loop
+		cur = cur.next
+		cur.next = NewUnary(ND_EXPR_STMT, NewVarNode(new, tok), tok)
+		cur = cur.next
+
+		node := NewNode(ND_STMT_EXPR, tok)
+		node.body = head.next
+		return node
+	}
+
+	// Convert `A op= B` to ``tmp = &A, *tmp = *tmp op B`.
 	variable := newLVar("", pointerTo(binary.lhs.ty))
 
 	expr1 := NewBinary(

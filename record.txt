@@ -2656,3 +2656,11 @@ Date:   Tue Sep 15 11:30:56 2020 +0900
     Add atomic_exchange
 
 = emm
+
+commit d69a11dd25a77c2b9390e54c9f9e8967456cb642
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Tue Sep 15 11:30:56 2020 +0900
+
+    Add _Atomic and atomic ++, -- and op= operators
+
+= emm

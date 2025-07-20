@@ -197,6 +197,11 @@ func genAddr(node *Node) {
 			genExpr(node)
 			return
 		}
+	case ND_ASSIGN, ND_COND:
+		if node.ty.kind == TY_STRUCT || node.ty.kind == TY_UNION {
+			genExpr(node)
+			return
+		}
 	case ND_VLA_PTR:
 		sout("  lea %d(%%rbp), %%rax", node.variable.offset)
 		return

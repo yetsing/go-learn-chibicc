@@ -2712,3 +2712,11 @@ Date:   Wed Sep 30 17:47:33 2020 +0900
     Update README
 
 = emm
+
+commit 90d1f7f199cc55b13c7fdb5839d1409806633fdb
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Dec 7 11:50:43 2020 +0900
+
+    Make struct member access to work with `=` and `?:`
+
+= emm

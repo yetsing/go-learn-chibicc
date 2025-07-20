@@ -2592,3 +2592,11 @@ Date:   Fri Sep 25 21:39:08 2020 +0900
     [GNU] Add #include_next
 
 = easy
+
+commit 1e9b6dd1108690f22c84af8db606fea9fb7ec2db
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Oct 9 15:06:35 2020 +0900
+
+    Add -static option
+
+= emm

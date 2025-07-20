@@ -36,6 +36,7 @@ var optS bool
 var optC bool
 var optCC1 bool
 var optHashHashHash bool
+var optStatic bool
 var optMF string
 var optMT string
 var optO string
@@ -309,6 +310,12 @@ func parseArgs() {
 		if os.Args[i] == "-idirafter" {
 			idirafter = append(idirafter, os.Args[i+1])
 			i++
+			continue
+		}
+
+		if os.Args[i] == "-static" {
+			optStatic = true
+			ldExtraArgs = append(ldExtraArgs, "-static")
 			continue
 		}
 
@@ -642,7 +649,7 @@ func findGCCLibpath() string {
 func runLinker(inputs []string, output string) {
 	var arr []string
 
-	arr = append(arr, "ld", "-o", output, "-m", "elf_x86_64", "-dynamic-linker", "/lib64/ld-linux-x86-64.so.2")
+	arr = append(arr, "ld", "-o", output, "-m", "elf_x86_64")
 	libpath := findLibpath()
 	gccLibpath := findGCCLibpath()
 
@@ -652,8 +659,7 @@ func runLinker(inputs []string, output string) {
 		fmt.Sprintf("%s/crti.o", libpath),
 		fmt.Sprintf("%s/crtbegin.o", gccLibpath),
 		fmt.Sprintf("-L%s", gccLibpath),
-		fmt.Sprintf("-L%s", libpath),
-		fmt.Sprintf("-L%s/..", libpath),
+		"-L/usr/lib/x86_64-linux-gnu",
 		"-L/usr/lib64",
 		"-L/lib64",
 		"-L/usr/lib/x86_64-linux-gnu",
@@ -663,17 +669,28 @@ func runLinker(inputs []string, output string) {
 		"-L/lib",
 	)
 
+	if !optStatic {
+		arr = append(arr, "-dynamic-linker", "/lib64/ld-linux-x86-64.so.2")
+	}
+
 	arr = append(arr, ldExtraArgs...)
 
 	arr = append(arr, inputs...)
 
+	if optStatic {
+		arr = append(arr, "--start-group", "-lgcc", "-lgcc_eh", "-lc", "--end-group")
+	} else {
+		arr = append(
+			arr,
+			"-lc",
+			"-lgcc",
+			"--as-needed",
+			"-lgcc_s",
+			"--no-as-needed",
+		)
+	}
 	arr = append(
 		arr,
-		"-lc",
-		"-lgcc",
-		"--as-needed",
-		"-lgcc_s",
-		"--no-as-needed",
 		fmt.Sprintf("%s/crtend.o", gccLibpath),
 		fmt.Sprintf("%s/crtn.o", libpath),
 	)

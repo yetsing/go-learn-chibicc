@@ -804,11 +804,75 @@ func readIncludeFilename(rest **Token, tok *Token, isDquote *bool) string {
 	return "" // Unreachable, but keeps the compiler happy
 }
 
+// Detect the following "include guard" pattern.
+//
+//	#ifndef FOO_H
+//	#define FOO_H
+//	...
+//	#endif
+func detectIncludeGuard(tok *Token) string {
+	// Detect the first two lines.
+	if !isHash(tok) || !tok.next.equal("ifndef") {
+		return ""
+	}
+	tok = tok.next.next
+
+	if tok.kind != TK_IDENT {
+		return ""
+	}
+
+	macro := tok.literal
+	tok = tok.next
+
+	if !isHash(tok) || !tok.next.equal("define") || !tok.next.next.equal(macro) {
+		return ""
+	}
+
+	// Read until the end of the file.
+	for tok.kind != TK_EOF {
+		if !isHash(tok) {
+			tok = tok.next
+			continue
+		}
+
+		if tok.next.equal("endif") && tok.next.next.kind == TK_EOF {
+			return macro // Found an include guard
+		}
+
+		if tok.equal("if") || tok.equal("ifdef") || tok.equal("ifndef") {
+			tok = skipCondIncl(tok.next)
+		} else {
+			tok = tok.next
+		}
+	}
+	return ""
+}
+
+var includeGuards = make(map[string]string)
+
 func includeFile(tok *Token, path string, filenameTok *Token) *Token {
+	// If we read the same file before, and if the file was guarded
+	// by the usual #ifndef ... #endif pattern, we may be able to
+	// skip the file without opening it.
+	guardName, ok1 := includeGuards[path]
+	if ok1 {
+		_, ok2 := sMacros[guardName]
+		if ok2 {
+			return tok // The file is already included
+		}
+	}
 	tok2 := tokenizeFile(path)
 	if tok2 == nil {
 		errorTok(filenameTok, "%s: cannot open file", path)
 	}
+
+	guardName = detectIncludeGuard(tok2)
+	if guardName != "" {
+		// If the file is guarded, we add the guard name to the
+		// list of macros so that we can skip the file next time.
+		includeGuards[path] = guardName
+	}
+
 	return appendToken(tok2, tok)
 }
 

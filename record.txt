@@ -2568,3 +2568,11 @@ Date:   Sat Sep 19 21:04:38 2020 +0900
     Cache file search results
 
 = easy
+
+commit d48d9e5ae35b5eb1a9dcb0c07c1dba9e65bd83f3
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Mon Oct 5 14:27:04 2020 +0900
+
+    Add include guard optimization
+
+= easy

@@ -2583,4 +2583,12 @@ Date:   Mon Oct 5 14:27:19 2020 +0900
 
     [GNU] Add "#pragma once"
 
-=
+= easy
+
+commit f10bcebaa5df6bcb8e08e622ac44b0098e3133ae
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Fri Sep 25 21:39:08 2020 +0900
+
+    [GNU] Add #include_next
+
+= easy

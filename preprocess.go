@@ -80,9 +80,10 @@ type CondIncl struct {
 	included bool         // Whether this condition is included
 }
 
-var sMacros map[string]*Macro           // List of defined macros
-var sCondIncl *CondIncl                 // Stack of conditional inclusions
-var programOnce = make(map[string]bool) // Program once macros
+var sMacros map[string]*Macro          // List of defined macros
+var sCondIncl *CondIncl                // Stack of conditional inclusions
+var pragmaOnce = make(map[string]bool) // Program once macros
+var includeNextIdx int
 
 type Hideset struct {
 	next *Hideset // Next hideset
@@ -755,6 +756,17 @@ func searchIncludePaths(filename string) string {
 		path := fmt.Sprintf("%s/%s", includePaths[i], filename)
 		if fileExists(path) {
 			cache[filename] = path
+			includeNextIdx = i + 1
+			return path
+		}
+	}
+	return ""
+}
+
+func searchIncludeNext(filename string) string {
+	for ; includeNextIdx < len(includePaths); includeNextIdx++ {
+		path := fmt.Sprintf("%s/%s", includePaths[includeNextIdx], filename)
+		if fileExists(path) {
 			return path
 		}
 	}
@@ -852,7 +864,7 @@ func detectIncludeGuard(tok *Token) string {
 var includeGuards = make(map[string]string)
 
 func includeFile(tok *Token, path string, filenameTok *Token) *Token {
-	if _, ok := programOnce[path]; ok {
+	if _, ok := pragmaOnce[path]; ok {
 		return tok
 	}
 
@@ -961,6 +973,18 @@ func preprocess2(tok *Token) *Token {
 			continue
 		}
 
+		if tok.equal("include_next") {
+			var ignore bool
+			filename := readIncludeFilename(&tok, tok.next, &ignore)
+			path := searchIncludeNext(filename)
+			if path == "" {
+				tok = includeFile(tok, filename, start.next.next)
+			} else {
+				tok = includeFile(tok, path, start.next.next)
+			}
+			continue
+		}
+
 		if tok.equal("define") {
 			readMacroDefinition(&tok, tok.next)
 			continue
@@ -1057,7 +1081,7 @@ func preprocess2(tok *Token) *Token {
 		}
 
 		if tok.equal("pragma") && tok.next.equal("once") {
-			programOnce[tok.file.name] = true
+			pragmaOnce[tok.file.name] = true
 			tok = skipLine(tok.next.next)
 			continue
 		}

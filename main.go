@@ -37,6 +37,7 @@ var optC bool
 var optCC1 bool
 var optHashHashHash bool
 var optStatic bool
+var optShared bool
 var optMF string
 var optMT string
 var optO string
@@ -316,6 +317,12 @@ func parseArgs() {
 		if os.Args[i] == "-static" {
 			optStatic = true
 			ldExtraArgs = append(ldExtraArgs, "-static")
+			continue
+		}
+
+		if os.Args[i] == "-shared" {
+			optShared = true
+			ldExtraArgs = append(ldExtraArgs, "-shared")
 			continue
 		}
 
@@ -653,11 +660,22 @@ func runLinker(inputs []string, output string) {
 	libpath := findLibpath()
 	gccLibpath := findGCCLibpath()
 
+	if optShared {
+		arr = append(
+			arr,
+			fmt.Sprintf("%s/crti.o", libpath),
+			fmt.Sprintf("%s/crtbeginS.o", gccLibpath),
+		)
+	} else {
+		arr = append(
+			arr,
+			fmt.Sprintf("%s/crt1.o", libpath),
+			fmt.Sprintf("%s/crti.o", libpath),
+			fmt.Sprintf("%s/crtbegin.o", gccLibpath),
+		)
+	}
 	arr = append(
 		arr,
-		fmt.Sprintf("%s/crt1.o", libpath),
-		fmt.Sprintf("%s/crti.o", libpath),
-		fmt.Sprintf("%s/crtbegin.o", gccLibpath),
 		fmt.Sprintf("-L%s", gccLibpath),
 		"-L/usr/lib/x86_64-linux-gnu",
 		"-L/usr/lib64",
@@ -689,9 +707,15 @@ func runLinker(inputs []string, output string) {
 			"--no-as-needed",
 		)
 	}
+
+	if optShared {
+		arr = append(arr, fmt.Sprintf("%s/crtendS.o", gccLibpath))
+	} else {
+		arr = append(arr, fmt.Sprintf("%s/crtend.o", gccLibpath))
+	}
+
 	arr = append(
 		arr,
-		fmt.Sprintf("%s/crtend.o", gccLibpath),
 		fmt.Sprintf("%s/crtn.o", libpath),
 	)
 

@@ -2664,3 +2664,11 @@ Date:   Tue Sep 15 11:30:56 2020 +0900
     Add _Atomic and atomic ++, -- and op= operators
 
 = emm
+
+commit 0a5d08c8f8a72e39828e7b1910c55174e6c8dd5e
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Sep 16 15:59:56 2020 +0900
+
+    Complete stdatomic.h
+
+= emm

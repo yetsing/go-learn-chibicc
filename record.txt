@@ -2688,3 +2688,11 @@ Date:   Wed Sep 23 20:57:17 2020 +0900
     redefinition
 
 = emm
+
+commit 44bea4c85a48d440bc0f704abe64eac80e9165dc
+Author: Rui Ueyama <ruiu@cs.stanford.edu>
+Date:   Wed Oct 7 11:14:15 2020 +0900
+
+    Add __attribute__((packed))
+
+= emm

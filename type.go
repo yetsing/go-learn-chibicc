@@ -53,6 +53,7 @@ type Type struct {
 	// Struct
 	members    *Member
 	isFlexible bool
+	isPacked   bool
 
 	// Function Type
 	returnTy   *Type

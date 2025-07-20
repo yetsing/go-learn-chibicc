@@ -3149,8 +3149,27 @@ func structMembers(ty *Type) {
 	ty.members = head.next
 }
 
-// struct-union-decl = ident? ("{" struct-members)?
+// attribute = ("__attribute__" "(" "(" "packed" ")" ")")?
+func attribute(tok *Token, ty *Type) *Token {
+	if !gtok.equal("__attribute__") {
+		return tok
+	}
+
+	tok = tok.next
+	tok = tok.consume("(")
+	tok = tok.consume("(")
+	tok = tok.consume("packed")
+	tok = tok.consume(")")
+	tok = tok.consume(")")
+	ty.isPacked = true
+	return tok
+}
+
+// struct-union-decl = attribute? ident? ("{" struct-members)?
 func structUnionDecl() *Type {
+	ty := structType()
+	gtok = attribute(gtok, ty)
+
 	// Read a tag
 	var tag *Token = nil
 	if gtok.kind == TK_IDENT {
@@ -3159,12 +3178,11 @@ func structUnionDecl() *Type {
 	}
 
 	if tag != nil && !gtok.equal("{") {
-		ty := findTag(tag)
-		if ty != nil {
-			return ty
+		ty2 := findTag(tag)
+		if ty2 != nil {
+			return ty2
 		}
 
-		ty = structType()
 		ty.size = -1
 		pushTagScope(tag, ty)
 		return ty
@@ -3173,8 +3191,8 @@ func structUnionDecl() *Type {
 	gtok = gtok.consume("{")
 
 	// Construct a struct object.
-	ty := structType()
 	structMembers(ty)
+	gtok = attribute(gtok, ty)
 
 	if tag != nil {
 		// If this is a redefinition, overwrite a previous type.
@@ -3217,13 +3235,15 @@ func structDecl() *Type {
 			m.bitOffset = bits % (sz * 8)
 			bits += m.bitWidth
 		} else {
-			bits = alignTo(bits, m.align*8)
+			if !ty.isPacked {
+				bits = alignTo(bits, m.align*8)
+			}
 			m.offset = bits / 8
 			bits += m.ty.size * 8
 		}
 
 		// 结构体的整体大小必须是其最大对齐要求的整数倍
-		if ty.align < m.align {
+		if !ty.isPacked && ty.align < m.align {
 			ty.align = m.align
 		}
 	}
